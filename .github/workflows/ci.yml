@@ -189,4 +189,7 @@ jobs:
       if: runner.os == 'Windows'
       shell: powershell
       run: |
-        echo "y" | python src/improved_sdd_cli.py check; if ($LASTEXITCODE -ne 0) { Write-Host "Check command completed" }
+        # Use PowerShell here-string to provide input
+        $input = "y"
+        $input | python src/improved_sdd_cli.py check
+        if ($LASTEXITCODE -ne 0) { Write-Host "Check command completed" }

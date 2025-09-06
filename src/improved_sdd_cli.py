@@ -280,6 +280,13 @@ def offer_user_choice(missing_tools: list[str]) -> bool:
     console.print(f"\n[yellow]Missing optional tools: {', '.join(missing_tools)}[/yellow]")
     console.print("[dim]These tools enhance the development experience but are not required.[/dim]")
 
+    # Check if we're in CI/automation mode
+    import os
+
+    if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
+        console.print("[green][OK][/green] Continuing with available tools (CI mode)...")
+        return True
+
     try:
         choice = typer.prompt("\nWould you like to continue anyway? (y/n)", type=str, default="y").lower().strip()
 
