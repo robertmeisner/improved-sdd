@@ -96,14 +96,14 @@ APP_TYPES = {
     "python-cli": "Python CLI - Command-line application using typer and rich",
 }
 
-# Clean ASCII Banner (readable and correct spelling)
+# Clean ASCII Banner (readable and perfectly aligned)
 BANNER = r"""
- _____ __  __ _____  _____   ______      _______ _____        _____ _____  _____
-|_   _|  \/  |  __ \|  __ \ / __ \ \    / /  ___|  __ \      / ____|  __ \|  __ \
-  | | | |\/| | |__) | |__) | |  | \ \  / /| |__ | |  | |____| (___ | |  | | |  | |
-  | | | |  | |  ___/|  _  /| |  | |\ \/ / |  __|| |  | |_____\___ \| |  | | |  | |
- _| |_| |  | | |    | | \ \| |__| | \  /  | |___| |__| |     ____) | |__| | |__| |
-|_____|_|  |_|_|    |_|  \_\\____/   \/   |_____|_____/     |_____/|_____/|_____/
+. _   __  __ _____ _____    _____       _______ _____        _____ _____  _____
+ | | |      |  __ \|  __ \ / __ \ \    / /  ___|  __ \      / ____|  __ \|  __ \
+ | | | |\/| | |__) | |__) | |  | \ \  / /| |__ | |  | |____| (___ | |  | | |  | |
+ | | | |  | |  ___/|  _  /| |  | |\ \/ / |  __|| |  | |_____\___ \| |  | | |  | |
+ | | | |  | | |    | | \ \| |__| | \  /  | |___| |__| |     ____) | |__| | |__| |
+ |_| |_|  | |_|    |_|  \_\\____/   \/   |_____|_____/     |_____/|_____/|_____/
 """
 
 TAGLINE = "Spec-Driven Development for GitHub Copilot (soon more: Cursor, Claude, Gemini)"
@@ -228,8 +228,9 @@ def show_banner():
     console.print()
     for i, line in enumerate(banner_lines):
         color = colors[i % len(colors)]
-        console.print(f"[{color}]{line}[/{color}]")
-    console.print(f"[italic bright_yellow]{TAGLINE}[/italic bright_yellow]")
+        # Use console.print with style parameter instead of markup to avoid formatting issues
+        console.print(line, style=color)
+    console.print(TAGLINE, style="italic bright_yellow")
     console.print()
 
 
