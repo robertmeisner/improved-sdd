@@ -313,7 +313,8 @@ def select_ai_tools() -> list[str]:
         else:
             # Other tools are coming soon
             console.print(
-                f"[dim cyan]{i}.[/dim cyan] [dim white]{tool_info['name']}[/dim white]: [dim]{tool_info['description']}[/dim] [yellow](coming soon)[/yellow]"
+                f"[dim cyan]{i}.[/dim cyan] [dim white]{tool_info['name']}[/dim white]: "
+                f"[dim]{tool_info['description']}[/dim] [yellow](coming soon)[/yellow]"
             )
 
     console.print("\n[dim]Enter numbers separated by commas (e.g., 1,2) or 'all' for all tools[/dim]")
@@ -579,7 +580,8 @@ def create_project_structure(
                     else:
                         # Fall back to individual file confirmations
                         console.print(
-                            f"[yellow]Asking about each {category_name.lower()} file for {tool_name} individually...[/yellow]"
+                            f"[yellow]Asking about each {category_name.lower()} file for "
+                            f"{tool_name} individually...[/yellow]"
                         )
                         category_confirmed = False
 
@@ -735,12 +737,14 @@ def init(
     ai_tools_display = ", ".join([AI_TOOLS[tool]["name"] for tool in selected_ai_tools])
     console.print(
         Panel.fit(
-            "[bold cyan]Install Improved-SDD Templates for AI Assistants[/bold cyan]\n"
-            f"{'Installing in current directory:' if here or not project_name else 'Creating new project:'} "
-            f"[green]{project_path.name}[/green]"
-            f"{(f'\n[dim]Path: {project_path}[/dim]' if here or not project_name else '')}"
-            f"\n[bold blue]App type: [/bold blue] [yellow]{selected_app_type}[/yellow]"
-            f"\n[bold magenta]AI tools:[/bold magenta] [cyan]{ai_tools_display}[/cyan]",
+            "[bold cyan]Install Improved-SDD Templates for AI Assistants[/bold cyan]"
+            + "\n"
+            + f"{'Installing in current directory:' if here or not project_name else 'Creating new project:'} "
+            + f"[green]{project_path.name}[/green]"
+            + (f"\n[dim]Path: {project_path}[/dim]" if here or not project_name else "")
+            + f"\n[bold blue]App type: [/bold blue] [yellow]{selected_app_type}[/yellow]"
+            + "\n[bold magenta]AI tools: [/bold magenta] "
+            + f"[cyan]{ai_tools_display}[/cyan]",
             border_style="cyan",
         )
     )
@@ -800,7 +804,8 @@ def init(
                 ai_dir = ai_tool.replace("-", "_")
                 template_path = f".github/{ai_dir}/"
             steps_lines.append(f"   • [bold]{tool_config['name']}[/bold]: Reference `{template_path}` templates")
-            steps_lines.append(f"     Command: {tool_config['keywords']['{AI_COMMAND}']}")
+            ai_command = tool_config["keywords"].get("{AI_COMMAND}", "See instructions")
+            steps_lines.append(f"     Command: {ai_command}")
 
     if selected_app_type == "mcp-server":
         steps_lines.append(f"{step_num + 1}. Review MCP protocol documentation and examples")
