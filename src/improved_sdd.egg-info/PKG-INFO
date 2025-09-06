@@ -1,3 +1,24 @@
+Metadata-Version: 2.4
+Name: improved-sdd
+Version: 0.1.0
+Summary: Setup tool for Improved Spec-Driven Development projects
+Author-email: Robert <robert@example.com>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: typer
+Requires-Dist: rich
+Requires-Dist: platformdirs
+Requires-Dist: readchar
+Requires-Dist: httpx
+Provides-Extra: dev
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: isort>=5.12.0; extra == "dev"
+Requires-Dist: pre-commit>=3.0.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Dynamic: license-file
+
 # improved-sdd
 
 A GitHub Copilot Studio project with Improved Spec-Driven Development templates.

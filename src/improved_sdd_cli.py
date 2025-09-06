@@ -5,7 +5,6 @@
 #     "typer",
 #     "rich",
 #     "platformdirs",
-#     "readchar",
 #     "httpx",
 # ]
 # ///
@@ -17,230 +16,141 @@ Usage:
     uvx improved-sdd-cli.py init --here
 
 Or install globally:
-    uv tool install --from improved-sdd-cli.py improved-sdd
+    uv tool install improved-sdd-cli.py improved-sdd
     improved-sdd init <project-name>
     improved-sdd init --here
 """
 
-import os
-import subprocess
-import sys
 import shutil
-import json
+import sys
 from pathlib import Path
-from typing import Optional
 
 import typer
+from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-from rich.align import Align
-from rich.table import Table
-from rich.tree import Tree
 from typer.core import TyperGroup
-
-# For cross-platform keyboard input
-import readchar
 
 # Constants
 APP_TYPES = {
-    "mcp-server": "MCP Server - Model Context Protocol server for AI integrations"
+    "mcp-server": "MCP Server - Model Context Protocol server for AI integrations",
+    "python-cli": "Python CLI - Command-line application using typer and rich",
 }
 
 # ASCII Art Banner
 BANNER = """
-╦╔╦╗╔═╗╦═╗╔═╗╦  ╦╔═╗╔╦╗  ╔═╗╔╦╗╔╦╗
-║║║║╠═╝╠╦╝║ ║╚╗╔╝║╣  ║║  ╚═╗ ║║ ║║
-╩╩ ╩╩  ╩╚═╚═╝ ╚╝ ╚═╝═╩╝  ╚═╝═╩╝═╩╝
+██╗███╗   ███╗██████╗ ██████╗  ██████╗ ██╗   ██╗███████╗██████╗       ███████╗██████╗ ██████╗
+██║████╗ ████║██╔══██╗██╔══██╗██╔═══██╗██║   ██║██╔════╝██╔══██╗      ██╔════╝██╔══██╗██╔══██╗
+██║██╔████╔██║██████╔╝██████╔╝██║   ██║██║   ██║█████╗  ██║  ██║█████╗███████╗██║  ██║██║  ██║
+██║██║╚██╔╝██║██╔═══╝ ██╔══██╗██║   ██║╚██╗ ██╔╝██╔══╝  ██║  ██║╚════╝╚════██║██║  ██║██║  ██║
+██║██║ ╚═╝ ██║██║     ██║  ██║╚██████╔╝ ╚████╔╝ ███████╗██████╔╝      ███████║██████╔╝██████╔╝
+╚═╝╚═╝     ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝   ╚═══╝  ╚══════╝╚═════╝       ╚══════╝╚═════╝ ╚═════╝
 """
 
-TAGLINE = "Spec-Driven Development for Copilot Studio"
+TAGLINE = "Spec-Driven Development for GitHub Copilot (soon more: Cursor, Claude, Gemini)"
 
-class StepTracker:
-    """Track and render hierarchical steps without emojis, similar to Claude Code tree output."""
-    
-    def __init__(self, title: str):
-        self.title = title
-        self.steps = []  # list of dicts: {key, label, status, detail}
-        self.status_order = {"pending": 0, "running": 1, "done": 2, "error": 3, "skipped": 4}
-        self._refresh_cb = None
-        
-    def attach_refresh(self, cb):
-        self._refresh_cb = cb
-        
-    def add(self, key: str, label: str):
-        if key not in [s["key"] for s in self.steps]:
-            self.steps.append({"key": key, "label": label, "status": "pending", "detail": ""})
-        self._maybe_refresh()
-        
-    def start(self, key: str, detail: str = ""):
-        self._update(key, status="running", detail=detail)
-        
-    def complete(self, key: str, detail: str = ""):
-        self._update(key, status="done", detail=detail)
-        
-    def error(self, key: str, detail: str = ""):
-        self._update(key, status="error", detail=detail)
-        
-    def skip(self, key: str, detail: str = ""):
-        self._update(key, status="skipped", detail=detail)
-        
-    def _update(self, key: str, status: str, detail: str):
-        for s in self.steps:
-            if s["key"] == key:
-                s["status"] = status
-                if detail:
-                    s["detail"] = detail
-                self._maybe_refresh()
-                return
-        # If not present, add it
-        self.steps.append({"key": key, "label": key, "status": status, "detail": detail})
-        self._maybe_refresh()
-        
-    def _maybe_refresh(self):
-        if self._refresh_cb:
-            try:
-                self._refresh_cb()
-            except Exception:
-                pass
-                
-    def render(self):
-        tree = Tree(f"[bold cyan]{self.title}[/bold cyan]", guide_style="grey50")
-        for step in self.steps:
-            label = step["label"]
-            detail_text = step["detail"].strip() if step["detail"] else ""
-            
-            # Status symbols
-            status = step["status"]
-            if status == "done":
-                symbol = "[green]●[/green]"
-            elif status == "pending":
-                symbol = "[green dim]○[/green dim]"
-            elif status == "running":
-                symbol = "[cyan]○[/cyan]"
-            elif status == "error":
-                symbol = "[red]●[/red]"
-            elif status == "skipped":
-                symbol = "[yellow]○[/yellow]"
+
+class FileTracker:
+    """Track files that are created or modified during installation."""
+
+    def __init__(self):
+        self.created_files = []
+        self.modified_files = []
+        self.created_dirs = []
+
+    def track_file_creation(self, filepath: Path):
+        """Track a file that was created."""
+        self.created_files.append(str(filepath))
+
+    def track_file_modification(self, filepath: Path):
+        """Track a file that was modified."""
+        self.modified_files.append(str(filepath))
+
+    def track_dir_creation(self, dirpath: Path):
+        """Track a directory that was created."""
+        self.created_dirs.append(str(dirpath))
+
+    def get_summary(self) -> str:
+        """Get a formatted summary of all tracked changes."""
+        lines = []
+
+        if self.created_dirs:
+            lines.append("[bold cyan]Directories Created:[/bold cyan]")
+            for dir_path in sorted(self.created_dirs):
+                lines.append(f"  📁 {dir_path}")
+            lines.append("")
+
+        if self.created_files:
+            lines.append("[bold green]Files Created:[/bold green]")
+            # Group files by type
+            file_groups = self._group_files_by_type(self.created_files)
+            for file_type, files in file_groups.items():
+                lines.append(f"  [dim]{file_type}: [/dim]")
+                for file_path in sorted(files):
+                    lines.append(f"    📄 {file_path}")
+                lines.append("")
+            lines.append("")
+
+        if self.modified_files:
+            lines.append("[bold yellow]Files Modified:[/bold yellow]")
+            # Group files by type
+            file_groups = self._group_files_by_type(self.modified_files)
+            for file_type, files in file_groups.items():
+                lines.append(f"  [dim]{file_type}: [/dim]")
+                for file_path in sorted(files):
+                    lines.append(f"    ✏️  {file_path}")
+                lines.append("")
+            lines.append("")
+
+        total_changes = len(self.created_dirs) + len(self.created_files) + len(self.modified_files)
+        if total_changes > 0:
+            lines.append(
+                f"[dim]Total: {len(self.created_dirs)} directories, "
+                f"{len(self.created_files)} files created, "
+                f"{len(self.modified_files)} files modified[/dim]"
+            )
+        else:
+            lines.append("[dim]No files were created or modified[/dim]")
+
+        return "\n".join(lines)
+
+    def _group_files_by_type(self, files: list) -> dict:
+        """Group files by their type based on directory structure."""
+        groups = {"Chatmodes": [], "Instructions": [], "Prompts": [], "Commands": []}
+
+        for file_path in files:
+            # Convert to string and normalize path separators
+            path_str = str(file_path).replace("\\", "/")
+
+            if "chatmodes" in path_str:
+                groups["Chatmodes"].append(file_path)
+            elif "instructions" in path_str:
+                groups["Instructions"].append(file_path)
+            elif "prompts" in path_str:
+                groups["Prompts"].append(file_path)
+            elif "commands" in path_str:
+                groups["Commands"].append(file_path)
             else:
-                symbol = " "
-                
-            if status == "pending":
-                # Pending items in light gray
-                if detail_text:
-                    line = f"{symbol} [bright_black]{label} ({detail_text})[/bright_black]"
-                else:
-                    line = f"{symbol} [bright_black]{label}[/bright_black]"
-            else:
-                # Active/completed items
-                if detail_text:
-                    line = f"{symbol} [white]{label}[/white] [bright_black]({detail_text})[/bright_black]"
-                else:
-                    line = f"{symbol} [white]{label}[/white]"
-                    
-            tree.add(line)
-        return tree
+                # Fallback for any files not in the expected structure
+                groups["Other"] = groups.get("Other", [])
+                groups["Other"].append(file_path)
 
-def get_key():
-    """Get a single keypress in a cross-platform way using readchar."""
-    key = readchar.readkey()
-    
-    # Arrow keys
-    if key == readchar.key.UP:
-        return 'up'
-    if key == readchar.key.DOWN:
-        return 'down'
-    
-    # Enter/Return
-    if key == readchar.key.ENTER:
-        return 'enter'
-    
-    # Escape
-    if key == readchar.key.ESC:
-        return 'escape'
-        
-    # Ctrl+C
-    if key == readchar.key.CTRL_C:
-        raise KeyboardInterrupt
+        # Remove empty groups
+        return {k: v for k, v in groups.items() if v}
 
-    return key
-
-def select_with_arrows(options: dict, prompt_text: str = "Select an option", default_key: str = None) -> str:
-    """Interactive selection using arrow keys with Rich display."""
-    option_keys = list(options.keys())
-    if default_key and default_key in option_keys:
-        selected_index = option_keys.index(default_key)
-    else:
-        selected_index = 0
-    
-    selected_key = None
-
-    def create_selection_panel():
-        """Create the selection panel with current selection highlighted."""
-        table = Table.grid(padding=(0, 2))
-        table.add_column(style="bright_cyan", justify="left", width=3)
-        table.add_column(style="white", justify="left")
-        
-        for i, key in enumerate(option_keys):
-            if i == selected_index:
-                table.add_row("▶", f"[bright_cyan]{key}: {options[key]}[/bright_cyan]")
-            else:
-                table.add_row(" ", f"[white]{key}: {options[key]}[/white]")
-        
-        table.add_row("", "")
-        table.add_row("", "[dim]Use ↑/↓ to navigate, Enter to select, Esc to cancel[/dim]")
-        
-        return Panel(
-            table,
-            title=f"[bold]{prompt_text}[/bold]",
-            border_style="cyan",
-            padding=(1, 2)
-        )
-    
-    console.print()
-
-    def run_selection_loop():
-        nonlocal selected_key, selected_index
-        from rich.live import Live
-        
-        with Live(create_selection_panel(), console=console, transient=True, auto_refresh=False) as live:
-            while True:
-                try:
-                    key = get_key()
-                    if key == 'up':
-                        selected_index = (selected_index - 1) % len(option_keys)
-                    elif key == 'down':
-                        selected_index = (selected_index + 1) % len(option_keys)
-                    elif key == 'enter':
-                        selected_key = option_keys[selected_index]
-                        break
-                    elif key == 'escape':
-                        console.print("\n[yellow]Selection cancelled[/yellow]")
-                        raise typer.Exit(1)
-                    
-                    live.update(create_selection_panel(), refresh=True)
-
-                except KeyboardInterrupt:
-                    console.print("\n[yellow]Selection cancelled[/yellow]")
-                    raise typer.Exit(1)
-
-    run_selection_loop()
-    
-    if selected_key is None:
-        console.print("\n[red]Selection failed.[/red]")
-        raise typer.Exit(1)
-        
-    return selected_key
 
 console = Console()
 
+
 class BannerGroup(TyperGroup):
     """Custom group that shows banner before help."""
-    
+
     def format_help(self, ctx, formatter):
         # Show banner before help
         show_banner()
         super().format_help(ctx, formatter)
+
 
 app = typer.Typer(
     name="improved-sdd",
@@ -250,19 +160,21 @@ app = typer.Typer(
     cls=BannerGroup,
 )
 
+
 def show_banner():
     """Display the ASCII art banner."""
-    banner_lines = BANNER.strip().split('\n')
+    banner_lines = BANNER.strip().split("\n")
     colors = ["bright_blue", "blue", "cyan", "bright_cyan", "white", "bright_white"]
-    
+
     styled_banner = Text()
     for i, line in enumerate(banner_lines):
         color = colors[i % len(colors)]
         styled_banner.append(line + "\n", style=color)
-    
+
     console.print(Align.center(styled_banner))
     console.print(Align.center(Text(TAGLINE, style="italic bright_yellow")))
     console.print()
+
 
 @app.callback()
 def callback(ctx: typer.Context):
@@ -272,23 +184,6 @@ def callback(ctx: typer.Context):
         console.print(Align.center("[dim]Run 'improved-sdd --help' for usage information[/dim]"))
         console.print()
 
-def run_command(cmd: list[str], check_return: bool = True, capture: bool = False, shell: bool = False) -> Optional[str]:
-    """Run a shell command and optionally capture output."""
-    try:
-        if capture:
-            result = subprocess.run(cmd, check=check_return, capture_output=True, text=True, shell=shell)
-            return result.stdout.strip()
-        else:
-            subprocess.run(cmd, check=check_return, shell=shell)
-            return None
-    except subprocess.CalledProcessError as e:
-        if check_return:
-            console.print(f"[red]Error running command:[/red] {' '.join(cmd)}")
-            console.print(f"[red]Exit code:[/red] {e.returncode}")
-            if hasattr(e, 'stderr') and e.stderr:
-                console.print(f"[red]Error output:[/red] {e.stderr}")
-            raise
-        return None
 
 def check_tool(tool: str, install_hint: str) -> bool:
     """Check if a tool is installed."""
@@ -300,185 +195,128 @@ def check_tool(tool: str, install_hint: str) -> bool:
         console.print(f"   Install with: [cyan]{install_hint}[/cyan]")
         return False
 
-def is_git_repo(path: Path = None) -> bool:
-    """Check if the specified path is inside a git repository."""
-    if path is None:
-        path = Path.cwd()
-    
-    if not path.is_dir():
-        return False
-
-    try:
-        subprocess.run(
-            ["git", "rev-parse", "--is-inside-work-tree"],
-            check=True,
-            capture_output=True,
-            cwd=path,
-        )
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        return False
-
-def init_git_repo(project_path: Path, quiet: bool = False) -> bool:
-    """Initialize a git repository in the specified path."""
-    try:
-        original_cwd = Path.cwd()
-        os.chdir(project_path)
-        if not quiet:
-            console.print("[cyan]Initializing git repository...[/cyan]")
-        subprocess.run(["git", "init"], check=True, capture_output=True)
-        subprocess.run(["git", "add", "."], check=True, capture_output=True)
-        subprocess.run(["git", "commit", "-m", "Initial commit from Improved-SDD template"], check=True, capture_output=True)
-        if not quiet:
-            console.print("[green]✓[/green] Git repository initialized")
-        return True
-        
-    except subprocess.CalledProcessError as e:
-        if not quiet:
-            console.print(f"[red]Error initializing git repository:[/red] {e}")
-        return False
-    finally:
-        os.chdir(original_cwd)
 
 def select_app_type() -> str:
-    """Interactive app type selection with arrow key navigation."""
+    """Interactive app type selection with fallback to simple prompt."""
     console.print("\n🔧 What kind of app are you building?")
-    
-    return select_with_arrows(
-        APP_TYPES, 
-        "Choose your app type:", 
-        "mcp-server"
-    )
 
-def create_project_structure(project_path: Path, app_type: str) -> None:
+    # Use simple numbered selection to avoid terminal compatibility issues
+    option_keys = list(APP_TYPES.keys())
+
+    console.print()
+    for i, key in enumerate(option_keys, 1):
+        console.print(f"[cyan]{i}.[/cyan] [white]{key}[/white]: {APP_TYPES[key]}")
+
+    console.print()
+
+    while True:
+        try:
+            choice = typer.prompt(f"Select option (1-{len(option_keys)}) [default: 1]", type=int, default=1)
+            if 1 <= choice <= len(option_keys):
+                selected = option_keys[choice - 1]
+                console.print(f"[green]Selected: [/green] {selected}")
+                return selected
+            else:
+                console.print(f"[red]Please enter a number between 1 and {len(option_keys)}[/red]")
+        except (ValueError, typer.Abort):
+            console.print("[red]Invalid input. Please enter a number.[/red]")
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Selection cancelled[/yellow]")
+            raise typer.Exit(1)
+
+
+def create_project_structure(project_path: Path, app_type: str, file_tracker: FileTracker, force: bool = False) -> None:
     """Install Improved-SDD templates into the project directory for GitHub Copilot."""
-    
+
     # Get the CLI script directory (where this script is located)
     script_dir = Path(__file__).parent
     templates_source = script_dir.parent / "templates"
-    
-    # For GitHub Copilot, we install templates in specific locations
-    # .github/copilot-instructions.md - Main instructions
-    # .vscode/prompts/ - Custom prompts for Copilot
-    # .copilot/ - Custom templates and configurations
-    
-    copilot_dirs = [
-        ".github",
-        ".vscode/prompts", 
-        ".copilot/chatmodes",
-        ".copilot/instructions",
-        ".copilot/prompts",
-        ".copilot/commands"
-    ]
-    
-    for dir_path in copilot_dirs:
-        full_path = project_path / dir_path
-        full_path.mkdir(parents=True, exist_ok=True)
-    
-    # Copy templates to .copilot directory for reference
+
+    # Copy template files if they exist
     if templates_source.exists():
-        shutil.copytree(templates_source, project_path / ".copilot", dirs_exist_ok=True)
-    
-    # Copy key templates to .vscode/prompts for direct Copilot access
-    if templates_source.exists():
-        prompts_source = templates_source / "prompts"
-        if prompts_source.exists():
-            shutil.copytree(prompts_source, project_path / ".vscode" / "prompts", dirs_exist_ok=True)
-    
-    # Create .github/copilot-instructions.md for GitHub Copilot Studio
-    copilot_instructions = f"""# Improved-SDD Development Instructions
+        # Define categories for grouped confirmation
+        categories = {
+            "Chatmodes/Agents": {"source": templates_source / "chatmodes", "dest": ".github/chatmodes", "files": []},
+            "Instructions": {"source": templates_source / "instructions", "dest": ".github/instructions", "files": []},
+            "Prompts/Commands": {"source": templates_source / "prompts", "dest": ".github/prompts", "files": []},
+        }
 
-This project follows the Improved Spec-Driven Development methodology for **{APP_TYPES.get(app_type, app_type)}**.
+        # Add commands to Prompts/Commands category
+        commands_src = templates_source / "commands"
+        if commands_src.exists():
+            categories["Prompts/Commands"]["commands_source"] = commands_src
+            categories["Prompts/Commands"]["commands_dest"] = ".github/commands"
 
-## Core Principles
+        # Collect all files for each category
+        for category_name, category_info in categories.items():
+            source_dir = category_info["source"]
+            if source_dir.exists():
+                for template_file in source_dir.glob("*.md"):
+                    dest_file = project_path / category_info["dest"] / template_file.name
+                    category_info["files"].append((template_file, dest_file))
 
-- Requirements → Design → Implementation → Validation
-- Template-driven AI interactions
-- Code minimalism and quality
-- GitHub Copilot Studio integration
+            # Add commands files to Prompts/Commands category
+            if "commands_source" in category_info:
+                commands_source = category_info["commands_source"]
+                for template_file in commands_source.glob("*.md"):
+                    dest_file = project_path / category_info["commands_dest"] / template_file.name
+                    category_info["files"].append((template_file, dest_file))
 
-## Workflow
+        # Create .github directory if we have any files to install
+        total_files = sum(len(category_info["files"]) for category_info in categories.values())
+        if total_files > 0:
+            github_dir = project_path / ".github"
+            if not github_dir.exists():
+                github_dir.mkdir(parents=True, exist_ok=True)
+                file_tracker.track_dir_creation(github_dir.relative_to(project_path))
 
-Use the templates in `.copilot/` and `.vscode/prompts/` to guide development:
-- `.copilot/chatmodes/` for AI behavior patterns
-- `.copilot/instructions/` for context-specific guidance
-- `.copilot/prompts/` for structured interactions
-- `.vscode/prompts/` for direct Copilot prompt access
+        # Process each category
+        for category_name, category_info in categories.items():
+            if not category_info["files"]:
+                continue
 
-## Quality Standards
+            # Create category directory if it doesn't exist
+            category_dir = project_path / category_info["dest"]
+            if not category_dir.exists():
+                category_dir.mkdir(parents=True, exist_ok=True)
+                file_tracker.track_dir_creation(category_dir.relative_to(project_path))
 
-Follow the Improved-SDD constitutional framework for all development work.
+            console.print(f"[cyan]Installing {category_name}...[/cyan]")
 
-## App-Specific Guidelines
+            # Check if any files in this category already exist
+            existing_files = [dest_file for _, dest_file in category_info["files"] if dest_file.exists()]
 
-{get_app_specific_instructions(app_type)}
+            category_confirmed = force
+            if existing_files and not force:
+                # Ask once per category
+                if typer.confirm(f"Some {category_name.lower()} files already exist. Overwrite all?"):
+                    category_confirmed = True
+                else:
+                    # Fall back to individual file confirmations
+                    console.print(f"[yellow]Asking about each {category_name.lower()} file individually...[/yellow]")
+                    category_confirmed = False
 
-## Template Usage
+            # Copy all files in this category
+            for template_file, dest_file in category_info["files"]:
+                if not dest_file.exists():
+                    dest_file.write_text(template_file.read_text(encoding="utf-8"), encoding="utf-8")
+                    file_tracker.track_file_creation(dest_file.relative_to(project_path))
+                elif category_confirmed:
+                    dest_file.write_text(template_file.read_text(encoding="utf-8"), encoding="utf-8")
+                    file_tracker.track_file_modification(dest_file.relative_to(project_path))
+                elif not category_confirmed and existing_files:
+                    # Individual file confirmation
+                    if typer.confirm(f"Overwrite {dest_file.relative_to(project_path)}?"):
+                        dest_file.write_text(template_file.read_text(encoding="utf-8"), encoding="utf-8")
+                        file_tracker.track_file_modification(dest_file.relative_to(project_path))
+                    else:
+                        console.print(f"[yellow]Skipped: [/yellow] {dest_file.relative_to(project_path)}")
+                else:
+                    console.print(f"[yellow]Skipped: [/yellow] {dest_file.relative_to(project_path)}")
 
-1. **For GitHub Copilot Chat**: Reference templates in `.copilot/` directory
-2. **For VS Code Prompts**: Use files in `.vscode/prompts/` directory  
-3. **For Spec Development**: Follow the spec-driven workflow with chatmodes
+    # Handle app-specific instructions (these are already handled in the categories above)
+    console.print(f"[cyan]App type '{app_type}' templates installed[/cyan]")
 
-## Quick Start
-
-1. Open this project in VS Code
-2. Use Ctrl+Shift+P → "Chat: Open Chat" to start GitHub Copilot
-3. Reference the chatmodes and prompts for structured development
-4. Follow the spec-driven workflow: Requirements → Design → Implementation
-
-"""
-    (project_path / ".github" / "copilot-instructions.md").write_text(copilot_instructions, encoding='utf-8')
-
-    # Create a simple README if it doesn't exist
-    readme_path = project_path / "README.md"
-    if not readme_path.exists():
-        readme_content = f"""# {project_path.name}
-
-A GitHub Copilot Studio project with Improved Spec-Driven Development templates.
-
-## App Type: {APP_TYPES.get(app_type, app_type)}
-
-This project is configured with custom templates for GitHub Copilot Studio development.
-
-## Quick Start
-
-1. Open in VS Code
-2. Use GitHub Copilot with the templates in `.copilot/` and `.vscode/prompts/`
-3. Follow the spec-driven development workflow
-4. Reference `.github/copilot-instructions.md` for detailed guidance
-
-## Templates Available
-
-- **Chatmodes**: `.copilot/chatmodes/` - AI behavior patterns
-- **Instructions**: `.copilot/instructions/` - Context-specific guidance
-- **Prompts**: `.copilot/prompts/` and `.vscode/prompts/` - Reusable interactions
-- **Commands**: `.copilot/commands/` - Command definitions
-
-{get_app_specific_readme_section(app_type)}
-"""
-        readme_path.write_text(readme_content, encoding='utf-8')
-
-def get_app_specific_readme_section(app_type: str) -> str:
-    """Get app-specific README section."""
-    if app_type == "mcp-server":
-        return """
-## MCP Server Development
-
-This project is set up for Model Context Protocol server development:
-
-- Follow MCP protocol specifications
-- Use TypeScript for type safety
-- Implement proper tool interfaces
-- Include comprehensive error handling
-- Test with multiple MCP clients
-
-### Resources
-
-- [MCP Documentation](https://spec.modelcontextprotocol.io/)
-- [MCP Examples](https://github.com/modelcontextprotocol)
-"""
-    
-    return ""
 
 def get_app_specific_instructions(app_type: str) -> str:
     """Get app-specific development instructions."""
@@ -487,140 +325,144 @@ def get_app_specific_instructions(app_type: str) -> str:
 
 - Follow MCP protocol specifications
 - Implement proper tool interfaces
-- Use TypeScript for type safety
 - Include comprehensive error handling
-- Document all available tools and resources
-- Test with multiple MCP clients"""
-    
-    return "Follow general development best practices."
+- Test with multiple MCP clients
+
+### Key Resources
+- [MCP Protocol Docs](https://spec.modelcontextprotocol.io/)
+- [MCP Examples](https://github.com/modelcontextprotocol)
+"""
+    elif app_type == "python-cli":
+        return """### Python CLI Development
+
+- Use typer for CLI framework with type hints
+- Rich for beautiful terminal output and formatting
+- Follow CLI UX best practices (progress, confirmations, help)
+- Implement proper error handling and user feedback
+- Support configuration and environment variables
+- Include comprehensive testing with typer.testing
+
+### Key Resources
+- [Typer Documentation](https://typer.tiangolo.com/)
+- [Rich Documentation](https://rich.readthedocs.io/)
+- [CLI Best Practices](https://clig.dev/)
+- [Python CLI Template](.github/instructions/CLIPythonDev.instructions.md)
+"""
+
+    return ""
+
 
 @app.command()
 def init(
-    project_name: str = typer.Argument(None, help="Name for your new project directory (optional, defaults to current directory)"),
+    project_name: str = typer.Argument(
+        None, help="Name for your new project directory (optional, defaults to current directory)"
+    ),
     app_type: str = typer.Option(None, "--app-type", help="App type to build: mcp-server"),
     ignore_agent_tools: bool = typer.Option(False, "--ignore-agent-tools", help="Skip checks for AI agent tools"),
-    no_git: bool = typer.Option(False, "--no-git", help="Skip git repository initialization"),
-    here: bool = typer.Option(True, "--here/--new-dir", help="Install templates in current directory (default) or create new directory"),
+    here: bool = typer.Option(
+        True, "--here/--new-dir", help="Install templates in current directory (default) or create new directory"
+    ),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing files without asking for confirmation"),
 ):
     """
     Install Improved-SDD templates for GitHub Copilot Studio in your project.
-    
+
     This command will:
-    1. Check that required tools are installed (git is optional)
+    1. Check that required tools are installed
     2. Let you choose your app type
     3. Install custom templates for GitHub Copilot
     4. Set up GitHub Copilot Studio configurations
-    5. Initialize a git repository (if not --no-git and not already a repo)
-    
+
     Examples:
         improved-sdd init                    # Install in current directory
-        improved-sdd init --app-type mcp-server --no-git
+        improved-sdd init --app-type mcp-server
         improved-sdd init my-project --new-dir   # Create new directory
+        improved-sdd init --force            # Overwrite existing files without asking
     """
-    
+
     # Show banner first
     show_banner()
-    
+
     # Validate arguments
     if not here and not project_name:
         console.print("[red]Error:[/red] Must specify either a project name or use default --here mode")
         raise typer.Exit(1)
-    
+
     # Determine project directory
     if here or not project_name:
         project_name = Path.cwd().name
         project_path = Path.cwd()
-        
+
         # Check if current directory has any files
         existing_items = list(project_path.iterdir())
         if existing_items:
-            console.print(f"[yellow]Installing templates in current directory:[/yellow] {project_path.name}")
+            console.print(f"[yellow]Installing templates in current directory: [/yellow] {project_path.name}")
             console.print(f"[dim]Found {len(existing_items)} existing items - templates will be added/merged[/dim]")
     else:
         project_path = Path(project_name).resolve()
         # Check if project directory already exists
         if project_path.exists():
-            console.print(f"[red]Error:[/red] Directory '{project_name}' already exists")
+            console.print(f"[red]Error: [/red] Directory '{project_name}' already exists")
             raise typer.Exit(1)
-    
-    console.print(Panel.fit(
-        "[bold cyan]Install Improved-SDD Templates for GitHub Copilot Studio[/bold cyan]\n"
-        f"{'Installing in current directory:' if here or not project_name else 'Creating new project:'} [green]{project_path.name}[/green]"
-        + (f"\n[dim]Path: {project_path}[/dim]" if here or not project_name else ""),
-        border_style="cyan"
-    ))
-    
-    # Check git availability
-    git_available = True
-    if not no_git:
-        git_available = check_tool("git", "https://git-scm.com/downloads")
-        if not git_available:
-            console.print("[yellow]Git not found - will skip repository initialization[/yellow]")
 
     # App type selection
     if app_type:
         if app_type not in APP_TYPES:
-            console.print(f"[red]Error:[/red] Invalid app type '{app_type}'. Choose from: {', '.join(APP_TYPES.keys())}")
+            console.print(
+                f"[red]Error: [/red] Invalid app type '{app_type}'. " f"Choose from: {', '.join(APP_TYPES.keys())}"
+            )
             raise typer.Exit(1)
         selected_app_type = app_type
     else:
         selected_app_type = select_app_type()
-    
-    # Create project with progress tracking
-    tracker = StepTracker("Install Improved-SDD Templates for Copilot Studio")
-    
-    # Add steps
-    tracker.add("precheck", "Check required tools")
-    tracker.complete("precheck", "ok")
-    tracker.add("app-select", "Select app type")  
-    tracker.complete("app-select", f"{selected_app_type}")
-    tracker.add("templates", "Install Copilot templates")
-    tracker.add("config", "Configure GitHub Copilot")
-    if not no_git and not is_git_repo(project_path):
-        tracker.add("git", "Initialize git repository")
-    tracker.add("final", "Finalize setup")
-    
-    from rich.live import Live
-    
-    with Live(tracker.render(), console=console, refresh_per_second=8, transient=True) as live:
-        tracker.attach_refresh(lambda: live.update(tracker.render()))
-        
-        try:
-            # Install templates
-            tracker.start("templates")
-            if not here and project_name:
-                project_path.mkdir(parents=True, exist_ok=True)
-            create_project_structure(project_path, selected_app_type)
-            tracker.complete("templates", "templates installed to .copilot/ and .vscode/")
-            
-            # Configure Copilot
-            tracker.start("config")
-            # Configuration is handled in create_project_structure
-            tracker.complete("config", "GitHub Copilot configured")
-            
-            # Git initialization
-            if not no_git and not is_git_repo(project_path):
-                tracker.start("git")
-                if git_available:
-                    if init_git_repo(project_path, quiet=True):
-                        tracker.complete("git", "initialized")
-                    else:
-                        tracker.error("git", "init failed")
-                else:
-                    tracker.skip("git", "git not available")
-            
-            tracker.complete("final", "templates ready for GitHub Copilot")
-            
-        except Exception as e:
-            tracker.error("final", str(e))
-            if not here and project_name and project_path.exists():
-                shutil.rmtree(project_path)
-            raise typer.Exit(1)
-    
+
+    # Show panel with app type information
+    console.print(
+        Panel.fit(
+            "[bold cyan]Install Improved-SDD Templates for GitHub Copilot Studio[/bold cyan]\n"
+            f"{'Installing in current directory:' if here or not project_name else 'Creating new project:'} "
+            f"[green]{project_path.name}[/green]"
+            f"{(f'\n[dim]Path: {project_path}[/dim]' if here or not project_name else '')}"
+            f"\n[bold blue]App type: [/bold blue] [yellow]{selected_app_type}[/yellow]",
+            border_style="cyan",
+        )
+    )
+
+    # Initialize file tracker
+    file_tracker = FileTracker()
+
+    try:
+        # Install templates
+        console.print("\n[cyan]Installing templates...[/cyan]")
+        if not here and project_name:
+            project_path.mkdir(parents=True, exist_ok=True)
+            file_tracker.track_dir_creation(Path(project_name))
+        create_project_structure(project_path, selected_app_type, file_tracker, force)
+        console.print("[green]✓[/green] Templates installed")
+
+        # Configure Copilot
+        console.print("[cyan]Configuring GitHub Copilot...[/cyan]")
+        # Configuration is handled in create_project_structure
+        console.print("[green]✓[/green] GitHub Copilot configured")
+
+        console.print("[green]✓[/green] Setup complete")
+
+    except Exception as e:
+        console.print(f"[red]✗[/red] Error: {e}")
+        if not here and project_name and project_path.exists():
+            shutil.rmtree(project_path)
+        raise typer.Exit(1)
+
     # Final static display
-    console.print(tracker.render())
     console.print("\n[bold green]Templates installed![/bold green]")
-    
+
+    # Show file summary
+    console.print()
+    file_summary_panel = Panel(
+        file_tracker.get_summary(), title="[bold cyan]Files Summary[/bold cyan]", border_style="cyan", padding=(1, 2)
+    )
+    console.print(file_summary_panel)
+
     # Next steps
     steps_lines = []
     if not here and project_name:
@@ -630,46 +472,181 @@ def init(
         steps_lines.append("1. Open VS Code in this directory")
         step_num = 2
 
-    steps_lines.append(f"{step_num}. Use GitHub Copilot with the installed templates:")
-    steps_lines.append(f"   • Reference `.copilot/chatmodes/` for AI behavior patterns")
-    steps_lines.append(f"   • Use `.vscode/prompts/` for direct prompt access")
-    steps_lines.append(f"   • Check `.github/copilot-instructions.md` for guidance")
+    steps_lines.append(f"{step_num}. Use GitHub Copilot with the installed templates: ")
+    steps_lines.append("   • Reference `.github/chatmodes/` for AI behavior patterns")
+    steps_lines.append("   • Use `.github/prompts/` for structured interactions")
+    steps_lines.append("   • Check `.github/instructions/` for app-specific guidance")
     if selected_app_type == "mcp-server":
         steps_lines.append(f"{step_num + 1}. Review MCP protocol documentation and examples")
+        step_num += 1
+    elif selected_app_type == "python-cli":
+        steps_lines.append(
+            f"{step_num + 1}. Review Python CLI development guide in "
+            "`.github/instructions/CLIPythonDev.instructions.md`"
+        )
         step_num += 1
 
     step_num += 1
     steps_lines.append(f"{step_num}. Start your first feature using the spec-driven workflow")
     steps_lines.append(f"{step_num + 1}. Use Ctrl+Shift+P → 'Chat: Open Chat' to start GitHub Copilot")
 
-    steps_panel = Panel("\n".join(steps_lines), title="Next steps", border_style="cyan", padding=(1,2))
+    steps_panel = Panel("\n".join(steps_lines), title="Next steps", border_style="cyan", padding=(1, 2))
     console.print()
     console.print(steps_panel)
+
+
+@app.command()
+def delete(
+    app_type: str = typer.Argument(None, help="App type to delete files for: mcp-server, python-cli"),
+    force: bool = typer.Option(False, "--force", help="Skip confirmation prompt"),
+):
+    """
+    Delete Improved-SDD templates for a specific app type.
+
+    This command will:
+    1. Identify files installed for the specified app type
+    2. Show what will be deleted
+    3. Require confirmation (unless --force is used)
+    4. Delete the files
+
+    Examples:
+        improved-sdd delete mcp-server
+        improved-sdd delete python-cli --force
+    """
+
+    # Show banner first
+    show_banner()
+
+    # Validate app type
+    if app_type:
+        if app_type not in APP_TYPES:
+            console.print(
+                f"[red]Error: [/red] Invalid app type '{app_type}'. " f"Choose from: {', '.join(APP_TYPES.keys())}"
+            )
+            raise typer.Exit(1)
+        selected_app_type = app_type
+    else:
+        selected_app_type = select_app_type()
+
+    # Get project path (current directory)
+    project_path = Path.cwd()
+
+    # Find files to delete
+    files_to_delete = []
+    dirs_to_delete = []
+
+    # Check for app-specific files
+    github_dir = project_path / ".github"
+    if github_dir.exists():
+        # Check chatmodes
+        chatmodes_dir = github_dir / "chatmodes"
+        if chatmodes_dir.exists():
+            for file_path in chatmodes_dir.glob("*.md"):
+                files_to_delete.append(file_path)
+
+        # Check instructions
+        instructions_dir = github_dir / "instructions"
+        if instructions_dir.exists():
+            for file_path in instructions_dir.glob("*.md"):
+                files_to_delete.append(file_path)
+
+        # Check prompts
+        prompts_dir = github_dir / "prompts"
+        if prompts_dir.exists():
+            for file_path in prompts_dir.glob("*.md"):
+                files_to_delete.append(file_path)
+
+        # Check commands
+        commands_dir = github_dir / "commands"
+        if commands_dir.exists():
+            for file_path in commands_dir.glob("*.md"):
+                files_to_delete.append(file_path)
+
+        # Check if directories are empty after deletion
+        for dir_path in [chatmodes_dir, instructions_dir, prompts_dir, commands_dir]:
+            if dir_path.exists() and not list(dir_path.glob("*")):
+                dirs_to_delete.append(dir_path)
+
+        # Check if .github is empty after deletion
+        if not list(github_dir.glob("*")):
+            dirs_to_delete.append(github_dir)
+
+    # Show what will be deleted
+    if not files_to_delete and not dirs_to_delete:
+        console.print(f"[yellow]No files found for app type '{selected_app_type}'[/yellow]")
+        return
+
+    console.print(f"[bold red]Files to be deleted for '{selected_app_type}': [/bold red]")
+    console.print()
+
+    if files_to_delete:
+        console.print("[red]Files:[/red]")
+        for file_path in sorted(files_to_delete):
+            console.print(f"  🗑️  {file_path.relative_to(project_path)}")
+        console.print()
+
+    if dirs_to_delete:
+        console.print("[red]Directories:[/red]")
+        for dir_path in sorted(dirs_to_delete):
+            console.print(f"  📁 {dir_path.relative_to(project_path)}")
+        console.print()
+
+    # Confirmation
+    if not force:
+        console.print("[bold yellow]⚠️  This action cannot be undone![/bold yellow]")
+        confirmation = typer.prompt("Type 'Yes' to confirm deletion", type=str, default="")
+        if confirmation != "Yes":
+            console.print("[yellow]Deletion cancelled[/yellow]")
+            return
+
+    # Delete files
+    console.print("[cyan]Deleting files...[/cyan]")
+
+    deleted_files = 0
+    deleted_dirs = 0
+
+    for file_path in files_to_delete:
+        try:
+            file_path.unlink()
+            console.print(f"[green]✓[/green] Deleted: {file_path.relative_to(project_path)}")
+            deleted_files += 1
+        except Exception as e:
+            console.print(f"[red]✗[/red] Failed to delete {file_path.relative_to(project_path)}: {e}")
+
+    # Delete directories (in reverse order to handle nested dirs)
+    for dir_path in sorted(dirs_to_delete, reverse=True):
+        try:
+            if not list(dir_path.glob("*")):  # Only delete if empty
+                dir_path.rmdir()
+                console.print(f"[green]✓[/green] Deleted directory: {dir_path.relative_to(project_path)}")
+                deleted_dirs += 1
+        except Exception as e:
+            console.print(f"[red]✗[/red] Failed to delete directory {dir_path.relative_to(project_path)}: {e}")
+
+    console.print(f"\n[green]✓[/green] Deletion complete: {deleted_files} files, {deleted_dirs} directories removed")
+
 
 @app.command()
 def check():
     """Check that all required tools are installed."""
     show_banner()
     console.print("[bold]Checking Improved-SDD requirements...[/bold]\n")
-    
+
     console.print("[cyan]Required tools:[/cyan]")
     python_ok = check_tool("python", "Install from: https://python.org/downloads")
-    
-    console.print("\n[cyan]Optional tools:[/cyan]")
-    git_ok = check_tool("git", "Install from: https://git-scm.com/downloads")
-    
+
     console.print("\n[cyan]AI Assistant tools:[/cyan]")
-    claude_ok = check_tool("claude", "Install from: https://docs.anthropic.com/en/docs/claude-code/setup")
-    
-    console.print(f"\n[green]✓ Improved-SDD CLI is ready to use![/green]")
+    check_tool("claude", "Install from: https://docs.anthropic.com/en/docs/claude-code/setup")
+
+    console.print("\n[green]✓ Improved-SDD CLI is ready to use![/green]")
     if not python_ok:
         console.print("[red]Python is required for this tool to work.[/red]")
         raise typer.Exit(1)
-    if not git_ok:
-        console.print("[yellow]Consider installing git for repository management[/yellow]")
+
 
 def main():
     app()
+
 
 if __name__ == "__main__":
     main()

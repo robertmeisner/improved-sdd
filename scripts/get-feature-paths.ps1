@@ -18,12 +18,12 @@ if ($Help) {
 try {
     # Get all paths
     $paths = Get-FeaturePaths
-    
+
     # Check if on feature branch
     if (-not (Test-FeatureBranch $paths.CURRENT_BRANCH)) {
         exit 1
     }
-    
+
     # Output paths (don't create anything)
     Write-Host "REPO_ROOT: $($paths.REPO_ROOT)"
     Write-Host "BRANCH: $($paths.CURRENT_BRANCH)"

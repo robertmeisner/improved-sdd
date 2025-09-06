@@ -44,7 +44,7 @@ When fixing tests reveals the need for substantial design or behavioral changes,
 
 ### When to escalate to Spec Mode:
 - Breaking changes to public APIs, data contracts, or cross-module interfaces
-- Architectural shifts (e.g., new service/module, persistence strategy, or event flows)  
+- Architectural shifts (e.g., new service/module, persistence strategy, or event flows)
 - Non-trivial behavior changes that invalidate existing acceptance criteria
 - Wide-reaching refactors across multiple files/packages or specs
 - Significant new functionality beyond scope of a test fix

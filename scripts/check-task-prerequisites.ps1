@@ -18,19 +18,19 @@ if ($Help) {
 try {
     # Get all paths
     $paths = Get-FeaturePaths
-    
+
     # Check if on feature branch
     if (-not (Test-FeatureBranch $paths.CURRENT_BRANCH)) {
         exit 1
     }
-    
+
     # Check if plan.md exists
     if (-not (Test-Path $paths.IMPL_PLAN)) {
         Write-Error "No implementation plan found at $($paths.IMPL_PLAN)"
         Write-Host "Run .\setup-plan.ps1 first to create the plan."
         exit 1
     }
-    
+
     if ($Json) {
         # Build array of available docs that actually exist
         $docs = @()
@@ -44,7 +44,7 @@ try {
         if (Test-Path $paths.REQUIREMENTS) { $docs += "requirements.md" }
         if (Test-Path $paths.DESIGN) { $docs += "design.md" }
         if (Test-Path $paths.FEASIBILITY) { $docs += "feasibility.md" }
-        
+
         $result = @{
             FEATURE_DIR = $paths.FEATURE_DIR
             AVAILABLE_DOCS = $docs
@@ -57,7 +57,7 @@ try {
         Write-Host "FEATURE_DIR: $($paths.FEATURE_DIR)"
         Write-Host ""
         Write-Host "AVAILABLE_DOCS:" -ForegroundColor Yellow
-        
+
         # Check available design documents
         Test-FileExists $paths.RESEARCH "research.md"
         Test-FileExists $paths.DATA_MODEL "data-model.md"
@@ -66,7 +66,7 @@ try {
         Test-FileExists $paths.REQUIREMENTS "requirements.md"
         Test-FileExists $paths.DESIGN "design.md"
         Test-FileExists $paths.FEASIBILITY "feasibility.md"
-        
+
         Write-Host ""
         Write-Host "Prerequisites check complete." -ForegroundColor Green
     }

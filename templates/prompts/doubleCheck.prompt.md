@@ -27,8 +27,8 @@ mode: agent
 ## Response Format
 
 ### 📋 Verification Summary
-**Task**: [What was requested]  
-**Implementation Status**: ✅ Found | ⚠️ Partial | ❌ Not Found  
+**Task**: [What was requested]
+**Implementation Status**: ✅ Found | ⚠️ Partial | ❌ Not Found
 **Verification Result**: ✅ Verified | ⚠️ Issues Found | ❌ Failed
 
 ### ✅ Verified Working

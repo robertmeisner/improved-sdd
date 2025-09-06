@@ -619,7 +619,7 @@ Here is a Mermaid flow diagram that describes how the workflow should behave. Ta
 ```mermaid
 stateDiagram-v2
   [*] --> Feasibility : Initial Creation
-  
+
   Feasibility : Assess Feasibility
   Requirements : Write Requirements
   Design : Write Design
@@ -630,24 +630,24 @@ stateDiagram-v2
   ReviewFeas --> Feasibility : Feedback/Changes
   ReviewFeas --> Requirements : Proceed
   ReviewFeas --> [*] : Do Not Proceed
-  
+
   Requirements --> ReviewReq : Complete Requirements
   ReviewReq --> Requirements : Feedback/Changes Requested
   ReviewReq --> Design : Explicit Approval
-  
+
   Design --> ReviewDesign : Complete Design
   ReviewDesign --> Design : Feedback/Changes Requested
   ReviewDesign --> Requirements : Major Gaps Found
   ReviewDesign --> Tasks : Explicit Approval
-  
+
   Tasks --> ReviewTasks : Complete Tasks
   ReviewTasks --> Tasks : Feedback/Changes Requested
   ReviewTasks --> Design : Design Changes Needed
   ReviewTasks --> [*] : Explicit Approval
-  
+
   Execute : Execute Task
   Execute --> Retrospective : All Tasks Complete
-  
+
   state "Entry Points" as EP {
       [*] --> Feasibility : New Spec
       [*] --> Requirements : Update
@@ -655,7 +655,7 @@ stateDiagram-v2
       [*] --> Tasks : Update
       [*] --> Execute : Execute task
   }
-  
+
   Retrospective --> [*] : Complete
 ```
 

@@ -32,7 +32,7 @@ Test entire codebase, fix broken tests and code, use pragmatic approaches for qu
 
 # Backend-specific patterns
 5. pytest tests/test_config.py -v                    # Config module tests
-6. pytest tests/test_cache_manager.py -v             # Cache module tests  
+6. pytest tests/test_cache_manager.py -v             # Cache module tests
 7. pytest tests/test_server.py -v                    # Server tests
 8. pytest -m unit                                    # Unit tests only
 9. pytest -m integration                             # Integration tests only
@@ -75,7 +75,7 @@ Test entire codebase, fix broken tests and code, use pragmatic approaches for qu
 
 ### Summary
 - Total tests: Before vs After (separated by backend/frontend when applicable)
-- Passing rate: Before vs After (backend priority)  
+- Passing rate: Before vs After (backend priority)
 - Coverage: Before vs After (backend priority)
 - Time to run: Before vs After
 - Test modules: Backend (Cache, Config, Server, Analysis), Frontend (when available)

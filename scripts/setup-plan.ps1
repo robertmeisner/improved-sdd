@@ -19,17 +19,17 @@ if ($Help) {
 try {
     # Get all paths
     $paths = Get-FeaturePaths
-    
+
     # Check if on feature branch
     if (-not (Test-FeatureBranch $paths.CURRENT_BRANCH)) {
         exit 1
     }
-    
+
     # Create specs directory if it doesn't exist
     if (-not (Test-Path $paths.FEATURE_DIR)) {
         New-Item -ItemType Directory -Path $paths.FEATURE_DIR -Force | Out-Null
     }
-    
+
     # Copy plan template if it exists
     $template = Join-Path $paths.REPO_ROOT "templates" "plan-template.md"
     if (Test-Path $template) {
@@ -62,7 +62,7 @@ try {
 "@
         Set-Content -Path $paths.IMPL_PLAN -Value $basicPlan
     }
-    
+
     if ($Json) {
         $result = @{
             FEATURE_SPEC = $paths.FEATURE_SPEC

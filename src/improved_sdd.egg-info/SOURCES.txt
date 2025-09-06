@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+src/improved_sdd_cli.py
+src/improved_sdd.egg-info/PKG-INFO
+src/improved_sdd.egg-info/SOURCES.txt
+src/improved_sdd.egg-info/dependency_links.txt
+src/improved_sdd.egg-info/entry_points.txt
+src/improved_sdd.egg-info/requires.txt
+src/improved_sdd.egg-info/top_level.txt

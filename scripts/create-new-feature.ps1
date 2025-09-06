@@ -6,9 +6,9 @@
 param(
     [Parameter(Mandatory=$true, Position=0)]
     [string]$FeatureDescription,
-    
+
     [switch]$Json,
-    
+
     [switch]$Help
 )
 
@@ -29,12 +29,12 @@ try {
     # Get repository root
     $repoRoot = Get-RepoRoot
     $specsDir = Join-Path $repoRoot "specs"
-    
+
     # Create specs directory if it doesn't exist
     if (-not (Test-Path $specsDir)) {
         New-Item -ItemType Directory -Path $specsDir -Force | Out-Null
     }
-    
+
     # Find the highest numbered feature directory
     $highest = 0
     if (Test-Path $specsDir) {
@@ -46,29 +46,29 @@ try {
             }
         }
     }
-    
+
     # Generate next feature number
     $featureNum = "{0:D3}" -f ($highest + 1)
-    
+
     # Create branch name from description
     $words = $FeatureDescription -replace '[^\w\s-]', '' -split '\s+' | Where-Object { $_ -ne '' } | Select-Object -First 3
     $branchSuffix = ($words -join '-').ToLower()
     $branchName = "$featureNum-$branchSuffix"
-    
+
     # Create and switch to new branch
     git checkout -b $branchName 2>$null
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to create branch '$branchName'"
     }
-    
+
     # Create feature directory
     $featureDir = Join-Path $specsDir $branchName
     New-Item -ItemType Directory -Path $featureDir -Force | Out-Null
-    
+
     # Copy template if it exists
     $template = Join-Path $repoRoot "templates" "spec-template.md"
     $specFile = Join-Path $featureDir "spec.md"
-    
+
     if (Test-Path $template) {
         Copy-Item $template $specFile
     }
@@ -91,7 +91,7 @@ $FeatureDescription
 "@
         Set-Content -Path $specFile -Value $basicSpec
     }
-    
+
     if ($Json) {
         $result = @{
             BRANCH_NAME = $branchName

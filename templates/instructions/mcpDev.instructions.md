@@ -18,20 +18,20 @@ This project implements an MCP (Model Context Protocol) server that provides pro
 graph TB
     subgraph "MCP Host (AI Application)"
         HOST[Claude Desktop/VS Code/Custom AI App]
-        
+
         subgraph "Client Manager"
             CLIENT[MCP Client - Connection Manager]
         end
     end
-    
+
     subgraph "Transport Layer"
         STDIO[stdio Transport - Local Development]
         HTTP[Streamable HTTP - Production]
     end
-    
+
     subgraph "Project Analyzer MCP Server"
         ANALYZER[FastMCP Server - Project Analysis]
-        
+
         subgraph "Tools"
             ANALYZE[analyze_project()]
             ANALYZE_FILE[analyze_file()]
@@ -39,25 +39,25 @@ graph TB
             EXPLAIN[explain_code_purpose()]
             AI_ANALYZE[ai_summarize_file()]
         end
-        
+
         subgraph "Resources"
             PROJECT_DATA[project://structure]
             FILE_DATA[file://analysis/{path}]
         end
     end
-    
+
     HOST --> CLIENT
     CLIENT -.->|stdio/HTTP| STDIO
     CLIENT -.->|HTTP| HTTP
     STDIO --> ANALYZER
     HTTP --> ANALYZER
-    
+
     ANALYZER --> ANALYZE
     ANALYZER --> ANALYZE_FILE
     ANALYZER --> SEARCH
     ANALYZER --> EXPLAIN
     ANALYZER --> AI_ANALYZE
-    
+
     ANALYZER --> PROJECT_DATA
     ANALYZER --> FILE_DATA
 ```
@@ -258,7 +258,7 @@ pytest tests/ -v                     # Run tests
 
 #### 2. Running Server Directly
 - **❌ NEVER**: `python server.py` or `cd src && python server.py` (server will hang)
-- **✅ USE**: 
+- **✅ USE**:
   - `python -m mcp dev src/server.py` (Interactive debugging)
   - `python -m mcp install src/server.py` (Install to Claude Desktop)
   - `pytest tests/` (Run tests)

@@ -9,7 +9,7 @@ function Get-RepoRoot {
         }
     }
     catch {}
-    
+
     # Fallback: look for .git directory
     $current = Get-Location
     while ($current -ne $current.Root) {
@@ -18,7 +18,7 @@ function Get-RepoRoot {
         }
         $current = $current.Parent
     }
-    
+
     throw "Not in a git repository"
 }
 
@@ -30,7 +30,7 @@ function Get-CurrentBranch {
         }
     }
     catch {}
-    
+
     throw "Cannot determine current branch"
 }
 
@@ -39,7 +39,7 @@ function Get-FeatureDir {
         [string]$RepoRoot,
         [string]$CurrentBranch
     )
-    
+
     return Join-Path $RepoRoot "specs" $CurrentBranch
 }
 
@@ -47,7 +47,7 @@ function Get-FeaturePaths {
     $repoRoot = Get-RepoRoot
     $currentBranch = Get-CurrentBranch
     $featureDir = Get-FeatureDir $repoRoot $currentBranch
-    
+
     return @{
         REPO_ROOT = $repoRoot
         CURRENT_BRANCH = $currentBranch
@@ -68,17 +68,17 @@ function Get-FeaturePaths {
 
 function Test-FeatureBranch {
     param([string]$BranchName)
-    
+
     if ($BranchName -eq "main" -or $BranchName -eq "master") {
         Write-Error "Cannot work on feature specs from main/master branch"
         return $false
     }
-    
+
     if (-not ($BranchName -match '^\d{3}-')) {
         Write-Error "Feature branch must start with 3-digit number (e.g., 001-feature-name)"
         return $false
     }
-    
+
     return $true
 }
 
@@ -87,7 +87,7 @@ function Test-FileExists {
         [string]$FilePath,
         [string]$Description
     )
-    
+
     if (Test-Path $FilePath) {
         Write-Host "  ✓ $Description" -ForegroundColor Green
         return $true
@@ -103,7 +103,7 @@ function Test-DirectoryExists {
         [string]$DirPath,
         [string]$Description
     )
-    
+
     if (Test-Path $DirPath -PathType Container) {
         $count = (Get-ChildItem $DirPath -File).Count
         if ($count -gt 0) {
@@ -123,18 +123,18 @@ function Test-DirectoryExists {
 
 function Write-JsonOutput {
     param([hashtable]$Data)
-    
+
     $jsonData = @{}
     foreach ($key in $Data.Keys) {
         $jsonData[$key] = $Data[$key]
     }
-    
+
     ConvertTo-Json $jsonData -Compress
 }
 
 function Show-Banner {
     param([string]$Title)
-    
+
     Write-Host ""
     Write-Host "╔══════════════════════════════════════╗" -ForegroundColor Cyan
     Write-Host "║           IMPROVED-SDD               ║" -ForegroundColor Cyan

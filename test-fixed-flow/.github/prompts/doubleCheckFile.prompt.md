@@ -37,15 +37,15 @@ mode: agent
 ## Response Format
 
 ### 📋 File/Class Verification Summary
-**File**: `path/to/file.ext`  
-**Class/Module**: [Name if applicable]  
-**Purpose**: [Brief description]  
+**File**: `path/to/file.ext`
+**Class/Module**: [Name if applicable]
+**Purpose**: [Brief description]
 **Status**: ✅ Fully Verified | ⚠️ Issues Found | ❌ Critical Problems
 
 ### 🔍 Code Analysis
-**Lines of Code**: X  
-**Complexity**: Low/Medium/High  
-**Dependencies**: [List key dependencies]  
+**Lines of Code**: X
+**Complexity**: Low/Medium/High
+**Dependencies**: [List key dependencies]
 **Public Interface**: [Methods/properties exposed]
 
 ### ✅ Verified Aspects
@@ -76,7 +76,7 @@ mode: agent
 
 ### 📊 File/Class Health Score
 - **Correctness**: X/10
-- **Maintainability**: X/10  
+- **Maintainability**: X/10
 - **Performance**: X/10
 - **Test Coverage**: X%
 - **Overall Score**: X/10
