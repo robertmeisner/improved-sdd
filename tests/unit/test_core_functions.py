@@ -254,7 +254,7 @@ class TestToolChecking:
         assert result is True
         mock_prompt.assert_not_called()
 
-    @patch("typer.prompt")
+    @patch("improved_sdd_cli.typer.prompt")
     @patch("improved_sdd_cli.console")
     def test_offer_user_choice_user_accepts(self, mock_console, mock_prompt):
         """Test offer_user_choice when user accepts to continue."""
@@ -265,7 +265,7 @@ class TestToolChecking:
         assert result is True
         mock_prompt.assert_called_once()
 
-    @patch("typer.prompt")
+    @patch("improved_sdd_cli.typer.prompt")
     @patch("improved_sdd_cli.console")
     def test_offer_user_choice_user_declines(self, mock_console, mock_prompt):
         """Test offer_user_choice when user declines to continue."""
@@ -276,7 +276,7 @@ class TestToolChecking:
         assert result is False
         mock_prompt.assert_called_once()
 
-    @patch("typer.prompt")
+    @patch("improved_sdd_cli.typer.prompt")
     @patch("improved_sdd_cli.console")
     def test_offer_user_choice_keyboard_interrupt(self, mock_console, mock_prompt):
         """Test offer_user_choice with keyboard interrupt."""
