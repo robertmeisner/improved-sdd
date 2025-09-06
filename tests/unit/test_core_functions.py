@@ -254,6 +254,7 @@ class TestToolChecking:
         assert result is True
         mock_prompt.assert_not_called()
 
+    @patch.dict(os.environ, {}, clear=True)  # Clear CI environment variables
     @patch("improved_sdd_cli.typer.prompt")
     @patch("improved_sdd_cli.console")
     def test_offer_user_choice_user_accepts(self, mock_console, mock_prompt):
@@ -265,6 +266,7 @@ class TestToolChecking:
         assert result is True
         mock_prompt.assert_called_once()
 
+    @patch.dict(os.environ, {}, clear=True)  # Clear CI environment variables
     @patch("improved_sdd_cli.typer.prompt")
     @patch("improved_sdd_cli.console")
     def test_offer_user_choice_user_declines(self, mock_console, mock_prompt):
@@ -276,6 +278,7 @@ class TestToolChecking:
         assert result is False
         mock_prompt.assert_called_once()
 
+    @patch.dict(os.environ, {}, clear=True)  # Clear CI environment variables
     @patch("improved_sdd_cli.typer.prompt")
     @patch("improved_sdd_cli.console")
     def test_offer_user_choice_keyboard_interrupt(self, mock_console, mock_prompt):
@@ -285,3 +288,14 @@ class TestToolChecking:
         result = offer_user_choice(["Tool1"])
 
         assert result is False
+        mock_prompt.assert_called_once()
+
+    @patch.dict(os.environ, {"CI": "true"})  # Simulate CI environment
+    @patch("improved_sdd_cli.typer.prompt")
+    @patch("improved_sdd_cli.console")
+    def test_offer_user_choice_ci_mode(self, mock_console, mock_prompt):
+        """Test offer_user_choice in CI environment returns True without prompting."""
+        result = offer_user_choice(["Tool1", "Tool2"])
+
+        assert result is True
+        mock_prompt.assert_not_called()  # Should not prompt in CI mode
