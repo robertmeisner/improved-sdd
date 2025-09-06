@@ -3,15 +3,15 @@
 import os
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-from improved_sdd_cli import (
-    AI_TOOLS,
+# Import after path modification - this avoids E402 since it's necessary
+from improved_sdd_cli import (  # noqa: E402
     FileTracker,
     check_github_copilot,
     check_tool,
@@ -199,7 +199,7 @@ class TestToolChecking:
         result = check_tool("python", "Install from python.org")
 
         assert result is True
-        mock_console.print.assert_called_with("[green]✓[/green] python found")
+        mock_console.print.assert_called_with("[green][OK][/green] python found")
 
     @patch("shutil.which")
     @patch("improved_sdd_cli.console")
@@ -210,7 +210,7 @@ class TestToolChecking:
         result = check_tool("python", "Install from python.org")
 
         assert result is False
-        mock_console.print.assert_any_call("[red]✗[/red]  python not found")
+        mock_console.print.assert_any_call("[red][ERROR][/red]  python not found")
 
     @patch("shutil.which")
     @patch("improved_sdd_cli.console")
@@ -221,7 +221,7 @@ class TestToolChecking:
         result = check_tool("optional-tool", "Install hint", optional=True)
 
         assert result is False
-        mock_console.print.assert_any_call("[yellow]⚠️[/yellow]  optional-tool not found")
+        mock_console.print.assert_any_call("[yellow][WARN][/yellow]  optional-tool not found")
 
     @patch("shutil.which")
     @patch("improved_sdd_cli.console")
@@ -232,7 +232,7 @@ class TestToolChecking:
         result = check_github_copilot()
 
         assert result is True
-        mock_console.print.assert_any_call("[green]✓[/green] VS Code found")
+        mock_console.print.assert_any_call("[green][OK][/green] VS Code found")
 
     @patch("shutil.which")
     @patch("improved_sdd_cli.console")
@@ -243,7 +243,7 @@ class TestToolChecking:
         result = check_github_copilot()
 
         assert result is False
-        mock_console.print.assert_any_call("[yellow]⚠️[/yellow]  VS Code not found")
+        mock_console.print.assert_any_call("[yellow][WARN][/yellow]  VS Code not found")
 
     @patch("typer.prompt")
     @patch("improved_sdd_cli.console")

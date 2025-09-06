@@ -246,10 +246,10 @@ def callback(ctx: typer.Context):
 def check_tool(tool: str, install_hint: str, optional: bool = False) -> bool:
     """Check if a tool is installed."""
     if shutil.which(tool):
-        console.print(f"[green]✓[/green] {tool} found")
+        console.print(f"[green][OK][/green] {tool} found")
         return True
     else:
-        status_icon = "[yellow]⚠️[/yellow]" if optional else "[red]✗[/red]"
+        status_icon = "[yellow][WARN][/yellow]" if optional else "[red][ERROR][/red]"
         console.print(f"{status_icon}  {tool} not found")
         console.print(f"   Install with: [cyan]{install_hint}[/cyan]")
         return False
@@ -261,12 +261,12 @@ def check_github_copilot() -> bool:
     vscode_found = shutil.which("code") is not None
 
     if vscode_found:
-        console.print("[green]✓[/green] VS Code found")
+        console.print("[green][OK][/green] VS Code found")
         console.print("   [dim]Note: GitHub Copilot availability depends on VS Code extensions[/dim]")
         console.print("   [dim]Open VS Code and check if Copilot extension is installed and activated[/dim]")
         return True
     else:
-        console.print("[yellow]⚠️[/yellow]  VS Code not found")
+        console.print("[yellow][WARN][/yellow]  VS Code not found")
         console.print("   Install with: [cyan]https://code.visualstudio.com/download[/cyan]")
         console.print("   [dim]Then install GitHub Copilot extension from VS Code marketplace[/dim]")
         return False
@@ -284,7 +284,7 @@ def offer_user_choice(missing_tools: list[str]) -> bool:
         choice = typer.prompt("\nWould you like to continue anyway? (y/n)", type=str, default="y").lower().strip()
 
         if choice in ["y", "yes"]:
-            console.print("[green]✓[/green] Continuing with available tools...")
+            console.print("[green][OK][/green] Continuing with available tools...")
             return True
         else:
             console.print("[yellow]Setup cancelled. Please install the missing tools and try again.[/yellow]")
@@ -758,17 +758,17 @@ def init(
             project_path.mkdir(parents=True, exist_ok=True)
             file_tracker.track_dir_creation(Path(project_name))
         create_project_structure(project_path, selected_app_type, selected_ai_tools, file_tracker, force)
-        console.print("[green]✓[/green] Templates installed")
+        console.print("[green][OK][/green] Templates installed")
 
         # Configure AI assistants
         console.print("[cyan]Configuring AI assistants...[/cyan]")
         # Configuration is handled in create_project_structure
-        console.print("[green]✓[/green] AI assistants configured")
+        console.print("[green][OK][/green] AI assistants configured")
 
-        console.print("[green]✓[/green] Setup complete")
+        console.print("[green][OK][/green] Setup complete")
 
     except Exception as e:
-        console.print(f"[red]✗[/red] Error: {e}")
+        console.print(f"[red][ERROR][/red] Error: {e}")
         if not here and project_name and project_path.exists():
             shutil.rmtree(project_path)
         raise typer.Exit(1)
@@ -919,7 +919,7 @@ def delete(
 
     # Confirmation
     if not force:
-        console.print("[bold yellow]⚠️  This action cannot be undone![/bold yellow]")
+        console.print("[bold yellow][WARN]  This action cannot be undone![/bold yellow]")
         confirmation = typer.prompt("Type 'Yes' to confirm deletion", type=str, default="")
         if confirmation != "Yes":
             console.print("[yellow]Deletion cancelled[/yellow]")
@@ -934,22 +934,22 @@ def delete(
     for file_path in files_to_delete:
         try:
             file_path.unlink()
-            console.print(f"[green]✓[/green] Deleted: {file_path.relative_to(project_path)}")
+            console.print(f"[green][OK][/green] Deleted: {file_path.relative_to(project_path)}")
             deleted_files += 1
         except Exception as e:
-            console.print(f"[red]✗[/red] Failed to delete {file_path.relative_to(project_path)}: {e}")
+            console.print(f"[red][ERROR][/red] Failed to delete {file_path.relative_to(project_path)}: {e}")
 
     # Delete directories (in reverse order to handle nested dirs)
     for dir_path in sorted(dirs_to_delete, reverse=True):
         try:
             if not list(dir_path.glob("*")):  # Only delete if empty
                 dir_path.rmdir()
-                console.print(f"[green]✓[/green] Deleted directory: {dir_path.relative_to(project_path)}")
+                console.print(f"[green][OK][/green] Deleted directory: {dir_path.relative_to(project_path)}")
                 deleted_dirs += 1
         except Exception as e:
-            console.print(f"[red]✗[/red] Failed to delete directory {dir_path.relative_to(project_path)}: {e}")
+            console.print(f"[red][ERROR][/red] Failed to delete directory {dir_path.relative_to(project_path)}: {e}")
 
-    console.print(f"\n[green]✓[/green] Deletion complete: {deleted_files} files, {deleted_dirs} directories removed")
+    console.print(f"\n[green][OK][/green] Deletion complete: {deleted_files} files, {deleted_dirs} directories removed")
 
 
 @app.command()
@@ -974,7 +974,7 @@ def check():
     if not copilot_ok:
         missing_tools.append("VS Code/GitHub Copilot")
 
-    console.print("\n[green]✓ Improved-SDD CLI is ready to use![/green]")
+    console.print("\n[green][OK] Improved-SDD CLI is ready to use![/green]")
 
     if not python_ok:
         console.print("[red]Python is required for this tool to work.[/red]")
@@ -985,7 +985,7 @@ def check():
         if not offer_user_choice(missing_tools):
             raise typer.Exit(1)
     else:
-        console.print("[green]✓ All AI assistant tools are available![/green]")
+        console.print("[green][OK] All AI assistant tools are available![/green]")
 
 
 def main():
