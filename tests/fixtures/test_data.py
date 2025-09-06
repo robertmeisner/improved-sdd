@@ -10,13 +10,9 @@ SAMPLE_AI_TOOLS = {
             "chatmodes": ".test.md",
             "instructions": ".test.md",
             "prompts": ".test.md",
-            "commands": ".test.md"
+            "commands": ".test.md",
         },
-        "keywords": {
-            "{AI_ASSISTANT}": "Test AI Assistant",
-            "{AI_SHORTNAME}": "TestAI",
-            "{AI_COMMAND}": "test-command"
-        }
+        "keywords": {"{AI_ASSISTANT}": "Test AI Assistant", "{AI_SHORTNAME}": "TestAI", "{AI_COMMAND}": "test-command"},
     }
 }
 

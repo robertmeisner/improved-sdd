@@ -72,7 +72,7 @@ pytest -m "cli"
 
 **CLI Commands (`test_cli_commands.py`)**
 - `TestInitCommand`: Tests for the `init` command
-- `TestDeleteCommand`: Tests for the `delete` command  
+- `TestDeleteCommand`: Tests for the `delete` command
 - `TestCheckCommand`: Tests for the `check` command
 - `TestMainApp`: Tests for main app behavior
 

@@ -42,13 +42,13 @@ AI_TOOLS = {
             "chatmodes": ".chatmode.md",
             "instructions": ".instructions.md",
             "prompts": ".prompt.md",
-            "commands": ".command.md"
+            "commands": ".command.md",
         },
         "keywords": {
             "{AI_ASSISTANT}": "GitHub Copilot",
             "{AI_SHORTNAME}": "Copilot",
-            "{AI_COMMAND}": "Ctrl+Shift+P → 'Chat: Open Chat'"
-        }
+            "{AI_COMMAND}": "Ctrl+Shift+P → 'Chat: Open Chat'",
+        },
     },
     "claude": {
         "name": "Claude (Anthropic)",
@@ -58,13 +58,9 @@ AI_TOOLS = {
             "chatmodes": ".claude.md",
             "instructions": ".claude.md",
             "prompts": ".claude.md",
-            "commands": ".claude.md"
+            "commands": ".claude.md",
         },
-        "keywords": {
-            "{AI_ASSISTANT}": "Claude",
-            "{AI_SHORTNAME}": "Claude",
-            "{AI_COMMAND}": "Open Claude interface"
-        }
+        "keywords": {"{AI_ASSISTANT}": "Claude", "{AI_SHORTNAME}": "Claude", "{AI_COMMAND}": "Open Claude interface"},
     },
     "cursor": {
         "name": "Cursor AI",
@@ -74,13 +70,9 @@ AI_TOOLS = {
             "chatmodes": ".cursor.md",
             "instructions": ".cursor.md",
             "prompts": ".cursor.md",
-            "commands": ".cursor.md"
+            "commands": ".cursor.md",
         },
-        "keywords": {
-            "{AI_ASSISTANT}": "Cursor AI",
-            "{AI_SHORTNAME}": "Cursor",
-            "{AI_COMMAND}": "Ctrl+K or Ctrl+L"
-        }
+        "keywords": {"{AI_ASSISTANT}": "Cursor AI", "{AI_SHORTNAME}": "Cursor", "{AI_COMMAND}": "Ctrl+K or Ctrl+L"},
     },
     "gemini": {
         "name": "Google Gemini",
@@ -90,14 +82,14 @@ AI_TOOLS = {
             "chatmodes": ".gemini.md",
             "instructions": ".gemini.md",
             "prompts": ".gemini.md",
-            "commands": ".gemini.md"
+            "commands": ".gemini.md",
         },
         "keywords": {
             "{AI_ASSISTANT}": "Google Gemini",
             "{AI_SHORTNAME}": "Gemini",
-            "{AI_COMMAND}": "Use Gemini CLI or API"
-        }
-    }
+            "{AI_COMMAND}": "Use Gemini CLI or API",
+        },
+    },
 }
 
 APP_TYPES = {
@@ -268,7 +260,7 @@ def check_github_copilot() -> bool:
     """Check if GitHub Copilot is available in VS Code."""
     # Check for VS Code installation
     vscode_found = shutil.which("code") is not None
-    
+
     if vscode_found:
         console.print("[green]✓[/green] VS Code found")
         console.print("   [dim]Note: GitHub Copilot availability depends on VS Code extensions[/dim]")
@@ -285,24 +277,20 @@ def offer_user_choice(missing_tools: list[str]) -> bool:
     """Offer user choice when tools are missing."""
     if not missing_tools:
         return True
-        
+
     console.print(f"\n[yellow]Missing optional tools: {', '.join(missing_tools)}[/yellow]")
     console.print("[dim]These tools enhance the development experience but are not required.[/dim]")
-    
+
     try:
-        choice = typer.prompt(
-            "\nWould you like to continue anyway? (y/n)",
-            type=str,
-            default="y"
-        ).lower().strip()
-        
-        if choice in ['y', 'yes']:
+        choice = typer.prompt("\nWould you like to continue anyway? (y/n)", type=str, default="y").lower().strip()
+
+        if choice in ["y", "yes"]:
             console.print("[green]✓[/green] Continuing with available tools...")
             return True
         else:
             console.print("[yellow]Setup cancelled. Please install the missing tools and try again.[/yellow]")
             return False
-            
+
     except (typer.Abort, KeyboardInterrupt):
         console.print("\n[yellow]Setup cancelled[/yellow]")
         return False
@@ -324,7 +312,9 @@ def select_ai_tools() -> list[str]:
             console.print(f"[cyan]{i}.[/cyan] [white]{tool_info['name']}[/white]: {tool_info['description']}")
         else:
             # Other tools are coming soon
-            console.print(f"[dim cyan]{i}.[/dim cyan] [dim white]{tool_info['name']}[/dim white]: [dim]{tool_info['description']}[/dim] [yellow](coming soon)[/yellow]")
+            console.print(
+                f"[dim cyan]{i}.[/dim cyan] [dim white]{tool_info['name']}[/dim white]: [dim]{tool_info['description']}[/dim] [yellow](coming soon)[/yellow]"
+            )
 
     console.print("\n[dim]Enter numbers separated by commas (e.g., 1,2) or 'all' for all tools[/dim]")
     console.print()
@@ -333,18 +323,18 @@ def select_ai_tools() -> list[str]:
         try:
             # Use input() instead of typer.prompt to avoid issues with defaults
             user_input = input(f"Select options (1-{len(tool_keys)}) [default: 1]: ").strip().lower()
-            
+
             # Handle empty input (use default)
             if not user_input:
                 choice = "1"
             else:
                 choice = user_input
-            
+
             if choice == "all":
                 selected = tool_keys.copy()
                 console.print(f"[green]Selected: [/green] All AI tools ({len(selected)} tools)")
                 return selected
-            
+
             # Parse comma-separated numbers
             selected_indices = []
             for part in choice.split(","):
@@ -357,7 +347,7 @@ def select_ai_tools() -> list[str]:
                         raise ValueError(f"Invalid option: {idx}")
                 else:
                     raise ValueError(f"Invalid input: {part}")
-            
+
             if selected_indices:
                 selected = [tool_keys[i] for i in selected_indices]
                 tool_names = [AI_TOOLS[key]["name"] for key in selected]
@@ -365,7 +355,7 @@ def select_ai_tools() -> list[str]:
                 return selected
             else:
                 console.print("[red]Please select at least one option[/red]")
-                
+
         except ValueError as e:
             console.print(f"[red]Invalid input: {e}. Please try again.[/red]")
         except KeyboardInterrupt:
@@ -377,14 +367,14 @@ def customize_template_content(content: str, ai_tool: str) -> str:
     """Customize template content for specific AI tool by replacing keywords."""
     if ai_tool not in AI_TOOLS:
         return content
-        
+
     tool_config = AI_TOOLS[ai_tool]
     customized_content = content
-    
+
     # Replace AI-specific keywords
     for keyword, replacement in tool_config["keywords"].items():
         customized_content = customized_content.replace(keyword, replacement)
-    
+
     return customized_content
 
 
@@ -407,7 +397,7 @@ def get_template_filename(original_name: str, ai_tool: str, template_type: str) 
         "chatmodes": "chatmodes",  # already correct
         "instructions": "instructions",  # already correct
         "prompts": "prompts",  # already correct
-        "commands": "commands"  # already correct
+        "commands": "commands",  # already correct
     }
 
     extension_key = extension_key_map.get(template_type, template_type)
@@ -418,15 +408,17 @@ def get_template_filename(original_name: str, ai_tool: str, template_type: str) 
         # Map plural template types to singular extensions
         singular_map = {
             "chatmodes": "chatmode",
-            "instructions": "instructions", 
+            "instructions": "instructions",
             "prompts": "prompt",
-            "commands": "command"
+            "commands": "command",
         }
         singular_type = singular_map.get(template_type, template_type)
         return f"{base_name}.{singular_type}.md"
     else:
         # For other AI tools, use their configured extensions
         return f"{base_name}{extension}"
+
+
 def select_app_type() -> str:
     """Interactive app type selection with fallback to simple prompt."""
     console.print("\n🔧 What kind of app are you building?")
@@ -444,13 +436,13 @@ def select_app_type() -> str:
         try:
             # Use input() instead of typer.prompt to avoid issues with defaults
             user_input = input(f"Select option (1-{len(option_keys)}) [default: 1]: ").strip()
-            
+
             # Handle empty input (use default)
             if not user_input:
                 choice = 1
             else:
                 choice = int(user_input)
-                
+
             if 1 <= choice <= len(option_keys):
                 selected = option_keys[choice - 1]
                 console.print(f"[green]Selected: [/green] {selected}")
@@ -464,7 +456,9 @@ def select_app_type() -> str:
             raise typer.Exit(1)
 
 
-def create_project_structure(project_path: Path, app_type: str, ai_tools: list[str], file_tracker: FileTracker, force: bool = False) -> None:
+def create_project_structure(
+    project_path: Path, app_type: str, ai_tools: list[str], file_tracker: FileTracker, force: bool = False
+) -> None:
     """Install Improved-SDD templates into the project directory for selected AI tools."""
 
     # Get the CLI script directory (where this script is located)
@@ -477,37 +471,37 @@ def create_project_structure(project_path: Path, app_type: str, ai_tools: list[s
             if ai_tool not in AI_TOOLS:
                 console.print(f"[yellow]Warning: Unknown AI tool '{ai_tool}', skipping[/yellow]")
                 continue
-                
+
             tool_config = AI_TOOLS[ai_tool]
             tool_name = tool_config["name"]
-            
+
             console.print(f"[cyan]Installing templates for {tool_name}...[/cyan]")
-            
+
             # Define categories for this AI tool
             # GitHub Copilot goes in root .github/, others get their own subdirectory
             if ai_tool == "github-copilot":
                 ai_tool_dir = ""  # Root .github directory
             else:
                 ai_tool_dir = ai_tool.replace("-", "_") + "/"  # Convert kebab-case to snake_case for directory
-            
+
             categories = {
                 "Chatmodes/Agents": {
-                    "source": templates_source / "chatmodes", 
-                    "dest": f".github/{ai_tool_dir}chatmodes", 
+                    "source": templates_source / "chatmodes",
+                    "dest": f".github/{ai_tool_dir}chatmodes",
                     "files": [],
-                    "type": "chatmodes"
+                    "type": "chatmodes",
                 },
                 "Instructions": {
-                    "source": templates_source / "instructions", 
-                    "dest": f".github/{ai_tool_dir}instructions", 
+                    "source": templates_source / "instructions",
+                    "dest": f".github/{ai_tool_dir}instructions",
                     "files": [],
-                    "type": "instructions"
+                    "type": "instructions",
                 },
                 "Prompts/Commands": {
-                    "source": templates_source / "prompts", 
-                    "dest": f".github/{ai_tool_dir}prompts", 
+                    "source": templates_source / "prompts",
+                    "dest": f".github/{ai_tool_dir}prompts",
                     "files": [],
-                    "type": "prompts"
+                    "type": "prompts",
                 },
             }
 
@@ -530,13 +524,9 @@ def create_project_structure(project_path: Path, app_type: str, ai_tools: list[s
                                 continue
                             elif app_type == "mcp-server" and not template_file.name.startswith("mcpDev"):
                                 continue
-                        
+
                         # Generate AI-specific filename
-                        new_filename = get_template_filename(
-                            template_file.name, 
-                            ai_tool, 
-                            category_info["type"]
-                        )
+                        new_filename = get_template_filename(template_file.name, ai_tool, category_info["type"])
                         dest_file = project_path / category_info["dest"] / new_filename
                         category_info["files"].append((template_file, dest_file, category_info["type"]))
 
@@ -545,9 +535,7 @@ def create_project_structure(project_path: Path, app_type: str, ai_tools: list[s
                     commands_source = category_info["commands_source"]
                     for template_file in commands_source.glob("*.md"):
                         new_filename = get_template_filename(
-                            template_file.name, 
-                            ai_tool, 
-                            category_info["commands_type"]
+                            template_file.name, ai_tool, category_info["commands_type"]
                         )
                         dest_file = project_path / category_info["commands_dest"] / new_filename
                         category_info["files"].append((template_file, dest_file, category_info["commands_type"]))
@@ -584,11 +572,15 @@ def create_project_structure(project_path: Path, app_type: str, ai_tools: list[s
                 category_confirmed = force
                 if existing_files and not force:
                     # Ask once per category per AI tool
-                    if typer.confirm(f"Some {category_name.lower()} files for {tool_name} already exist. Overwrite all?"):
+                    if typer.confirm(
+                        f"Some {category_name.lower()} files for {tool_name} already exist. Overwrite all?"
+                    ):
                         category_confirmed = True
                     else:
                         # Fall back to individual file confirmations
-                        console.print(f"[yellow]Asking about each {category_name.lower()} file for {tool_name} individually...[/yellow]")
+                        console.print(
+                            f"[yellow]Asking about each {category_name.lower()} file for {tool_name} individually...[/yellow]"
+                        )
                         category_confirmed = False
 
                 # Copy all files in this category with AI-specific customization
@@ -596,7 +588,7 @@ def create_project_structure(project_path: Path, app_type: str, ai_tools: list[s
                     # Read and customize template content
                     original_content = template_file.read_text(encoding="utf-8")
                     customized_content = customize_template_content(original_content, ai_tool)
-                    
+
                     if not dest_file.exists():
                         dest_file.write_text(customized_content, encoding="utf-8")
                         file_tracker.track_file_creation(dest_file.relative_to(project_path))
@@ -658,7 +650,11 @@ def init(
         None, help="Name for your new project directory (optional, defaults to current directory)"
     ),
     app_type: str = typer.Option(None, "--app-type", help="App type to build: mcp-server, python-cli"),
-    ai_tools: str = typer.Option(None, "--ai-tools", help="AI tools to generate templates for (comma-separated): github-copilot (others coming soon)"),
+    ai_tools: str = typer.Option(
+        None,
+        "--ai-tools",
+        help="AI tools to generate templates for (comma-separated): github-copilot (others coming soon)",
+    ),
     ignore_agent_tools: bool = typer.Option(False, "--ignore-agent-tools", help="Skip checks for AI agent tools"),
     here: bool = typer.Option(
         True, "--here/--new-dir", help="Install templates in current directory (default) or create new directory"
@@ -710,8 +706,7 @@ def init(
     if app_type:
         if app_type not in APP_TYPES:
             console.print(
-                f"[red]Error: [/red] Invalid app type '{app_type}'. "
-                f"Choose from: {', '.join(APP_TYPES.keys())}"
+                f"[red]Error: [/red] Invalid app type '{app_type}'. " f"Choose from: {', '.join(APP_TYPES.keys())}"
             )
             raise typer.Exit(1)
         selected_app_type = app_type
@@ -806,14 +801,12 @@ def init(
                 template_path = f".github/{ai_dir}/"
             steps_lines.append(f"   • [bold]{tool_config['name']}[/bold]: Reference `{template_path}` templates")
             steps_lines.append(f"     Command: {tool_config['keywords']['{AI_COMMAND}']}")
-    
+
     if selected_app_type == "mcp-server":
         steps_lines.append(f"{step_num + 1}. Review MCP protocol documentation and examples")
         step_num += 1
     elif selected_app_type == "python-cli":
-        steps_lines.append(
-            f"{step_num + 1}. Review Python CLI development guide in AI-specific instructions"
-        )
+        steps_lines.append(f"{step_num + 1}. Review Python CLI development guide in AI-specific instructions")
         step_num += 1
 
     step_num += 1
@@ -965,9 +958,11 @@ def check():
     python_ok = check_tool("python", "Install from: https://python.org/downloads")
 
     console.print("\n[cyan]AI Assistant tools (optional):[/cyan]")
-    claude_ok = check_tool("claude", "Install from: https://docs.anthropic.com/en/docs/claude-code/setup", optional=True)
+    claude_ok = check_tool(
+        "claude", "Install from: https://docs.anthropic.com/en/docs/claude-code/setup", optional=True
+    )
     copilot_ok = check_github_copilot()
-    
+
     # Collect missing optional tools
     missing_tools = []
     if not claude_ok:
@@ -976,11 +971,11 @@ def check():
         missing_tools.append("VS Code/GitHub Copilot")
 
     console.print("\n[green]✓ Improved-SDD CLI is ready to use![/green]")
-    
+
     if not python_ok:
         console.print("[red]Python is required for this tool to work.[/red]")
         raise typer.Exit(1)
-        
+
     # Offer user choice for missing optional tools
     if missing_tools:
         if not offer_user_choice(missing_tools):

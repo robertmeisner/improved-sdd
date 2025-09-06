@@ -43,7 +43,7 @@ Main CI/CD pipeline that runs on every push and PR:
 ```yaml
 Jobs:
 - test: Full test suite on Python 3.8-3.12
-- security: Security scanning with safety and bandit  
+- security: Security scanning with safety and bandit
 - build: Package building and validation
 - integration-test: Cross-platform CLI testing
 ```
@@ -95,7 +95,7 @@ pytest -m cli           # CLI tests only
 ### Individual Test Suites
 ```bash
 python tasks.py test-unit        # Unit tests
-python tasks.py test-integration # Integration tests  
+python tasks.py test-integration # Integration tests
 python tasks.py test-coverage    # With coverage report
 python tasks.py test-verbose     # Verbose output
 ```
@@ -201,7 +201,7 @@ python -m twine check dist/*
 ✅ **GitHub now checks EVERYTHING:**
 
 1. **Code Quality**: Formatting, linting, type checking
-2. **Testing**: 52 tests across unit and integration suites  
+2. **Testing**: 52 tests across unit and integration suites
 3. **Security**: Dependency and code security scanning
 4. **Compatibility**: Multi-Python and multi-OS testing
 5. **Build**: Package creation and validation

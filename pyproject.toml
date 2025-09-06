@@ -99,7 +99,7 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "cli: marks tests that test CLI commands",
-    "templates: marks tests that involve template operations", 
+    "templates: marks tests that involve template operations",
     "file_ops: marks tests that involve file operations",
 ]
 filterwarnings = [
