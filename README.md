@@ -98,8 +98,6 @@ GitHub Actions will automatically run linting checks on:
 - **Chatmodes**: `.github/chatmodes/` - AI behavior patterns
 - **Instructions**: `.github/instructions/` - Context-specific guidance
 - **Prompts**: `.github/prompts/` - Structured interactions
-- **Commands**: `.github/commands/` - Command definitions
-
 
 ## Python CLI Development
 
