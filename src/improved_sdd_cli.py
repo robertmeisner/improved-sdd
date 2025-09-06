@@ -29,7 +29,6 @@ import typer
 from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
-from rich.text import Text
 from typer.core import TyperGroup
 
 # Constants
@@ -97,13 +96,14 @@ APP_TYPES = {
     "python-cli": "Python CLI - Command-line application using typer and rich",
 }
 
-# ASCII Art Banner
+# Clean ASCII Banner (readable and correct spelling)
 BANNER = r"""
- ___ __  __ ___  ___  _____  _   _ _____  ____        _____ ____  ____
-|_ _|  \/  | _ \| _ \/ _ \ \/ / \/| ___| |  _ \      / ___| _ \|  _ \
- | || |\/| |  _/|   / | | \  /|  \| |_  | | | |_____\___ \| | | | | | |
- | || |  | | |  | | \ |_| /  \| |\|  _| | |_| |_____|___) | |_| | |_| |
-|___|_|  |_|_|  |_|_\\___/_/\_\_| \|_|   |____/      |____/|____/|____/
+ _____ __  __ _____  _____   ______      _______ _____        _____ _____  _____
+|_   _|  \/  |  __ \|  __ \ / __ \ \    / /  ___|  __ \      / ____|  __ \|  __ \
+  | | | |\/| | |__) | |__) | |  | \ \  / /| |__ | |  | |____| (___ | |  | | |  | |
+  | | | |  | |  ___/|  _  /| |  | |\ \/ / |  __|| |  | |_____\___ \| |  | | |  | |
+ _| |_| |  | | |    | | \ \| |__| | \  /  | |___| |__| |     ____) | |__| | |__| |
+|_____|_|  |_|_|    |_|  \_\\____/   \/   |_____|_____/     |_____/|_____/|_____/
 """
 
 TAGLINE = "Spec-Driven Development for GitHub Copilot (soon more: Cursor, Claude, Gemini)"
@@ -220,17 +220,16 @@ app = typer.Typer(
 
 
 def show_banner():
-    """Display the ASCII art banner."""
+    """Display ASCII art banner with multicolor styling."""
+    # Display the ASCII banner with gradient colors
     banner_lines = BANNER.strip().split("\n")
     colors = ["bright_blue", "blue", "cyan", "bright_cyan", "white", "bright_white"]
 
-    styled_banner = Text()
+    console.print()
     for i, line in enumerate(banner_lines):
         color = colors[i % len(colors)]
-        styled_banner.append(line + "\n", style=color)
-
-    console.print(Align.center(styled_banner))
-    console.print(Align.center(Text(TAGLINE, style="italic bright_yellow")))
+        console.print(f"[{color}]{line}[/{color}]")
+    console.print(f"[italic bright_yellow]{TAGLINE}[/italic bright_yellow]")
     console.print()
 
 
