@@ -1,3 +1,6 @@
+---
+applyTo: '**'
+---
 # Python CLI Development Instructions
 
 ## Overview
@@ -10,6 +13,35 @@ This template provides guidance for developing Python CLI applications using mod
 - **Configuration**: Typer options and arguments
 - **Packaging**: uv script or standalone package
 
+## Import Organization Guidelines
+
+Follow PEP 8 import conventions for clean, maintainable code:
+
+```python
+# Standard library imports (alphabetical)
+import json
+import sys
+from pathlib import Path
+from typing import Optional
+
+# Third-party imports (alphabetical)
+import typer
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress
+
+# Local application imports
+from .config import load_config
+from .utils import FileTracker
+```
+
+**Best practices:**
+- Group imports by type (standard library, third-party, local)
+- Sort alphabetically within each group
+- Use absolute imports for external packages
+- Use relative imports for local modules when appropriate
+- Avoid wildcard imports (`from module import *`)
+
 ## Project Structure
 ```
 project/
@@ -19,22 +51,28 @@ project/
 │   ├── commands/            # Command modules
 │   │   ├── __init__.py
 │   │   ├── init.py         # init command
-│   │   └── config.py       # config command
+│   │   ├── config.py       # config command
+│       └── ...
 │   ├── core/               # Core business logic
 │   │   ├── __init__.py
 │   │   ├── models.py       # Data models
-│   │   └── utils.py        # Utilities
+│   │   ├── utils.py        # Utilities
+│       └── ...
 │   └── ui/                 # UI components
 │       ├── __init__.py
 │       ├── console.py      # Rich console setup
 │       ├── progress.py     # Progress tracking
-│       └── prompts.py      # Interactive prompts
+│       ├── prompts.py      # Interactive prompts
+│       └── ...
 ├── tests/
 ├── pyproject.toml          # Project configuration
-└── README.md
+├── README.md
+└── ...
 ```
 
 ## Implementation Guidelines
+
+> **Note**: The following examples are **inspirational patterns** rather than strict requirements. Adapt these patterns to fit your specific use case, project structure, and team preferences. The goal is to provide proven approaches that you can modify and extend as needed.
 
 ### 1. Main CLI Setup
 ```python
@@ -192,11 +230,13 @@ class FileTracker:
 
 ## Command Patterns
 
+> **Note**: These are **example patterns** to inspire your CLI design. Mix, match, and modify these approaches based on your application's specific requirements and user experience goals.
+
 ### 1. Simple Command
 ```python
 @app.command()
 def hello(
-    name: str = typer.Argument(..., help="Name to greet"),
+    name: str = typer.Argument(help="Name to greet"),
     count: int = typer.Option(1, help="Number of greetings")
 ):
     """Say hello to someone."""
@@ -212,8 +252,8 @@ app.add_typer(config_app)
 
 @config_app.command("set")
 def config_set(
-    key: str = typer.Argument(..., help="Configuration key"),
-    value: str = typer.Argument(..., help="Configuration value")
+    key: str = typer.Argument(help="Configuration key"),
+    value: str = typer.Argument(help="Configuration value")
 ):
     """Set a configuration value."""
     config = load_config()
@@ -223,7 +263,7 @@ def config_set(
 
 @config_app.command("get")
 def config_get(
-    key: str = typer.Argument(..., help="Configuration key")
+    key: str = typer.Argument(help="Configuration key")
 ):
     """Get a configuration value."""
     config = load_config()
@@ -264,6 +304,8 @@ def init(
 ```
 
 ## Testing Guidelines
+
+> **Note**: These testing approaches serve as **starting points**. Choose testing strategies that align with your project's complexity, team size, and quality requirements.
 
 ### 1. CLI Testing with Typer
 ```python
@@ -381,7 +423,7 @@ app = typer.Typer(help="Example CLI with typer and rich")
 
 @app.command()
 def create(
-    name: str = typer.Argument(..., help="Project name"),
+    name: str = typer.Argument(help="Project name"),
     template: str = typer.Option("basic", help="Template type")
 ):
     """Create a new project."""
