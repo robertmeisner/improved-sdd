@@ -740,7 +740,7 @@ def init(
             f"[green]{project_path.name}[/green]"
             f"{(f'\n[dim]Path: {project_path}[/dim]' if here or not project_name else '')}"
             f"\n[bold blue]App type: [/bold blue] [yellow]{selected_app_type}[/yellow]"
-            f"\n[bold magenta]AI tools: [/bold magenta] [cyan]{ai_tools_display}[/cyan]",
+            f"\n[bold magenta]AI tools:[/bold magenta] [cyan]{ai_tools_display}[/cyan]",
             border_style="cyan",
         )
     )
