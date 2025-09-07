@@ -4,20 +4,43 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "improved-sdd"
-version = "0.1.0"
-description = "Setup tool for Improved Spec-Driven Development projects"
+version = "0.1.3"
+description = "Setup tool for Improved Spec-Driven Development projects with AI assistant templates"
 readme = "README.md"
 requires-python = ">=3.8"
+license = "MIT"
+keywords = ["spec-driven-development", "ai", "github-copilot", "templates", "cli", "development-tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Utilities",
+    "Environment :: Console",
+]
 dependencies = [
-    "typer",
-    "rich",
-    "platformdirs",
-    "readchar",
-    "httpx"
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "platformdirs>=3.0.0",
+    "readchar>=4.0.0",
+    "httpx>=0.24.0"
 ]
 authors = [
-    {name = "Robert", email = "robert@example.com"}
+    {name = "Robert Meisner", email = "robert@catchit.pl"}
 ]
+
+[project.urls]
+Homepage = "https://github.com/robertmeisner/improved-sdd"
+Repository = "https://github.com/robertmeisner/improved-sdd"
+Issues = "https://github.com/robertmeisner/improved-sdd/issues"
+Documentation = "https://github.com/robertmeisner/improved-sdd#readme"
 
 [project.optional-dependencies]
 dev = [

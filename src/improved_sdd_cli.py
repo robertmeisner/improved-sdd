@@ -92,8 +92,14 @@ AI_TOOLS = {
 }
 
 APP_TYPES = {
-    "mcp-server": "MCP Server - Model Context Protocol server for AI integrations",
-    "python-cli": "Python CLI - Command-line application using typer and rich",
+    "mcp-server": {
+        "description": "MCP Server - Model Context Protocol server for AI integrations",
+        "instruction_files": ["sddMcpServerDev", "mcpDev"],  # New naming, legacy naming
+    },
+    "python-cli": {
+        "description": "Python CLI - Command-line application using typer and rich",
+        "instruction_files": ["sddPythonCliDev", "CLIPythonDev"],  # New naming, legacy naming
+    },
 }
 
 # Clean ASCII Banner (readable and perfectly aligned)
@@ -202,17 +208,23 @@ console = Console()
 
 
 class BannerGroup(TyperGroup):
-    """Custom group that shows banner before help."""
+    """Custom group that shows banner before help and tip after help."""
 
     def format_help(self, ctx, formatter):
         # Show banner before help
         show_banner()
         super().format_help(ctx, formatter)
 
+        # Add tip after the help content
+        formatter.write("\n")
+        formatter.write("💡 Tip: Use 'COMMAND --help' for detailed options and examples.\n")
+        formatter.write("   Example: improved-sdd init --help\n")
+        formatter.write("\n")
+
 
 app = typer.Typer(
     name="improved-sdd",
-    help="Setup tool for Improved Spec-Driven Development projects",
+    help="Setup AI-optimized development templates and workflows.",
     add_completion=False,
     invoke_without_command=True,
     cls=BannerGroup,
@@ -435,7 +447,7 @@ def select_app_type() -> str:
 
     console.print()
     for i, key in enumerate(option_keys, 1):
-        console.print(f"[cyan]{i}.[/cyan] [white]{key}[/white]: {APP_TYPES[key]}")
+        console.print(f"[cyan]{i}.[/cyan] [white]{key}[/white]: {APP_TYPES[key]['description']}")
 
     console.print()
 
@@ -527,9 +539,11 @@ def create_project_structure(
                         # Filter instruction files based on app type
                         if category_info["type"] == "instructions":
                             # Only include the instruction file that matches the app type
-                            if app_type == "python-cli" and not template_file.name.startswith("CLIPythonDev"):
-                                continue
-                            elif app_type == "mcp-server" and not template_file.name.startswith("mcpDev"):
+                            # Check against configured instruction file patterns
+                            app_config = APP_TYPES[app_type]
+                            instruction_patterns = app_config["instruction_files"]
+
+                            if not any(template_file.name.startswith(pattern) for pattern in instruction_patterns):
                                 continue
 
                         # Generate AI-specific filename
