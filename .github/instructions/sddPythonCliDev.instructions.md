@@ -1,6 +1,7 @@
 ---
 applyTo: '**'
 ---
+
 # Python CLI Development Instructions
 
 ## Overview
