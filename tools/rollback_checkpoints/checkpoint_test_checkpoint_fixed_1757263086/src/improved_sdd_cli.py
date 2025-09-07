@@ -37,36 +37,92 @@ import typer
 from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import (
-    BarColumn,
-    DownloadColumn,
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
-)
+from rich.progress import BarColumn, DownloadColumn, Progress, SpinnerColumn, TextColumn, TimeRemainingColumn, TransferSpeedColumn
 from typer.core import TyperGroup
 
-# Import core components
-from core import (
-    AI_TOOLS,
-    APP_TYPES,
-    BANNER,
-    TAGLINE,
-    TemplateError,
-    NetworkError,
-    GitHubAPIError,
-    RateLimitError,
-    TimeoutError,
-    ValidationError,
-    TemplateSourceType,
-    ProgressInfo,
-    TemplateSource,
-    TemplateResolutionResult,
-)
+# Constants
+AI_TOOLS = {
+    "github-copilot": {
+        "name": "GitHub Copilot",
+        "description": "GitHub Copilot in VS Code",
+        "template_dir": "github",
+        "file_extensions": {
+            "chatmodes": ".chatmode.md",
+            "instructions": ".instructions.md",
+            "prompts": ".prompt.md",
+            "commands": ".command.md",
+        },
+        "keywords": {
+            "{AI_ASSISTANT}": "GitHub Copilot",
+            "{AI_SHORTNAME}": "Copilot",
+            "{AI_COMMAND}": "Ctrl+Shift+P → 'Chat: Open Chat'",
+        },
+    },
+    "claude": {
+        "name": "Claude (Anthropic)",
+        "description": "Claude Code or Claude API",
+        "template_dir": "claude",
+        "file_extensions": {
+            "chatmodes": ".claude.md",
+            "instructions": ".claude.md",
+            "prompts": ".claude.md",
+            "commands": ".claude.md",
+        },
+        "keywords": {"{AI_ASSISTANT}": "Claude", "{AI_SHORTNAME}": "Claude", "{AI_COMMAND}": "Open Claude interface"},
+    },
+    "cursor": {
+        "name": "Cursor AI",
+        "description": "Cursor AI Editor",
+        "template_dir": "cursor",
+        "file_extensions": {
+            "chatmodes": ".cursor.md",
+            "instructions": ".cursor.md",
+            "prompts": ".cursor.md",
+            "commands": ".cursor.md",
+        },
+        "keywords": {"{AI_ASSISTANT}": "Cursor AI", "{AI_SHORTNAME}": "Cursor", "{AI_COMMAND}": "Ctrl+K or Ctrl+L"},
+    },
+    "gemini": {
+        "name": "Google Gemini",
+        "description": "Google Gemini CLI or API",
+        "template_dir": "gemini",
+        "file_extensions": {
+            "chatmodes": ".gemini.md",
+            "instructions": ".gemini.md",
+            "prompts": ".gemini.md",
+            "commands": ".gemini.md",
+        },
+        "keywords": {
+            "{AI_ASSISTANT}": "Google Gemini",
+            "{AI_SHORTNAME}": "Gemini",
+            "{AI_COMMAND}": "Use Gemini CLI or API",
+        },
+    },
+}
 
-# Core constants and exceptions are now imported from core module
+APP_TYPES = {
+    "mcp-server": {
+        "description": "MCP Server - Model Context Protocol server for AI integrations",
+        "instruction_files": ["sddMcpServerDev", "mcpDev"],  # New naming, legacy naming
+    },
+    "python-cli": {
+        "description": "Python CLI - Command-line application using typer and rich",
+        "instruction_files": ["sddPythonCliDev", "CLIPythonDev"],  # New naming, legacy naming
+    },
+}
+
+# Clean ASCII Banner (readable and perfectly aligned)
+BANNER = r"""
+. _   __  __ _____ _____    _____       _______ _____        _____ _____  _____
+ | | |      |  __ \|  __ \ / __ \ \    / /  ___|  __ \      / ____|  __ \|  __ \
+ | | | |\/| | |__) | |__) | |  | \ \  / /| |__ | |  | |____| (___ | |  | | |  | |
+ | | | |  | |  ___/|  _  /| |  | |\ \/ / |  __|| |  | |_____\___ \| |  | | |  | |
+ | | | |  | | |    | | \ \| |__| | \  /  | |___| |__| |     ____) | |__| | |__| |
+ |_| |_|  | |_|    |_|  \_\\____/   \/   |_____|_____/     |_____/|_____/|_____/
+"""
+
+TAGLINE = "Spec-Driven Development for GitHub Copilot (soon more: Cursor, Claude, Gemini)"
+
 
 class FileTracker:
     """Track files that are created or modified during installation."""
@@ -427,7 +483,110 @@ def select_app_type() -> str:
             console.print("\n[yellow]Selection cancelled[/yellow]")
             raise typer.Exit(1)
 
-# Exceptions and models are now imported from core module
+
+# Template Download Exceptions
+class TemplateError(Exception):
+    """Base exception for template-related operations."""
+
+    pass
+
+
+class NetworkError(TemplateError):
+    """Exception for network-related errors during template download."""
+
+    pass
+
+
+class GitHubAPIError(TemplateError):
+    """Exception for GitHub API-specific errors."""
+
+    def __init__(self, message: str, status_code: Optional[int] = None):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class RateLimitError(GitHubAPIError):
+    """Exception for GitHub API rate limit errors."""
+
+    def __init__(self, retry_after: Optional[int] = None):
+        super().__init__("GitHub API rate limit exceeded")
+        self.retry_after = retry_after
+
+
+class TimeoutError(NetworkError):
+    """Exception for timeout errors during download."""
+
+    pass
+
+
+class ValidationError(TemplateError):
+    """Exception for template validation errors."""
+
+    pass
+
+
+class TemplateSourceType(Enum):
+    """Enumeration of template source types for transparency."""
+
+    LOCAL = "local"
+    BUNDLED = "bundled"
+    GITHUB = "github"
+
+
+@dataclass
+class ProgressInfo:
+    """Progress information for download and extraction operations."""
+
+    phase: str  # "download" or "extract"
+    bytes_completed: int
+    bytes_total: int
+    percentage: float
+    speed_bps: Optional[int] = None
+    eta_seconds: Optional[int] = None
+
+    @property
+    def speed_mbps(self) -> Optional[float]:
+        """Download speed in MB/s."""
+        return self.speed_bps / (1024 * 1024) if self.speed_bps else None
+
+
+@dataclass
+class TemplateSource:
+    """Represents a template source with location and type information."""
+
+    path: Path
+    source_type: TemplateSourceType
+    size_bytes: Optional[int] = None
+
+    def __str__(self) -> str:
+        """Human-readable string representation."""
+        return f"{self.source_type.value} templates at {self.path}"
+
+
+@dataclass
+class TemplateResolutionResult:
+    """Tracks the result of template resolution with transparency information."""
+
+    source: Optional[TemplateSource]
+    success: bool
+    message: str
+    fallback_attempted: bool = False
+
+    @property
+    def is_local(self) -> bool:
+        """Check if resolved source is local .sdd_templates."""
+        return self.source is not None and self.source.source_type == TemplateSourceType.LOCAL
+
+    @property
+    def is_bundled(self) -> bool:
+        """Check if resolved source is bundled templates."""
+        return self.source is not None and self.source.source_type == TemplateSourceType.BUNDLED
+
+    @property
+    def is_github(self) -> bool:
+        """Check if resolved source is GitHub download."""
+        return self.source is not None and self.source.source_type == TemplateSourceType.GITHUB
+
 
 class CacheManager:
     """Manages temporary cache directories for template downloads.
@@ -944,13 +1103,7 @@ class GitHubDownloader:
 class TemplateResolver:
     """Handles template resolution with priority-based system: local .sdd_templates > bundled templates > GitHub download."""
 
-    def __init__(
-        self,
-        project_path: Path,
-        offline: bool = False,
-        force_download: bool = False,
-        template_repo: Optional[str] = None,
-    ):
+    def __init__(self, project_path: Path, offline: bool = False, force_download: bool = False, template_repo: Optional[str] = None):
         """Initialize the resolver for a specific project path.
 
         Args:
@@ -964,14 +1117,14 @@ class TemplateResolver:
         self.offline = offline
         self.force_download = force_download
         self.template_repo = template_repo
-
+        
         # Parse custom repository if provided
         if template_repo:
             repo_parts = template_repo.split("/")
             self.github_downloader = GitHubDownloader(repo_owner=repo_parts[0], repo_name=repo_parts[1])
         else:
             self.github_downloader = GitHubDownloader()
-
+            
         self.cache_manager = CacheManager()
 
         # Clean up orphaned caches on startup
@@ -1056,7 +1209,7 @@ class TemplateResolver:
                     message="Cannot force download in offline mode",
                     fallback_attempted=False,
                 )
-
+            
             console.print("[blue]⬇ Force download mode - downloading from GitHub...[/blue]")
             return self._attempt_github_download()
 
@@ -1119,10 +1272,7 @@ class TemplateResolver:
                 repo_msg = f" from {self.template_repo}" if self.template_repo else ""
                 console.print(f"[green]✓ Downloaded templates from GitHub{repo_msg} to {github_path}[/green]")
                 return TemplateResolutionResult(
-                    source=source,
-                    success=True,
-                    message=f"Downloaded templates from GitHub{repo_msg}",
-                    fallback_attempted=True,
+                    source=source, success=True, message=f"Downloaded templates from GitHub{repo_msg}", fallback_attempted=True
                 )
         except NetworkError as e:
             console.print(f"[yellow]⚠ Network error during GitHub download: {e}[/yellow]")
@@ -1253,14 +1403,14 @@ class TemplateResolver:
 
 
 def create_project_structure(
-    project_path: Path,
-    app_type: str,
-    ai_tools: list[str],
-    file_tracker: FileTracker,
+    project_path: Path, 
+    app_type: str, 
+    ai_tools: list[str], 
+    file_tracker: FileTracker, 
     force: bool = False,
     offline: bool = False,
     force_download: bool = False,
-    template_repo: Optional[str] = None,
+    template_repo: Optional[str] = None
 ) -> None:
     """Install Improved-SDD templates into the project directory for selected AI tools.
 
@@ -1278,9 +1428,7 @@ def create_project_structure(
     """
 
     # Use TemplateResolver for priority-based template resolution with transparency
-    resolver = TemplateResolver(
-        project_path, offline=offline, force_download=force_download, template_repo=template_repo
-    )
+    resolver = TemplateResolver(project_path, offline=offline, force_download=force_download, template_repo=template_repo)
     resolution_result = resolver.resolve_templates_with_transparency()
 
     if not resolution_result.success:
@@ -1505,15 +1653,9 @@ def init(
         True, "--here/--new-dir", help="Install templates in current directory (default) or create new directory"
     ),
     force: bool = typer.Option(False, "--force", help="Overwrite existing files without asking for confirmation"),
-    offline: bool = typer.Option(
-        False, "--offline", help="Force offline mode - disable GitHub downloads and use only local/bundled templates"
-    ),
-    force_download: bool = typer.Option(
-        False, "--force-download", help="Force GitHub download even if local templates exist"
-    ),
-    template_repo: str = typer.Option(
-        None, "--template-repo", help="Custom GitHub repository for templates (format: owner/repo)"
-    ),
+    offline: bool = typer.Option(False, "--offline", help="Force offline mode - disable GitHub downloads and use only local/bundled templates"),
+    force_download: bool = typer.Option(False, "--force-download", help="Force GitHub download even if local templates exist"),
+    template_repo: str = typer.Option(None, "--template-repo", help="Custom GitHub repository for templates (format: owner/repo)"),
 ):
     """
     Install Improved-SDD templates for selected AI assistants in your project.
@@ -1546,7 +1688,7 @@ def init(
     if offline and force_download:
         console.print("[red]Error:[/red] Cannot use --offline and --force-download together")
         raise typer.Exit(1)
-
+    
     if template_repo and "/" not in template_repo:
         console.print("[red]Error:[/red] --template-repo must be in format 'owner/repo'")
         raise typer.Exit(1)
@@ -1622,16 +1764,7 @@ def init(
         if not here and project_name:
             project_path.mkdir(parents=True, exist_ok=True)
             file_tracker.track_dir_creation(Path(project_name))
-        create_project_structure(
-            project_path,
-            selected_app_type,
-            selected_ai_tools,
-            file_tracker,
-            force,
-            offline,
-            force_download,
-            template_repo,
-        )
+        create_project_structure(project_path, selected_app_type, selected_ai_tools, file_tracker, force, offline, force_download, template_repo)
         console.print("[green][OK][/green] Templates installed")
 
         # Configure AI assistants

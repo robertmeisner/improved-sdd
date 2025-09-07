@@ -227,14 +227,24 @@ Features that add value but aren't required for basic functionality:
   - ✓ Test files: tests/unit/test_github_downloader.py, tests/unit/test_cache_manager.py
   - _Requirements: 2.1, 2.2, 3.1, 3.2_
 
-- [ ] 7.3 Create integration tests for end-to-end workflows [~1h]
-  - Test complete template resolution from init command
-  - Verify error handling paths with real network conditions
-  - Test CLI option combinations and edge cases
+- [x] 7.3 Create integration tests for end-to-end workflows [~1h] [COMPLETED ~1h]
+  - ✓ Test complete template resolution from init command with priority system (local → bundled → GitHub)
+  - ✓ Verify error handling paths with real network conditions and graceful degradation
+  - ✓ Test CLI option combinations and edge cases (conflicting options, validation)
+  - ✓ Test user template protection workflow (ensures .sdd_templates never modified)
+  - ✓ Test offline mode functionality and error handling
+  - ✓ Created comprehensive integration test suite in tests/integration/test_workflows.py
+  - ✓ Added TestTemplateDownloadIntegration class with 6 comprehensive test methods
+  - ✓ All tests passing and validating end-to-end Template Download System workflows
   - _Requirements: All requirements end-to-end validation_
+  - _Implementation Notes: Created comprehensive integration tests covering template resolution priority, CLI option validation, user template protection, offline mode, error handling graceful degradation, and download system workflows. Tests validate the complete Template Download System behavior including priority-based resolution, user protection guarantees, and robust error handling. All 6 integration tests passing successfully._
 
-- [ ] 7.4 Create CLI tests using typer.testing.CliRunner [~1h]
-  - Test init command with various option combinations
-  - Verify output messages and error handling
-  - Test file creation and modification tracking
+- [x] 7.4 Create CLI tests using typer.testing.CliRunner [~1h] [COMPLETED ~1h]
+  - ✓ Test init command with various option combinations including --here, --force, --offline, --template-repo
+  - ✓ Verify output messages and error handling for validation errors, conflicting options, template failures
+  - ✓ Test file creation and modification tracking through FileTracker integration
+  - ✓ Created comprehensive CLI test suite with 13 test methods in TestCLICommands class
+  - ✓ Tests cover help commands, project creation, option validation, error scenarios, and user interaction simulation
+  - ✓ All CLI tests passing successfully with typer.testing.CliRunner for authentic CLI command testing
   - _Requirements: 8.1, 8.2, 8.3, 8.4_
+  - _Implementation Notes: Enhanced test_cli_commands.py with complete TestCLICommands class using typer.testing.CliRunner for authentic CLI testing. Tests validate init command with all option combinations, error handling paths, output message verification, file tracking, and user interaction flows. Includes comprehensive mocking for template system integration and validation of CLI behavior across all supported scenarios._

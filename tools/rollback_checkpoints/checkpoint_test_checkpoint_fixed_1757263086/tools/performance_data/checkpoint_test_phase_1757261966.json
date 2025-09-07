@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "cli_path": "C:\\Users\\Robert\\Documents\\Projects\\improved-sdd\\src\\improved_sdd_cli.py",
+    "monitoring_start": 1757261966.3165727,
+    "version": "1.0"
+  },
+  "baseline_snapshot": {
+    "phase": "baseline",
+    "timestamp": 1757260939.4122527,
+    "startup_time_ms": 10135.566711425781,
+    "memory_usage_mb": 45.51953125,
+    "import_time_ms": 102.43360201517741,
+    "command_times_ms": {
+      "help": 10141.067028045654,
+      "init_help": 910.0915590922037,
+      "delete_help": 911.2169742584229
+    },
+    "cpu_percent": 0.0,
+    "io_operations": 0
+  },
+  "performance_history": [
+    {
+      "phase": "test_phase",
+      "timestamp": 1757261966.314083,
+      "startup_time_ms": 1629.4705867767334,
+      "memory_usage_mb": 50.0,
+      "import_time_ms": 0.0,
+      "command_times_ms": {
+        "help": 1474.3146101633708,
+        "init_help": 1126.590887705485,
+        "delete_help": 1022.1394697825114,
+        "check_help": 953.9761543273926
+      },
+      "cpu_percent": 20.1,
+      "io_operations": 0
+    }
+  ],
+  "alerts": [],
+  "thresholds": {
+    "startup_time_ms": {
+      "metric_name": "startup_time_ms",
+      "warning_percent": 7.0,
+      "critical_percent": 10.0,
+      "baseline_value": 10135.566711425781
+    },
+    "memory_usage_mb": {
+      "metric_name": "memory_usage_mb",
+      "warning_percent": 10.0,
+      "critical_percent": 15.0,
+      "baseline_value": 45.51953125
+    },
+    "import_time_ms": {
+      "metric_name": "import_time_ms",
+      "warning_percent": 15.0,
+      "critical_percent": 25.0,
+      "baseline_value": 102.43360201517741
+    }
+  }
+}
