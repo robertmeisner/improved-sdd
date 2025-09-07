@@ -37,7 +37,7 @@ import typer
 from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import DownloadColumn, Progress, SpinnerColumn, TimeRemainingColumn, TransferSpeedColumn
+from rich.progress import BarColumn, DownloadColumn, Progress, SpinnerColumn, TextColumn, TimeRemainingColumn, TransferSpeedColumn
 from typer.core import TyperGroup
 
 # Constants
@@ -946,12 +946,12 @@ class GitHubDownloader:
                 if not zip_ref.namelist():
                     raise TemplateError("ZIP file is empty")
 
-                # Check for templates folder
-                templates_prefix = f"{self.repo_name}-main/templates/"
+                # Check for sdd_templates folder
+                templates_prefix = f"{self.repo_name}-main/sdd_templates/"
                 template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 if not template_files:
-                    raise TemplateError("No templates folder found in repository archive")
+                    raise TemplateError("No sdd_templates folder found in repository archive")
 
         except zipfile.BadZipFile:
             raise TemplateError("Downloaded file is not a valid ZIP archive")
@@ -980,7 +980,7 @@ class GitHubDownloader:
 
         try:
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                templates_prefix = f"{self.repo_name}-main/templates/"
+                templates_prefix = f"{self.repo_name}-main/sdd_templates/"
                 template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 # Calculate total extraction size for progress tracking
@@ -990,7 +990,7 @@ class GitHubDownloader:
                 for file_path in template_files:
                     # Remove prefix to get relative path
                     relative_path = file_path[len(templates_prefix) :]
-                    if not relative_path:  # Skip the templates/ directory itself
+                    if not relative_path:  # Skip the sdd_templates/ directory itself
                         continue
 
                     # Path traversal protection
@@ -1103,15 +1103,28 @@ class GitHubDownloader:
 class TemplateResolver:
     """Handles template resolution with priority-based system: local .sdd_templates > bundled templates > GitHub download."""
 
-    def __init__(self, project_path: Path):
+    def __init__(self, project_path: Path, offline: bool = False, force_download: bool = False, template_repo: Optional[str] = None):
         """Initialize the resolver for a specific project path.
 
         Args:
             project_path: The target project directory where templates will be installed
+            offline: If True, disable GitHub downloads and use only local/bundled templates
+            force_download: If True, bypass local templates and force GitHub download
+            template_repo: Custom GitHub repository for templates (format: "owner/repo")
         """
         self.project_path = project_path
         self.script_dir = Path(__file__).parent
-        self.github_downloader = GitHubDownloader()
+        self.offline = offline
+        self.force_download = force_download
+        self.template_repo = template_repo
+        
+        # Parse custom repository if provided
+        if template_repo:
+            repo_parts = template_repo.split("/")
+            self.github_downloader = GitHubDownloader(repo_owner=repo_parts[0], repo_name=repo_parts[1])
+        else:
+            self.github_downloader = GitHubDownloader()
+            
         self.cache_manager = CacheManager()
 
         # Clean up orphaned caches on startup
@@ -1181,12 +1194,26 @@ class TemplateResolver:
             return None
 
     def resolve_templates_with_transparency(self) -> TemplateResolutionResult:
-        """Resolve template source with full transparency and logging.
+        """Resolve template source with full transparency and logging, respecting CLI options.
 
         Returns:
             TemplateResolutionResult with detailed information about resolution
         """
-        # Check local .sdd_templates first
+        # Force download mode - skip local and bundled templates
+        if self.force_download:
+            if self.offline:
+                console.print("[red]✗ Cannot force download in offline mode[/red]")
+                return TemplateResolutionResult(
+                    source=None,
+                    success=False,
+                    message="Cannot force download in offline mode",
+                    fallback_attempted=False,
+                )
+            
+            console.print("[blue]⬇ Force download mode - downloading from GitHub...[/blue]")
+            return self._attempt_github_download()
+
+        # Check local .sdd_templates first (unless force download)
         local_path = self.get_local_templates_path()
         if local_path:
             source = TemplateSource(
@@ -1216,8 +1243,24 @@ class TemplateResolver:
                 fallback_attempted=True,
             )
 
+        # Offline mode - skip GitHub download
+        if self.offline:
+            console.print("[yellow]⚠ Offline mode - skipping GitHub download[/yellow]")
+            self._show_offline_instructions()
+            return TemplateResolutionResult(
+                source=None,
+                success=False,
+                message="No templates found in offline mode",
+                fallback_attempted=True,
+            )
+
         # Fallback to GitHub download
-        console.print("[blue]⬇ No local templates found, attempting GitHub download...[/blue]")
+        repo_msg = f" from {self.template_repo}" if self.template_repo else ""
+        console.print(f"[blue]⬇ No local templates found, attempting GitHub download{repo_msg}...[/blue]")
+        return self._attempt_github_download()
+
+    def _attempt_github_download(self) -> TemplateResolutionResult:
+        """Attempt to download templates from GitHub with error handling."""
         try:
             github_path = self._download_github_templates()
             if github_path:
@@ -1226,9 +1269,10 @@ class TemplateResolver:
                     source_type=TemplateSourceType.GITHUB,
                     size_bytes=self._get_directory_size(github_path),
                 )
-                console.print(f"[green]✓ Downloaded templates from GitHub to {github_path}[/green]")
+                repo_msg = f" from {self.template_repo}" if self.template_repo else ""
+                console.print(f"[green]✓ Downloaded templates from GitHub{repo_msg} to {github_path}[/green]")
                 return TemplateResolutionResult(
-                    source=source, success=True, message=f"Downloaded templates from GitHub", fallback_attempted=True
+                    source=source, success=True, message=f"Downloaded templates from GitHub{repo_msg}", fallback_attempted=True
                 )
         except NetworkError as e:
             console.print(f"[yellow]⚠ Network error during GitHub download: {e}[/yellow]")
@@ -1359,7 +1403,14 @@ class TemplateResolver:
 
 
 def create_project_structure(
-    project_path: Path, app_type: str, ai_tools: list[str], file_tracker: FileTracker, force: bool = False
+    project_path: Path, 
+    app_type: str, 
+    ai_tools: list[str], 
+    file_tracker: FileTracker, 
+    force: bool = False,
+    offline: bool = False,
+    force_download: bool = False,
+    template_repo: Optional[str] = None
 ) -> None:
     """Install Improved-SDD templates into the project directory for selected AI tools.
 
@@ -1377,7 +1428,7 @@ def create_project_structure(
     """
 
     # Use TemplateResolver for priority-based template resolution with transparency
-    resolver = TemplateResolver(project_path)
+    resolver = TemplateResolver(project_path, offline=offline, force_download=force_download, template_repo=template_repo)
     resolution_result = resolver.resolve_templates_with_transparency()
 
     if not resolution_result.success:
@@ -1602,6 +1653,9 @@ def init(
         True, "--here/--new-dir", help="Install templates in current directory (default) or create new directory"
     ),
     force: bool = typer.Option(False, "--force", help="Overwrite existing files without asking for confirmation"),
+    offline: bool = typer.Option(False, "--offline", help="Force offline mode - disable GitHub downloads and use only local/bundled templates"),
+    force_download: bool = typer.Option(False, "--force-download", help="Force GitHub download even if local templates exist"),
+    template_repo: str = typer.Option(None, "--template-repo", help="Custom GitHub repository for templates (format: owner/repo)"),
 ):
     """
     Install Improved-SDD templates for selected AI assistants in your project.
@@ -1617,6 +1671,9 @@ def init(
         improved-sdd init --app-type mcp-server --ai-tools github-copilot,claude
         improved-sdd init my-project --new-dir   # Create new directory
         improved-sdd init --force            # Overwrite existing files without asking
+        improved-sdd init --offline          # Use only local/bundled templates (no GitHub download)
+        improved-sdd init --force-download   # Force GitHub download even with local templates
+        improved-sdd init --template-repo user/repo  # Use custom GitHub repository for templates
     """
 
     # Show banner first
@@ -1625,6 +1682,15 @@ def init(
     # Validate arguments
     if not here and not project_name:
         console.print("[red]Error:[/red] Must specify either a project name or use default --here mode")
+        raise typer.Exit(1)
+
+    # Validate template options
+    if offline and force_download:
+        console.print("[red]Error:[/red] Cannot use --offline and --force-download together")
+        raise typer.Exit(1)
+    
+    if template_repo and "/" not in template_repo:
+        console.print("[red]Error:[/red] --template-repo must be in format 'owner/repo'")
         raise typer.Exit(1)
 
     # Determine project directory
@@ -1698,7 +1764,7 @@ def init(
         if not here and project_name:
             project_path.mkdir(parents=True, exist_ok=True)
             file_tracker.track_dir_creation(Path(project_name))
-        create_project_structure(project_path, selected_app_type, selected_ai_tools, file_tracker, force)
+        create_project_structure(project_path, selected_app_type, selected_ai_tools, file_tracker, force, offline, force_download, template_repo)
         console.print("[green][OK][/green] Templates installed")
 
         # Configure AI assistants
