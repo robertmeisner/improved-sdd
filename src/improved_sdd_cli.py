@@ -673,7 +673,8 @@ class GitHubDownloader:
                 download_task = progress.add_task("Downloading templates...", total=None)
 
                 async with httpx.AsyncClient(timeout=30.0) as client:
-                    async with client.stream("GET", archive_url) as response:
+                    response = await client.stream("GET", archive_url)
+                    async with response:
                         if response.status_code != 200:
                             raise GitHubAPIError(
                                 f"Failed to download repository: HTTP {response.status_code}", response.status_code
