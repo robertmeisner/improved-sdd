@@ -19,9 +19,7 @@ from ..utils import select_app_type
 
 
 def delete_command(
-    app_type: str = typer.Argument(
-        None, help="App type to delete files for: mcp-server, python-cli"
-    ),
+    app_type: str = typer.Argument(None, help="App type to delete files for: mcp-server, python-cli"),
     force: bool = typer.Option(False, "--force", help="Skip confirmation prompt"),
 ):
     """
@@ -44,9 +42,7 @@ def delete_command(
     # Validate app type
     if app_type:
         if app_type not in APP_TYPES:
-            console_manager.print_error(
-                f"Invalid app type '{app_type}'. Choose from: {', '.join(APP_TYPES.keys())}"
-            )
+            console_manager.print_error(f"Invalid app type '{app_type}'. Choose from: {', '.join(APP_TYPES.keys())}")
             raise typer.Exit(1)
         selected_app_type = app_type
     else:
@@ -121,7 +117,7 @@ def delete_command(
         confirmation = typer.prompt("Type 'Yes' to confirm deletion", type=str, default="")
         if confirmation != "Yes":
             console_manager.print_warning("Deletion cancelled")
-            return
+            raise typer.Exit(0)  # Exit with success code when user cancels
 
     # Delete files
     console_manager.print_info("Deleting files...")
@@ -135,24 +131,16 @@ def delete_command(
             console_manager.print_success(f"Deleted: {file_path.relative_to(project_path)}")
             deleted_files += 1
         except Exception as e:
-            console_manager.print_error(
-                f"Failed to delete {file_path.relative_to(project_path)}: {e}"
-            )
+            console_manager.print_error(f"Failed to delete {file_path.relative_to(project_path)}: {e}")
 
     # Delete directories (in reverse order to handle nested dirs)
     for dir_path in sorted(dirs_to_delete, reverse=True):
         try:
             if not list(dir_path.glob("*")):  # Only delete if empty
                 dir_path.rmdir()
-                console_manager.print_success(
-                    f"Deleted directory: {dir_path.relative_to(project_path)}"
-                )
+                console_manager.print_success(f"Deleted directory: {dir_path.relative_to(project_path)}")
                 deleted_dirs += 1
         except Exception as e:
-            console_manager.print_error(
-                f"Failed to delete directory {dir_path.relative_to(project_path)}: {e}"
-            )
+            console_manager.print_error(f"Failed to delete directory {dir_path.relative_to(project_path)}: {e}")
 
-    console_manager.print_success(
-        f"\nDeletion complete: {deleted_files} files, {deleted_dirs} directories removed"
-    )
+    console_manager.print_success(f"\nDeletion complete: {deleted_files} files, {deleted_dirs} directories removed")

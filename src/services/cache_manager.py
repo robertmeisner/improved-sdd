@@ -62,19 +62,16 @@ class CacheManager(CacheManagerProtocol):
         try:
             if cache_dir.exists():
                 shutil.rmtree(cache_dir, ignore_errors=True)
-
-            # Remove from active caches
-            if cache_dir in self._active_caches:
-                self._active_caches.remove(cache_dir)
-
         except Exception as e:
             # Log warning but don't fail operation
             from rich.console import Console
 
             console = Console()
-            console.print(
-                f"[yellow]⚠ Warning: Could not cleanup cache directory {cache_dir}: {e}[/yellow]"
-            )
+            console.print(f"[yellow]⚠ Warning: Could not cleanup cache directory {cache_dir}: {e}[/yellow]")
+        finally:
+            # Always remove from active caches, regardless of cleanup success/failure
+            if cache_dir in self._active_caches:
+                self._active_caches.remove(cache_dir)
 
     def cleanup_all_caches(self) -> None:
         """Clean up all active cache directories."""
@@ -126,9 +123,7 @@ class CacheManager(CacheManagerProtocol):
                     from rich.console import Console
 
                     console = Console()
-                    console.print(
-                        f"[yellow]⚠ Warning: Could not cleanup orphaned cache {cache_dir}: {e}[/yellow]"
-                    )
+                    console.print(f"[yellow]⚠ Warning: Could not cleanup orphaned cache {cache_dir}: {e}[/yellow]")
                     continue
 
             if cleaned_count > 0:
@@ -163,6 +158,7 @@ class CacheManager(CacheManagerProtocol):
                 try:
                     # Lazy import subprocess for Windows process checking
                     import subprocess
+
                     # Use tasklist to check if process exists
                     result = subprocess.run(
                         ["tasklist", "/FI", f"PID eq {pid}"],

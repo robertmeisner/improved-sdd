@@ -40,7 +40,7 @@ def mock_templates_dir(temp_dir: Path) -> Path:
     # Create chatmodes directory with sample templates
     chatmodes_dir = templates_dir / "chatmodes"
     chatmodes_dir.mkdir()
-    (chatmodes_dir / "specMode.md").write_text(
+    (chatmodes_dir / "sddSpecDriven.chatmode.md").write_text(
         """# Spec Mode for {AI_ASSISTANT}
 
 This is a test template for {AI_SHORTNAME}.
@@ -48,7 +48,7 @@ This is a test template for {AI_SHORTNAME}.
 Command: {AI_COMMAND}
 """
     )
-    (chatmodes_dir / "testMode.md").write_text(
+    (chatmodes_dir / "sddTesting.chatmode.md").write_text(
         """# Test Mode for {AI_ASSISTANT}
 
 Testing with {AI_SHORTNAME}.
@@ -58,13 +58,13 @@ Testing with {AI_SHORTNAME}.
     # Create instructions directory with sample templates
     instructions_dir = templates_dir / "instructions"
     instructions_dir.mkdir()
-    (instructions_dir / "CLIPythonDev.md").write_text(
+    (instructions_dir / "sddPythonCliDev.instructions.md").write_text(
         """# Python CLI Development
 
 Development instructions for {AI_ASSISTANT}.
 """
     )
-    (instructions_dir / "mcpDev.md").write_text(
+    (instructions_dir / "sddMcpServerDev.instructions.md").write_text(
         """# MCP Development
 
 MCP development instructions for {AI_ASSISTANT}.
@@ -74,7 +74,7 @@ MCP development instructions for {AI_ASSISTANT}.
     # Create prompts directory with sample templates
     prompts_dir = templates_dir / "prompts"
     prompts_dir.mkdir()
-    (prompts_dir / "analyzeProject.md").write_text(
+    (prompts_dir / "sddProjectAnalysis.prompt.md").write_text(
         """# Analyze Project
 
 Project analysis prompt for {AI_ASSISTANT}.
@@ -84,7 +84,7 @@ Project analysis prompt for {AI_ASSISTANT}.
     # Create commands directory with sample templates
     commands_dir = templates_dir / "commands"
     commands_dir.mkdir()
-    (commands_dir / "testCommand.md").write_text(
+    (commands_dir / "sddTest.command.md").write_text(
         """# Test Command
 
 Test command for {AI_ASSISTANT}.
@@ -199,23 +199,18 @@ def mock_typer_confirm():
 
 @pytest.fixture
 def project_with_existing_files(temp_project_dir: Path) -> Path:
-    """Create a project directory with existing files."""
-    # Create existing .github structure
+    """Create a project directory with existing files that will conflict."""
     github_dir = temp_project_dir / ".github"
-    github_dir.mkdir()
+    github_dir.mkdir(parents=True, exist_ok=True)
 
-    # Add existing chatmode
-    chatmodes_dir = github_dir / "chatmodes"
-    chatmodes_dir.mkdir()
-    (chatmodes_dir / "existing.chatmode.md").write_text("# Existing chatmode")
-
-    # Add existing instruction
+    # Add an existing instruction file that will conflict
     instructions_dir = github_dir / "instructions"
-    instructions_dir.mkdir()
-    (instructions_dir / "existing.instructions.md").write_text("# Existing instruction")
+    instructions_dir.mkdir(exist_ok=True)
+    (instructions_dir / "sddPythonCliDev.instructions.md").write_text("# Existing Instruction")
 
-    # Add other project files
-    (temp_project_dir / "README.md").write_text("# Test Project")
-    (temp_project_dir / "main.py").write_text("print('hello')")
+    # Add an existing chatmode file that will conflict
+    chatmodes_dir = github_dir / "chatmodes"
+    chatmodes_dir.mkdir(exist_ok=True)
+    (chatmodes_dir / "sddSpecDriven.chatmode.md").write_text("# Existing Chatmode")
 
     return temp_project_dir

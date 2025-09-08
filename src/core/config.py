@@ -129,9 +129,7 @@ class ConfigCompatibilityLayer:
  |_| |_|  | |_|    |_|  \_\\____/   \/   |_____|_____/     |_____/|_____/|_____/
 """
 
-        self._tagline = (
-            "Spec-Driven Development for GitHub Copilot (soon more: Cursor, Claude, Gemini)"
-        )
+        self._tagline = "Spec-Driven Development for GitHub Copilot (soon more: Cursor, Claude, Gemini)"
 
     @property
     def AI_TOOLS(self) -> Dict[str, Dict]:
@@ -193,9 +191,7 @@ class ConfigCompatibilityLayer:
             raise KeyError(f"App type '{app_type}' not found")
 
         data = self._app_types_data[app_type]
-        return AppTypeConfig(
-            description=data["description"], instruction_files=data["instruction_files"].copy()
-        )
+        return AppTypeConfig(description=data["description"], instruction_files=data["instruction_files"].copy())
 
     def validate_ai_tool_id(self, tool_id: str) -> bool:
         """Validate if an AI tool ID exists.

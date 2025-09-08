@@ -48,3 +48,4 @@ def check_command():
             raise typer.Exit(1)
     else:
         console_manager.print_success("All AI assistant tools are available!")
+    raise typer.Exit(0)

@@ -37,15 +37,15 @@ class TestTemplateResolver:
         resolver = TemplateResolver(project_path=temp_dir)
         templates_dir = temp_dir / "sdd_templates"
         templates_dir.mkdir()
-        
-        with patch.object(resolver, 'get_local_templates_path', return_value=templates_dir):
+
+        with patch.object(resolver, "get_local_templates_path", return_value=templates_dir):
             assert resolver.has_local_templates() is True
 
     def test_has_local_templates_false(self, temp_dir):
         """Test has_local_templates returns False when no templates."""
         resolver = TemplateResolver(project_path=temp_dir)
-        
-        with patch.object(resolver, 'get_local_templates_path', return_value=None):
+
+        with patch.object(resolver, "get_local_templates_path", return_value=None):
             assert resolver.has_local_templates() is False
 
     def test_has_bundled_templates_true(self, temp_dir):
@@ -53,15 +53,15 @@ class TestTemplateResolver:
         resolver = TemplateResolver(project_path=temp_dir)
         templates_dir = temp_dir / "sdd_templates"
         templates_dir.mkdir()
-        
-        with patch.object(resolver, 'get_bundled_templates_path', return_value=templates_dir):
+
+        with patch.object(resolver, "get_bundled_templates_path", return_value=templates_dir):
             assert resolver.has_bundled_templates() is True
 
     def test_has_bundled_templates_false(self, temp_dir):
         """Test has_bundled_templates returns False when no templates."""
         resolver = TemplateResolver(project_path=temp_dir)
-        
-        with patch.object(resolver, 'get_bundled_templates_path', return_value=None):
+
+        with patch.object(resolver, "get_bundled_templates_path", return_value=None):
             assert resolver.has_bundled_templates() is False
 
     def test_resolve_templates_with_transparency_local_success(self, temp_dir):
@@ -69,13 +69,13 @@ class TestTemplateResolver:
         resolver = TemplateResolver(project_path=temp_dir)
         templates_dir = temp_dir / "sdd_templates"
         templates_dir.mkdir()
-        
+
         # Create required subdirectories
         (templates_dir / "chatmodes").mkdir()
         (templates_dir / "instructions").mkdir()
         (templates_dir / "prompts").mkdir()
-        
-        with patch.object(resolver, 'get_local_templates_path', return_value=templates_dir):
+
+        with patch.object(resolver, "get_local_templates_path", return_value=templates_dir):
             result = resolver.resolve_templates_with_transparency()
             assert result.success is True
             assert result.source is not None
@@ -86,14 +86,15 @@ class TestTemplateResolver:
         resolver = TemplateResolver(project_path=temp_dir)
         bundled_dir = temp_dir / "sdd_templates"
         bundled_dir.mkdir()
-        
+
         # Create required subdirectories
         (bundled_dir / "chatmodes").mkdir()
         (bundled_dir / "instructions").mkdir()
         (bundled_dir / "prompts").mkdir()
-        
-        with patch.object(resolver, 'get_local_templates_path', return_value=None), \
-             patch.object(resolver, 'get_bundled_templates_path', return_value=bundled_dir):
+
+        with patch.object(resolver, "get_local_templates_path", return_value=None), patch.object(
+            resolver, "get_bundled_templates_path", return_value=bundled_dir
+        ):
             result = resolver.resolve_templates_with_transparency()
             assert result.success is True
             assert result.source is not None
@@ -102,15 +103,14 @@ class TestTemplateResolver:
     def test_resolve_templates_with_transparency_all_fail(self, temp_dir):
         """Test resolve_templates_with_transparency when all sources fail."""
         resolver = TemplateResolver(project_path=temp_dir)
-        
-        with patch.object(resolver, 'get_local_templates_path', return_value=None), \
-             patch.object(resolver, 'get_bundled_templates_path', return_value=None), \
-             patch.object(resolver, '_attempt_github_download') as mock_download:
-            
+
+        with patch.object(resolver, "get_local_templates_path", return_value=None), patch.object(
+            resolver, "get_bundled_templates_path", return_value=None
+        ), patch.object(resolver, "_attempt_github_download") as mock_download:
             mock_download.return_value = TemplateResolutionResult(
                 source=None, success=False, message="All sources failed", fallback_attempted=True
             )
-            
+
             result = resolver.resolve_templates_with_transparency()
             assert result.success is False
             assert result.source is None

@@ -8,14 +8,9 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-from src.core.exceptions import (
-    GitHubAPIError,
-    NetworkError,
-    RateLimitError,
-    TimeoutError,
-    ValidationError,
-)
+from src.core.exceptions import GitHubAPIError, NetworkError, RateLimitError, TimeoutError, ValidationError
 from src.core.models import TemplateResolutionResult, TemplateSource, TemplateSourceType
+
 from .cache_manager import CacheManager
 from .github_downloader import GitHubDownloader
 
@@ -23,12 +18,14 @@ from .github_downloader import GitHubDownloader
 def _get_console():
     """Lazy import and return rich console."""
     from rich.console import Console
+
     return Console()
 
 
 def _get_panel():
     """Lazy import and return rich Panel."""
     from rich.panel import Panel
+
     return Panel
 
 
@@ -59,9 +56,7 @@ class TemplateResolver:
         # Parse custom repository if provided
         if template_repo:
             repo_parts = template_repo.split("/")
-            self.github_downloader = GitHubDownloader(
-                repo_owner=repo_parts[0], repo_name=repo_parts[1]
-            )
+            self.github_downloader = GitHubDownloader(repo_owner=repo_parts[0], repo_name=repo_parts[1])
         else:
             self.github_downloader = GitHubDownloader()
 
@@ -198,9 +193,7 @@ class TemplateResolver:
 
         # Fallback to GitHub download
         repo_msg = f" from {self.template_repo}" if self.template_repo else ""
-        _get_console().print(
-            f"[blue]⬇ No local templates found, attempting GitHub download{repo_msg}...[/blue]"
-        )
+        _get_console().print(f"[blue]⬇ No local templates found, attempting GitHub download{repo_msg}...[/blue]")
         return self._attempt_github_download()
 
     def _attempt_github_download(self) -> TemplateResolutionResult:
@@ -214,9 +207,7 @@ class TemplateResolver:
                     size_bytes=self._get_directory_size(github_path),
                 )
                 repo_msg = f" from {self.template_repo}" if self.template_repo else ""
-                _get_console().print(
-                    f"[green]✓ Downloaded templates from GitHub{repo_msg} to {github_path}[/green]"
-                )
+                _get_console().print(f"[green]✓ Downloaded templates from GitHub{repo_msg} to {github_path}[/green]")
                 return TemplateResolutionResult(
                     source=source,
                     success=True,
@@ -228,11 +219,7 @@ class TemplateResolver:
             self._show_offline_instructions()
         except GitHubAPIError as e:
             if isinstance(e, RateLimitError):
-                retry_msg = (
-                    f" (retry after {e.retry_after}s)"
-                    if hasattr(e, "retry_after") and e.retry_after
-                    else ""
-                )
+                retry_msg = f" (retry after {e.retry_after}s)" if hasattr(e, "retry_after") and e.retry_after else ""
                 _get_console().print(f"[yellow]⚠ GitHub API rate limit exceeded{retry_msg}[/yellow]")
             else:
                 _get_console().print(f"[yellow]⚠ GitHub API error: {e}[/yellow]")
@@ -329,9 +316,7 @@ class TemplateResolver:
         )
 
         _get_console().print(
-            _get_panel()(
-                offline_instructions, title="💡 Offline Mode", border_style="cyan", padding=(1, 2)
-            )
+            _get_panel()(offline_instructions, title="💡 Offline Mode", border_style="cyan", padding=(1, 2))
         )
 
     def _show_manual_setup_instructions(self) -> None:

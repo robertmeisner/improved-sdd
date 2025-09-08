@@ -11,7 +11,8 @@ from typer.testing import CliRunner
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src import app, FileTracker
+from src.services.file_tracker import FileTracker
+from src.improved_sdd_cli import app
 
 
 @pytest.mark.integration
@@ -71,12 +72,12 @@ class TestBasicIntegration:
         assert "Instructions" in summary
         assert "Prompts" in summary
 
-    @patch("improved_sdd_cli.show_banner")
+    @patch("src.improved_sdd_cli.console_manager.show_banner")
     def test_check_command_basic(self, mock_banner, runner: CliRunner):
         """Test basic check command functionality."""
-        with patch("improved_sdd_cli.check_tool") as mock_check_tool:
-            with patch("improved_sdd_cli.check_github_copilot") as mock_check_copilot:
-                with patch("improved_sdd_cli.offer_user_choice") as mock_offer_choice:
+        with patch("src.commands.check.check_tool") as mock_check_tool:
+            with patch("src.commands.check.check_github_copilot") as mock_check_copilot:
+                with patch("src.commands.check.offer_user_choice") as mock_offer_choice:
                     # Set up mocks for successful tool checks
                     mock_check_tool.return_value = True
                     mock_check_copilot.return_value = True
@@ -87,7 +88,7 @@ class TestBasicIntegration:
                     assert result.exit_code == 0
                     assert "Improved-SDD CLI is ready to use!" in result.stdout
 
-    @patch("improved_sdd_cli.show_banner")
+    @patch("src.improved_sdd_cli.console_manager.show_banner")
     def test_init_validation(self, mock_banner, runner: CliRunner):
         """Test init command input validation."""
         # Test invalid app type
@@ -100,7 +101,7 @@ class TestBasicIntegration:
         assert result.exit_code == 1
         assert "Invalid AI tool(s)" in result.stdout
 
-    @patch("improved_sdd_cli.show_banner")
+    @patch("src.improved_sdd_cli.console_manager.show_banner")
     def test_delete_validation(self, mock_banner, runner: CliRunner):
         """Test delete command input validation."""
         # Test invalid app type
@@ -110,7 +111,7 @@ class TestBasicIntegration:
 
     def test_app_banner_group(self, runner: CliRunner):
         """Test that the app uses the custom banner group."""
-        from improved_sdd_cli import BannerGroup
+        from src.improved_sdd_cli import BannerGroup
 
         # The app should have the custom group class
         # We can test this by checking if the app has the expected behavior
@@ -120,7 +121,7 @@ class TestBasicIntegration:
 
     def test_constants_are_defined(self):
         """Test that important constants are properly defined."""
-        from improved_sdd_cli import AI_TOOLS, APP_TYPES, BANNER, TAGLINE
+        from src.core.config import AI_TOOLS, APP_TYPES, BANNER, TAGLINE
 
         # Verify AI_TOOLS structure
         assert isinstance(AI_TOOLS, dict)

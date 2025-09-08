@@ -76,9 +76,7 @@ class ProgressTracker:
             console=self.console,
         )
 
-    def update_progress_from_info(
-        self, progress: Progress, task_id: int, info: ProgressInfo
-    ) -> None:
+    def update_progress_from_info(self, progress: Progress, task_id: int, info: ProgressInfo) -> None:
         """Update progress task using ProgressInfo data.
 
         Args:
@@ -111,9 +109,7 @@ class ProgressTracker:
                 description=description,
             )
 
-    def create_callback_for_progress(
-        self, progress: Progress, task_id: int
-    ) -> Callable[[ProgressInfo], None]:
+    def create_callback_for_progress(self, progress: Progress, task_id: int) -> Callable[[ProgressInfo], None]:
         """Create a progress callback function for service layer operations.
 
         Args:

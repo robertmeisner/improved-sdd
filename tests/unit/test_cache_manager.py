@@ -35,7 +35,7 @@ class TestCacheManager:
     def test_init_sets_process_id(self, cache_manager):
         """Test CacheManager initialization sets process ID."""
         assert cache_manager.process_id == os.getpid()
-        assert cache_manager._active_caches == set()
+        assert cache_manager._active_caches == []
 
     def test_create_cache_dir_returns_path(self, cache_manager):
         """Test cache directory creation returns valid path."""

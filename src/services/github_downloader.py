@@ -44,12 +44,7 @@ except ImportError:
     TimeRemainingColumn = None
     RICH_AVAILABLE = False
 
-from src.core.exceptions import (
-    GitHubAPIError,
-    NetworkError,
-    TemplateError,
-    TimeoutError,
-)
+from src.core.exceptions import GitHubAPIError, NetworkError, TemplateError, TimeoutError
 from src.core.interfaces import GitHubDownloaderProtocol
 from src.core.models import ProgressInfo, TemplateSource, TemplateSourceType
 
@@ -90,14 +85,10 @@ class GitHubDownloader(GitHubDownloaderProtocol):
             TimeoutError: If download times out
         """
         if not HTTPX_AVAILABLE:
-            raise TemplateError(
-                "httpx library is required for GitHub downloads. Install with: pip install httpx"
-            )
+            raise TemplateError("httpx library is required for GitHub downloads. Install with: pip install httpx")
 
         if not RICH_AVAILABLE:
-            raise TemplateError(
-                "rich library is required for progress display. Install with: pip install rich"
-            )
+            raise TemplateError("rich library is required for progress display. Install with: pip install rich")
 
         console = Console()
 
@@ -106,9 +97,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
 
         try:
             # Download repository archive
-            archive_url = (
-                f"https://github.com/{self.repo_owner}/{self.repo_name}/archive/refs/heads/main.zip"
-            )
+            archive_url = f"https://github.com/{self.repo_owner}/{self.repo_name}/archive/refs/heads/main.zip"
 
             # Setup progress tracking - use provided instance or create new one
             if progress_instance:
@@ -117,9 +106,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                 download_task = progress.add_task("Downloading templates...", total=None)
 
                 # Perform download
-                temp_path = await self._download_with_progress(
-                    progress, download_task, archive_url, progress_callback
-                )
+                temp_path = await self._download_with_progress(progress, download_task, archive_url, progress_callback)
 
                 # Extract templates
                 progress.update(download_task, description="Validating and extracting templates...")
@@ -139,9 +126,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                     total=total_size,
                 )
 
-                return TemplateSource(
-                    path=target_dir, source_type=TemplateSourceType.GITHUB, size_bytes=total_size
-                )
+                return TemplateSource(path=target_dir, source_type=TemplateSourceType.GITHUB, size_bytes=total_size)
             else:
                 # Create own progress instance (existing behavior)
                 with Progress(
@@ -161,9 +146,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                     )
 
                     # Extract templates
-                    progress.update(
-                        download_task, description="Validating and extracting templates..."
-                    )
+                    progress.update(download_task, description="Validating and extracting templates...")
                     self.extract_templates(temp_path, target_dir, progress_callback)
 
                     # Cleanup and finalize
@@ -246,9 +229,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                             if elapsed_time > 0:
                                 speed_bps = int(downloaded / elapsed_time)
                                 remaining_bytes = total_size - downloaded
-                                eta_seconds = (
-                                    int(remaining_bytes / speed_bps) if speed_bps > 0 else None
-                                )
+                                eta_seconds = int(remaining_bytes / speed_bps) if speed_bps > 0 else None
                             else:
                                 speed_bps = None
                                 eta_seconds = None
@@ -289,9 +270,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
         # Convert extracted zip-relative names to template-relative paths for validation
         templates_prefix = f"{self.repo_name}-main/sdd_templates/"
         relative_files = [
-            name[len(templates_prefix) :]
-            for name in extracted_files
-            if name.startswith(templates_prefix)
+            name[len(templates_prefix) :] for name in extracted_files if name.startswith(templates_prefix)
         ]
 
         # Step 3: Template structure validation (expects relative paths like 'chatmodes/..')
@@ -322,9 +301,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
 
                 # Check for sdd_templates folder
                 templates_prefix = f"{self.repo_name}-main/sdd_templates/"
-                template_files = [
-                    name for name in zip_ref.namelist() if name.startswith(templates_prefix)
-                ]
+                template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 if not template_files:
                     raise TemplateError("No sdd_templates folder found in repository archive")
@@ -363,9 +340,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
         try:
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 templates_prefix = f"{self.repo_name}-main/sdd_templates/"
-                template_files = [
-                    name for name in zip_ref.namelist() if name.startswith(templates_prefix)
-                ]
+                template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 # Calculate total extraction size for progress tracking
                 total_files = len([f for f in template_files if not zip_ref.getinfo(f).is_dir()])
@@ -472,9 +447,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
 
         # Check for minimum file count
         if len(extracted_files) < 3:
-            raise TemplateError(
-                f"Too few template files extracted: {len(extracted_files)}. Expected at least 3 files."
-            )
+            raise TemplateError(f"Too few template files extracted: {len(extracted_files)}. Expected at least 3 files.")
 
         # Validate file sizes (basic check for empty files)
         empty_files = []
@@ -484,6 +457,4 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                 empty_files.append(file_path)
 
         if len(empty_files) > len(extracted_files) // 2:  # More than half are empty
-            raise TemplateError(
-                f"Too many empty template files detected: {len(empty_files)}/{len(extracted_files)}"
-            )
+            raise TemplateError(f"Too many empty template files detected: {len(empty_files)}/{len(extracted_files)}")

@@ -39,31 +39,31 @@ flowchart TD
 class TemplateResolver:
     def resolve_templates(self, project_type: str) -> TemplatePath:
         """Resolves templates using priority order"""
-    
+
     def _check_local_templates(self) -> Optional[Path]:
         """Check for .sdd_templates in current directory"""
-    
+
     def _check_bundled_templates(self) -> Optional[Path]:
         """Check for bundled .sdd_templates in CLI"""
-    
+
     def _download_templates(self) -> Optional[Path]:
         """Download and cache templates from GitHub"""
 ```
 
-#### 2. GitHubDownloader  
+#### 2. GitHubDownloader
 **Purpose**: Handles template downloads from GitHub
 ```python
 class GitHubDownloader:
     def __init__(self, repo: str, progress_callback: Callable):
         self.repo = repo
         self.progress = progress_callback
-    
+
     async def download_templates(self) -> Path:
         """Download templates ZIP from GitHub"""
-    
+
     def extract_templates(self, zip_path: Path, target: Path) -> None:
         """Extract ZIP to cache directory"""
-    
+
     def validate_templates(self, path: Path) -> bool:
         """Validate template structure"""
 ```
@@ -74,10 +74,10 @@ class GitHubDownloader:
 class CacheManager:
     def create_cache_dir(self) -> Path:
         """Create temp cache in system temporary directory"""
-    
+
     def cleanup_cache(self, cache_path: Path) -> None:
         """Remove cache directory"""
-    
+
     def cleanup_orphaned_caches(self) -> None:
         """Clean up from previous interrupted runs"""
 ```
@@ -88,10 +88,10 @@ class CacheManager:
 class TemplateValidator:
     def validate_zip(self, zip_path: Path) -> bool:
         """Check ZIP file integrity"""
-    
+
     def validate_structure(self, template_path: Path) -> ValidationResult:
         """Validate template directory structure"""
-    
+
     def get_missing_files(self, template_path: Path) -> List[str]:
         """Identify missing required files"""
 ```
@@ -106,13 +106,13 @@ class TemplateSource:
     source_type: Literal["local", "bundled", "github"]
     timestamp: Optional[datetime]
     size_bytes: Optional[int]
-    
-@dataclass 
+
+@dataclass
 class ValidationResult:
     is_valid: bool
     missing_files: List[str]
     errors: List[str]
-    
+
 @dataclass
 class DownloadProgress:
     bytes_downloaded: int
@@ -133,16 +133,16 @@ def resolve_templates(
 ) -> TemplateResolutionResult:
     """
     Resolves templates based on project type and options
-    
+
     Args:
         project_type: Type of project template needed
         offline_mode: Skip download attempts if True
         force_download: Download to cache even if local exists
         template_repo: Custom GitHub repo (format: owner/repo)
-    
+
     Returns:
         TemplateResolutionResult with source path and metadata
-        
+
     Raises:
         TemplateNotFoundError: No templates available
         NetworkError: Download failed and no local fallback
@@ -155,7 +155,7 @@ def resolve_templates(
 def create_template_cache() -> CacheContext:
     """
     Creates temporary cache for template downloads
-    
+
     Returns:
         Context manager that ensures cleanup
     """
@@ -165,7 +165,7 @@ def create_template_cache() -> CacheContext:
 
 ### Template State Flow
 1. **Discovery Phase**: Check local → bundled → download
-2. **Validation Phase**: Verify integrity and structure  
+2. **Validation Phase**: Verify integrity and structure
 3. **Usage Phase**: Templates available for installation
 4. **Cleanup Phase**: Remove temporary cache
 
@@ -186,11 +186,11 @@ class NetworkError(Exception):
 
 class GitHubAPIError(NetworkError):
     """GitHub API specific errors"""
-    
+
 class RateLimitError(GitHubAPIError):
     """Rate limit exceeded"""
     retry_after: int
-    
+
 class TimeoutError(NetworkError):
     """Download timeout"""
     retry_suggested: bool
@@ -200,16 +200,16 @@ class TimeoutError(NetworkError):
 ```python
 class TemplateError(Exception):
     """Base class for template-related errors"""
-    
+
 class TemplateNotFoundError(TemplateError):
     """No templates available from any source"""
     available_sources: List[str]
     manual_setup_instructions: str
-    
+
 class ValidationError(TemplateError):
     """Template validation failed"""
     missing_files: List[str]
-    
+
 class CorruptedTemplateError(TemplateError):
     """Template files corrupted"""
 ```
@@ -331,10 +331,10 @@ class CorruptedTemplateError(TemplateError):
 
 ### Current Gaps
 All core Template Download System components are IMPLEMENTED:
-- ✅ **GitHub Integration**: Complete GitHubDownloader with httpx async HTTP client 
+- ✅ **GitHub Integration**: Complete GitHubDownloader with httpx async HTTP client
 - ✅ **Cache Management**: Complete CacheManager with temporary directories and orphan cleanup
 - ✅ **Template Structure**: Correctly downloads from `/sdd_templates` folder and uses `.sdd_templates/` for bundled
-- ✅ **Progress UI**: Rich progress bars with download speed and ETA indicators  
+- ✅ **Progress UI**: Rich progress bars with download speed and ETA indicators
 - ✅ **Error Handling**: Complete exception hierarchy (NetworkError, GitHubAPIError, ValidationError, etc.)
 - ✅ **Template Validation**: ZIP integrity, path traversal protection, structure validation
 - ⚠️ **CLI Options**: Basic CLI exists (--force, --here) but template-specific flags not implemented
@@ -351,7 +351,7 @@ The Template Download System is 100% functionally complete with sophisticated fe
 All integration points are IMPLEMENTED:
 - ✅ **CLI Entry Point**: TemplateResolver fully integrated in main CLI `init` command
 - ✅ **Project Creation**: Complete integration with `create_project_structure()` function
-- ✅ **Error Display**: Full Rich console integration for progress and error messages  
+- ✅ **Error Display**: Full Rich console integration for progress and error messages
 - ✅ **Configuration**: Template resolution integrated with CLI argument handling
 
 ## Future Development Phases

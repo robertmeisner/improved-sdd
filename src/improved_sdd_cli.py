@@ -27,10 +27,10 @@ import typer
 from typer.core import TyperGroup
 
 # Import commands
-from .commands import check_command, delete_command, init_command
+from src.commands import check_command, delete_command, init_command
 
 # Import UI components
-from .ui import console_manager
+from src.ui import console_manager
 
 # Core constants and exceptions are now imported from core module
 
@@ -64,9 +64,7 @@ def callback(ctx: typer.Context):
     """Show banner when no subcommand is provided."""
     if ctx.invoked_subcommand is None and "--help" not in sys.argv and "-h" not in sys.argv:
         console_manager.show_banner()
-        console_manager.show_centered_message(
-            "[dim]Run 'improved-sdd --help' for usage information[/dim]"
-        )
+        console_manager.show_centered_message("[dim]Run 'improved-sdd --help' for usage information[/dim]")
         console_manager.print_newline()
 
 

@@ -177,8 +177,8 @@ class TestCacheManager:
             if running_cache.exists():
                 shutil.rmtree(running_cache, ignore_errors=True)
 
-    @patch('platform.system')
-    @patch('subprocess.run')
+    @patch("platform.system")
+    @patch("subprocess.run")
     def test_is_process_running_windows_tasklist_success(self, mock_subprocess, mock_platform):
         """Test process checking on Windows with successful tasklist."""
         mock_platform.return_value = "Windows"
@@ -189,8 +189,8 @@ class TestCacheManager:
         assert self.cache_manager._is_process_running(12345) is True
         mock_subprocess.assert_called_once()
 
-    @patch('platform.system')
-    @patch('subprocess.run')
+    @patch("platform.system")
+    @patch("subprocess.run")
     def test_is_process_running_windows_tasklist_failure(self, mock_subprocess, mock_platform):
         """Test process checking on Windows with tasklist failure."""
         mock_platform.return_value = "Windows"
@@ -198,8 +198,8 @@ class TestCacheManager:
 
         assert self.cache_manager._is_process_running(12345) is False
 
-    @patch('platform.system')
-    @patch('os.kill')
+    @patch("platform.system")
+    @patch("os.kill")
     def test_is_process_running_unix_success(self, mock_kill, mock_platform):
         """Test process checking on Unix-like systems with success."""
         mock_platform.return_value = "Linux"
@@ -208,8 +208,8 @@ class TestCacheManager:
         assert self.cache_manager._is_process_running(12345) is True
         mock_kill.assert_called_once_with(12345, 0)
 
-    @patch('platform.system')
-    @patch('os.kill')
+    @patch("platform.system")
+    @patch("os.kill")
     def test_is_process_running_unix_process_not_found(self, mock_kill, mock_platform):
         """Test process checking on Unix-like systems with process not found."""
         mock_platform.return_value = "Linux"
@@ -217,8 +217,8 @@ class TestCacheManager:
 
         assert self.cache_manager._is_process_running(12345) is False
 
-    @patch('platform.system')
-    @patch('os.kill')
+    @patch("platform.system")
+    @patch("os.kill")
     def test_is_process_running_unix_os_error(self, mock_kill, mock_platform):
         """Test process checking on Unix-like systems with OS error."""
         mock_platform.return_value = "Linux"
@@ -226,7 +226,7 @@ class TestCacheManager:
 
         assert self.cache_manager._is_process_running(12345) is False
 
-    @patch('platform.system')
+    @patch("platform.system")
     def test_is_process_running_unknown_platform(self, mock_platform):
         """Test process checking on unknown platform defaults to safe assumption."""
         mock_platform.return_value = "Unknown"
@@ -284,7 +284,7 @@ class TestCacheManager:
         test_file.write_text("content")
 
         # Mock the rglob iteration to raise permission error
-        with patch.object(Path, 'rglob') as mock_rglob:
+        with patch.object(Path, "rglob") as mock_rglob:
             mock_rglob.side_effect = PermissionError()
             info = self.cache_manager.get_cache_info(cache_dir)
 
@@ -304,11 +304,11 @@ class TestCacheManager:
 
         # Should implement all required methods
         required_methods = [
-            'create_cache_dir',
-            'cleanup_cache',
-            'cleanup_all_caches',
-            'cleanup_orphaned_caches',
-            'get_cache_info'
+            "create_cache_dir",
+            "cleanup_cache",
+            "cleanup_all_caches",
+            "cleanup_orphaned_caches",
+            "get_cache_info",
         ]
 
         for method_name in required_methods:

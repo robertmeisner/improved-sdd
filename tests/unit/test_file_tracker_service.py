@@ -5,14 +5,15 @@ in isolation and implements the FileTrackerProtocol properly.
 """
 import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-from src.services.file_tracker import FileTracker
 from src.core.interfaces import FileTrackerProtocol
+from src.services.file_tracker import FileTracker
 
 
 class TestFileTracker:
@@ -34,9 +35,9 @@ class TestFileTracker:
         """Test tracking file creation."""
         tracker = FileTracker()
         test_path = Path("test/file.txt")
-        
+
         tracker.track_file_creation(test_path)
-        
+
         assert str(test_path) in tracker.created_files
         assert len(tracker.created_files) == 1
         assert len(tracker.modified_files) == 0
@@ -46,9 +47,9 @@ class TestFileTracker:
         """Test tracking file modification."""
         tracker = FileTracker()
         test_path = Path("test/file.txt")
-        
+
         tracker.track_file_modification(test_path)
-        
+
         assert str(test_path) in tracker.modified_files
         assert len(tracker.modified_files) == 1
         assert len(tracker.created_files) == 0
@@ -58,9 +59,9 @@ class TestFileTracker:
         """Test tracking directory creation."""
         tracker = FileTracker()
         test_path = Path("test/dir")
-        
+
         tracker.track_dir_creation(test_path)
-        
+
         assert str(test_path) in tracker.created_dirs
         assert len(tracker.created_dirs) == 1
         assert len(tracker.created_files) == 0
@@ -70,7 +71,7 @@ class TestFileTracker:
         """Test summary generation with no tracked files."""
         tracker = FileTracker()
         summary = tracker.get_summary()
-        
+
         assert "No files were created or modified" in summary
 
     def test_get_summary_with_files(self):
@@ -79,9 +80,9 @@ class TestFileTracker:
         tracker.track_dir_creation(Path("test_dir"))
         tracker.track_file_creation(Path("test/file.txt"))
         tracker.track_file_modification(Path("existing/file.txt"))
-        
+
         summary = tracker.get_summary()
-        
+
         assert "Directories Created:" in summary
         assert "test_dir" in summary
         assert "Files Created:" in summary
@@ -99,11 +100,11 @@ class TestFileTracker:
             "test/instructions/guide.md",
             "test/prompts/template.md",
             "test/commands/cmd.md",
-            "test/other/file.txt"
+            "test/other/file.txt",
         ]
-        
+
         groups = tracker._group_files_by_type(files)
-        
+
         assert "Chatmodes" in groups
         assert "Instructions" in groups
         assert "Prompts" in groups
@@ -119,9 +120,9 @@ class TestFileTracker:
         """Test that empty groups are removed from file grouping."""
         tracker = FileTracker()
         files = ["test/chatmodes/sample.md"]
-        
+
         groups = tracker._group_files_by_type(files)
-        
+
         assert "Chatmodes" in groups
         assert "Instructions" not in groups
         assert "Prompts" not in groups
@@ -130,7 +131,7 @@ class TestFileTracker:
     def test_multiple_operations(self):
         """Test multiple file operations are tracked correctly."""
         tracker = FileTracker()
-        
+
         # Track multiple operations
         tracker.track_dir_creation(Path("dir1"))
         tracker.track_dir_creation(Path("dir2"))
@@ -138,10 +139,10 @@ class TestFileTracker:
         tracker.track_file_creation(Path("file2.txt"))
         tracker.track_file_modification(Path("existing1.txt"))
         tracker.track_file_modification(Path("existing2.txt"))
-        
+
         assert len(tracker.created_dirs) == 2
         assert len(tracker.created_files) == 2
         assert len(tracker.modified_files) == 2
-        
+
         summary = tracker.get_summary()
         assert "Total: 2 directories, 2 files created, 2 files modified" in summary

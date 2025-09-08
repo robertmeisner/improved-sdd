@@ -157,10 +157,10 @@ Use {AI_SHORTNAME} with {AI_COMMAND} to get started.
     def test_get_template_filename_github_copilot(self):
         """Test generating template filename for GitHub Copilot."""
         filename = get_template_filename("specMode.md", "github-copilot", "chatmodes")
-        assert filename == "specMode.copilot.md"
+        assert filename == "specMode.md"  # GitHub Copilot uses original names
 
         filename = get_template_filename("CLIPythonDev.md", "github-copilot", "instructions")
-        assert filename == "CLIPythonDev.copilot.md"
+        assert filename == "CLIPythonDev.md"  # GitHub Copilot uses original names
 
     def test_get_template_filename_claude(self):
         """Test generating template filename for Claude."""
@@ -177,13 +177,13 @@ Use {AI_SHORTNAME} with {AI_COMMAND} to get started.
 
     def test_get_template_filename_edge_cases(self):
         """Test generating template filename edge cases."""
-        # File without extension
+        # File without extension - GitHub Copilot returns original
         filename = get_template_filename("noext", "github-copilot", "chatmodes")
-        assert filename == "noext.copilot.md"
+        assert filename == "noext"
 
-        # Multiple dots in filename  
+        # Multiple dots in filename - GitHub Copilot returns original
         filename = get_template_filename("file.test.md", "github-copilot", "prompts")
-        assert filename == "file.test.copilot.md"
+        assert filename == "file.test.md"
 
 
 @pytest.mark.unit
@@ -191,63 +191,66 @@ class TestToolChecking:
     """Test tool checking functions."""
 
     @patch("shutil.which")
-    @patch("improved_sdd_cli.console")
-    def test_check_tool_found(self, mock_console, mock_which):
+    @patch("src.ui.console.ConsoleManager.print_status")
+    def test_check_tool_found(self, mock_print_status, mock_which):
         """Test check_tool when tool is found."""
         mock_which.return_value = "/usr/bin/python"
 
         result = check_tool("python", "Install from python.org")
 
         assert result is True
-        mock_console.print.assert_called_with("[green][OK][/green] python found")
+        mock_print_status.assert_called_with("python", True)
 
     @patch("shutil.which")
-    @patch("improved_sdd_cli.console")
-    def test_check_tool_not_found_required(self, mock_console, mock_which):
+    @patch("src.ui.console.ConsoleManager.print_status")
+    def test_check_tool_not_found_required(self, mock_print_status, mock_which):
         """Test check_tool when required tool is not found."""
         mock_which.return_value = None
 
         result = check_tool("python", "Install from python.org")
 
         assert result is False
-        mock_console.print.assert_any_call("[red][ERROR][/red]  python not found")
+        mock_print_status.assert_called_with("python", False, "Install from python.org", False)
 
     @patch("shutil.which")
-    @patch("improved_sdd_cli.console")
-    def test_check_tool_not_found_optional(self, mock_console, mock_which):
+    @patch("src.ui.console.ConsoleManager.print_status")
+    def test_check_tool_not_found_optional(self, mock_print_status, mock_which):
         """Test check_tool when optional tool is not found."""
         mock_which.return_value = None
 
         result = check_tool("optional-tool", "Install hint", optional=True)
 
         assert result is False
-        mock_console.print.assert_any_call("[yellow][WARN][/yellow]  optional-tool not found")
+        mock_print_status.assert_called_with("optional-tool", False, "Install hint", True)
 
     @patch("shutil.which")
-    @patch("improved_sdd_cli.console")
-    def test_check_github_copilot_vscode_found(self, mock_console, mock_which):
+    @patch("src.ui.console.ConsoleManager.print_success")
+    @patch("src.ui.console.ConsoleManager.print_dim")
+    def test_check_github_copilot_vscode_found(self, mock_print_dim, mock_print_success, mock_which):
         """Test check_github_copilot when VS Code is found."""
         mock_which.return_value = "/usr/bin/code"
 
         result = check_github_copilot()
 
         assert result is True
-        mock_console.print.assert_any_call("[green][OK][/green] VS Code found")
+        mock_print_success.assert_called_with("VS Code found")
 
     @patch("shutil.which")
-    @patch("improved_sdd_cli.console")
-    def test_check_github_copilot_vscode_not_found(self, mock_console, mock_which):
+    @patch("src.ui.console.ConsoleManager.print_warning")
+    @patch("src.ui.console.ConsoleManager.print")
+    @patch("src.ui.console.ConsoleManager.print_dim")
+    def test_check_github_copilot_vscode_not_found(self, mock_print_dim, mock_print, mock_print_warning, mock_which):
         """Test check_github_copilot when VS Code is not found."""
         mock_which.return_value = None
 
         result = check_github_copilot()
 
         assert result is False
-        mock_console.print.assert_any_call("[yellow][WARN][/yellow]  VS Code not found")
+        mock_print_warning.assert_called_with("VS Code not found")
 
     @patch("typer.prompt")
-    @patch("improved_sdd_cli.console")
-    def test_offer_user_choice_no_missing_tools(self, mock_console, mock_prompt):
+    @patch("src.ui.console.ConsoleManager.print")
+    def test_offer_user_choice_no_missing_tools(self, mock_print, mock_prompt):
         """Test offer_user_choice with no missing tools."""
         result = offer_user_choice([])
 
@@ -256,8 +259,9 @@ class TestToolChecking:
 
     @patch.dict(os.environ, {}, clear=True)  # Clear CI environment variables
     @patch("improved_sdd_cli.typer.prompt")
-    @patch("improved_sdd_cli.console")
-    def test_offer_user_choice_user_accepts(self, mock_console, mock_prompt):
+    @patch("src.ui.console.ConsoleManager.print_success")
+    @patch("src.ui.console.ConsoleManager.print")
+    def test_offer_user_choice_user_accepts(self, mock_print, mock_print_success, mock_prompt):
         """Test offer_user_choice when user accepts to continue."""
         mock_prompt.return_value = "y"
 
@@ -268,8 +272,9 @@ class TestToolChecking:
 
     @patch.dict(os.environ, {}, clear=True)  # Clear CI environment variables
     @patch("improved_sdd_cli.typer.prompt")
-    @patch("improved_sdd_cli.console")
-    def test_offer_user_choice_user_declines(self, mock_console, mock_prompt):
+    @patch("src.ui.console.ConsoleManager.print_warning")
+    @patch("src.ui.console.ConsoleManager.print")
+    def test_offer_user_choice_user_declines(self, mock_print, mock_print_warning, mock_prompt):
         """Test offer_user_choice when user declines to continue."""
         mock_prompt.return_value = "n"
 
@@ -280,8 +285,9 @@ class TestToolChecking:
 
     @patch.dict(os.environ, {}, clear=True)  # Clear CI environment variables
     @patch("improved_sdd_cli.typer.prompt")
-    @patch("improved_sdd_cli.console")
-    def test_offer_user_choice_keyboard_interrupt(self, mock_console, mock_prompt):
+    @patch("src.ui.console.ConsoleManager.print_warning")
+    @patch("src.ui.console.ConsoleManager.print")
+    def test_offer_user_choice_keyboard_interrupt(self, mock_print, mock_print_warning, mock_prompt):
         """Test offer_user_choice with keyboard interrupt."""
         mock_prompt.side_effect = KeyboardInterrupt()
 
@@ -292,8 +298,9 @@ class TestToolChecking:
 
     @patch.dict(os.environ, {"CI": "true"})  # Simulate CI environment
     @patch("improved_sdd_cli.typer.prompt")
-    @patch("improved_sdd_cli.console")
-    def test_offer_user_choice_ci_mode(self, mock_console, mock_prompt):
+    @patch("src.ui.console.ConsoleManager.print_success")
+    @patch("src.ui.console.ConsoleManager.print")
+    def test_offer_user_choice_ci_mode(self, mock_print, mock_print_success, mock_prompt):
         """Test offer_user_choice in CI environment returns True without prompting."""
         result = offer_user_choice(["Tool1", "Tool2"])
 

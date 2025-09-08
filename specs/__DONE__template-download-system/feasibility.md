@@ -33,7 +33,7 @@ Transform the CLI from bundled local templates to a dynamic GitHub-based templat
 - **Mitigation**: Cache downloads, provide local fallback instructions
 - **Impact**: May need authentication for heavy usage
 
-#### 🟢 Low Risk: Template Version Compatibility  
+#### 🟢 Low Risk: Template Version Compatibility
 - **Issue**: Downloaded templates may not match CLI version
 - **Mitigation**: Version checking, fallback to bundled templates
 - **Impact**: Graceful degradation possible

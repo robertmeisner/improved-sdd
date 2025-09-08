@@ -47,12 +47,7 @@ from .interfaces import (
 )
 
 # Import models and enums (available after Task 1.3)
-from .models import (
-    ProgressInfo,
-    TemplateResolutionResult,
-    TemplateSource,
-    TemplateSourceType,
-)
+from .models import ProgressInfo, TemplateResolutionResult, TemplateSource, TemplateSourceType
 
 # Import order for future modules:
 # All modules have been imported
@@ -91,3 +86,7 @@ __all__ = [
     "ServiceContainer",
     "container",
 ]
+
+# Populate APP_TYPES with instruction file names
+APP_TYPES["python-cli"]["instructions"] = ["sddPythonCliDev.instructions.md"]
+APP_TYPES["mcp-server"]["instructions"] = ["sddMcpServerDev.instructions.md"]

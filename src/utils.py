@@ -51,15 +51,11 @@ def check_github_copilot() -> bool:
     if vscode_found:
         console_manager.print_success("VS Code found")
         console_manager.print_dim("Note: GitHub Copilot availability depends on VS Code extensions")
-        console_manager.print_dim(
-            "Open VS Code and check if Copilot extension is installed and activated"
-        )
+        console_manager.print_dim("Open VS Code and check if Copilot extension is installed and activated")
         return True
     else:
         console_manager.print_warning("VS Code not found")
-        console_manager.print(
-            "   Install with: [cyan]https://code.visualstudio.com/download[/cyan]"
-        )
+        console_manager.print("   Install with: [cyan]https://code.visualstudio.com/download[/cyan]")
         console_manager.print_dim("Then install GitHub Copilot extension from VS Code marketplace")
         return False
 
@@ -80,9 +76,7 @@ def offer_user_choice(missing_tools: List[str]) -> bool:
         return True
 
     console_manager.print(f"\n[yellow]Missing optional tools: {', '.join(missing_tools)}[/yellow]")
-    console_manager.print_dim(
-        "These tools enhance the development experience but are not required."
-    )
+    console_manager.print_dim("These tools enhance the development experience but are not required.")
 
     # Check if we're in CI/automation mode
     if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
@@ -90,19 +84,13 @@ def offer_user_choice(missing_tools: List[str]) -> bool:
         return True
 
     try:
-        choice = (
-            typer.prompt("\nWould you like to continue anyway? (y/n)", type=str, default="y")
-            .lower()
-            .strip()
-        )
+        choice = typer.prompt("\nWould you like to continue anyway? (y/n)", type=str, default="y").lower().strip()
 
         if choice in ["y", "yes"]:
             console_manager.print_success("Continuing with available tools...")
             return True
         else:
-            console_manager.print_warning(
-                "Setup cancelled. Please install the missing tools and try again."
-            )
+            console_manager.print_warning("Setup cancelled. Please install the missing tools and try again.")
             return False
 
     except (typer.Abort, KeyboardInterrupt):
@@ -129,9 +117,7 @@ def select_app_type() -> str:
 
     console_manager.print_newline()
     for i, key in enumerate(option_keys, 1):
-        console_manager.print(
-            f"[cyan]{i}.[/cyan] [white]{key}[/white]: {APP_TYPES[key]['description']}"
-        )
+        console_manager.print(f"[cyan]{i}.[/cyan] [white]{key}[/white]: {APP_TYPES[key]['description']}")
 
     console_manager.print_newline()
 
@@ -151,9 +137,7 @@ def select_app_type() -> str:
                 console_manager.print(f"[green]Selected: [/green] {selected}")
                 return selected
             else:
-                console_manager.print_error(
-                    f"Please enter a number between 1 and {len(option_keys)}"
-                )
+                console_manager.print_error(f"Please enter a number between 1 and {len(option_keys)}")
         except ValueError:
             console_manager.print_error("Invalid input. Please enter a number.")
         except KeyboardInterrupt:
@@ -174,9 +158,7 @@ def select_ai_tools() -> List[str]:
         typer.Exit: If user cancels the selection
     """
     console_manager.print("\n🤖 Which AI assistant(s) do you want to generate templates for?")
-    console_manager.print_dim(
-        "You can select multiple tools (templates will be customized for each)"
-    )
+    console_manager.print_dim("You can select multiple tools (templates will be customized for each)")
 
     # Use simple numbered selection
     tool_keys = list(AI_TOOLS.keys())
@@ -186,9 +168,7 @@ def select_ai_tools() -> List[str]:
         tool_info = AI_TOOLS[key]
         if key == "github-copilot":
             # GitHub Copilot is available now
-            console_manager.print(
-                f"[cyan]{i}.[/cyan] [white]{tool_info['name']}[/white]: {tool_info['description']}"
-            )
+            console_manager.print(f"[cyan]{i}.[/cyan] [white]{tool_info['name']}[/white]: {tool_info['description']}")
         else:
             # Other tools are coming soon
             console_manager.print(
@@ -196,17 +176,13 @@ def select_ai_tools() -> List[str]:
                 f"[dim]{tool_info['description']}[/dim] [yellow](coming soon)[/yellow]"
             )
 
-    console_manager.print_dim(
-        "\nEnter numbers separated by commas (e.g., 1,2) or 'all' for all tools"
-    )
+    console_manager.print_dim("\nEnter numbers separated by commas (e.g., 1,2) or 'all' for all tools")
     console_manager.print_newline()
 
     while True:
         try:
             # Use input() instead of typer.prompt to avoid issues with defaults
-            user_input = (
-                input(f"Select options (1-{len(tool_keys)}) [default: 1]: ").strip().lower()
-            )
+            user_input = input(f"Select options (1-{len(tool_keys)}) [default: 1]: ").strip().lower()
 
             # Handle empty input (use default)
             if not user_input:
@@ -216,9 +192,7 @@ def select_ai_tools() -> List[str]:
 
             if choice == "all":
                 selected = tool_keys.copy()
-                console_manager.print(
-                    f"[green]Selected: [/green] All AI tools ({len(selected)} tools)"
-                )
+                console_manager.print(f"[green]Selected: [/green] All AI tools ({len(selected)} tools)")
                 return selected
 
             # Parse comma-separated numbers
@@ -276,52 +250,34 @@ def customize_template_content(content: str, ai_tool: str) -> str:
 
 
 def get_template_filename(original_name: str, ai_tool: str, template_type: str) -> str:
-    """Generate AI-specific template filename.
-
-    Creates appropriate filename for AI tool templates based on template type
-    and AI tool configuration.
-
-    Args:
-        original_name: Original template filename
-        ai_tool: AI tool key for filename customization
-        template_type: Type of template (e.g., 'chatmodes', 'instructions')
-
-    Returns:
-        str: Customized filename for the AI tool
-    """
+    """Generate AI-specific template filename."""
     if ai_tool not in AI_TOOLS:
+        return original_name
+
+    # For GitHub Copilot, templates are already correctly named
+    if ai_tool == "github-copilot":
         return original_name
 
     tool_config = AI_TOOLS[ai_tool]
 
-    # Split the original name to get base name without extensions
-    parts = original_name.split(".")
-    if len(parts) >= 2:  # Has extension
-        base_name = ".".join(parts[:-1])
+    # Get base name by removing the final .md extension if present
+    if original_name.endswith(".md"):
+        base_name = original_name[:-3]  # Remove .md
     else:
         base_name = original_name
 
-    # Map template types to extension keys (handle plural to singular mapping)
+    # Map template types to extension keys
     extension_key_map = {
-        "chatmodes": "chatmodes",  # maps to file_extensions.chatmodes
-        "instructions": "instructions",  # maps to file_extensions.instructions
-        "prompts": "prompts",  # maps to file_extensions.prompts
-        "commands": "commands",  # maps to file_extensions.commands
+        "chatmodes": "chatmodes",
+        "instructions": "instructions",
+        "prompts": "prompts",
+        "commands": "commands",
     }
-
     extension_key = extension_key_map.get(template_type, template_type)
     extension = tool_config["file_extensions"].get(extension_key, ".md")
 
-    # For GitHub Copilot, use simple .md extension to avoid double extensions
-    if ai_tool == "github-copilot":
-        # Already has .md from template, don't add another
-        if base_name.endswith((".copilot", ".chatmode", ".instruction", ".prompt", ".command")):
-            return f"{base_name}.md"
-        else:
-            return f"{base_name}.copilot.md"
-    else:
-        # For other tools, use configured extension
-        return f"{base_name}{extension}"
+    # Generate filename with tool-specific extension
+    return f"{base_name}{extension}"
 
 
 def create_project_structure(
@@ -355,7 +311,7 @@ def create_project_structure(
     )
     resolution_result = resolver.resolve_templates_with_transparency()
 
-    if not resolution_result.success:
+    if not resolution_result.success or not resolution_result.source:
         console_manager.print_error("No templates available")
         console_manager.print_error("- No local templates found")
         console_manager.print_error("- No bundled templates available")
@@ -373,15 +329,21 @@ def create_project_structure(
 
     # Show additional resolution context for transparency
     if resolution_result.fallback_attempted:
-        console_manager.print_info(f"Templates found: {resolution_result.source.type.value}")
+        console_manager.print_info(f"Templates found: {resolution_result.source.source_type.value}")
         console_manager.print_dim(f"Source: {templates_source}")
     else:
-        console_manager.print_info(f"Templates found: {resolution_result.source.type.value}")
+        console_manager.print_info(f"Templates found: {resolution_result.source.source_type.value}")
         console_manager.print_dim(f"Source: {templates_source}")
 
     # Template resolution successful - proceed with installation
     for ai_tool in ai_tools:
         console_manager.print_info(f"\nInstalling templates for {AI_TOOLS[ai_tool]['name']}...")
+
+        # Determine target base directory
+        if ai_tool == "github-copilot":
+            target_base_dir = project_path / ".github"
+        else:
+            target_base_dir = project_path / ".github" / ai_tool
 
         # Install each template type for this AI tool
         template_types = ["chatmodes", "instructions", "prompts", "commands"]
@@ -392,7 +354,7 @@ def create_project_structure(
                 console_manager.print_warning(f"  No {template_type} templates found")
                 continue
 
-            target_dir = project_path / ".github" / template_type
+            target_dir = target_base_dir / template_type
             target_dir.mkdir(parents=True, exist_ok=True)
 
             # Process all .md files in the template directory
@@ -401,11 +363,15 @@ def create_project_structure(
                 console_manager.print_warning(f"  No {template_type} template files found")
                 continue
 
-            console_manager.print_info(
-                f"  Installing {len(template_files)} {template_type} template(s)..."
-            )
+            console_manager.print_info(f"  Installing {len(template_files)} {template_type} template(s)...")
 
             for template_file in template_files:
+                # For 'instructions', only install if it matches the app_type
+                if template_type == "instructions":
+                    allowed_instructions = APP_TYPES.get(app_type, {}).get("instructions", [])
+                    if template_file.name not in allowed_instructions:
+                        continue  # Skip this instruction file
+
                 # Read template content
                 try:
                     content = template_file.read_text(encoding="utf-8")
@@ -422,22 +388,29 @@ def create_project_structure(
 
                 # Check if file exists and handle force flag
                 if output_path.exists() and not force:
-                    console_manager.print_warning(f"    Skipped {output_filename} (already exists)")
-                    continue
+                    if typer.confirm(
+                        f"  Overwrite existing file '{output_path.relative_to(project_path)}'?", default=False
+                    ):
+                        file_tracker.track_file_modification(output_path)
+                    else:
+                        console_manager.print_warning(f"    Skipped {output_filename}")
+                        continue
+                else:
+                    file_tracker.track_file_creation(output_path)
 
                 # Write customized template
                 try:
                     output_path.write_text(customized_content, encoding="utf-8")
-                    file_tracker.track_file_creation(output_path)
-                    console_manager.print_success(f"    Created {output_filename}")
+                    if output_path in file_tracker.created_files:
+                        console_manager.print_success(f"    Created {output_filename}")
+                    else:
+                        console_manager.print_success(f"    Overwrote {output_filename}")
                 except Exception as e:
                     console_manager.print_error(f"    Failed to create {output_filename}: {e}")
 
     # Handle app-specific instructions
     ai_tools_names = [AI_TOOLS[tool]["name"] for tool in ai_tools if tool in AI_TOOLS]
-    console_manager.print_info(
-        f"App type '{app_type}' templates installed for: {', '.join(ai_tools_names)}"
-    )
+    console_manager.print_info(f"App type '{app_type}' templates installed for: {', '.join(ai_tools_names)}")
 
 
 def get_app_specific_instructions(app_type: str) -> str:

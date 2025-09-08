@@ -15,12 +15,7 @@ service registration and resolution.
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
-from .interfaces import (
-    CacheManagerProtocol,
-    FileTrackerProtocol,
-    GitHubDownloaderProtocol,
-    TemplateResolverProtocol,
-)
+from .interfaces import CacheManagerProtocol, FileTrackerProtocol, GitHubDownloaderProtocol, TemplateResolverProtocol
 
 T = TypeVar("T")
 
@@ -111,11 +106,7 @@ class ServiceContainer:
         Returns:
             True if interface is registered
         """
-        return (
-            interface in self._services
-            or interface in self._factories
-            or interface in self._singletons
-        )
+        return interface in self._services or interface in self._factories or interface in self._singletons
 
     def clear(self) -> None:
         """Clear all registered services."""

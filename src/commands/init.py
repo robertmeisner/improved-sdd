@@ -18,25 +18,19 @@ def init_command(
     project_name: str = typer.Argument(
         None, help="Name for your new project directory (optional, defaults to current directory)"
     ),
-    app_type: str = typer.Option(
-        None, "--app-type", help="App type to build: mcp-server, python-cli"
-    ),
+    app_type: str = typer.Option(None, "--app-type", help="App type to build: mcp-server, python-cli"),
     ai_tools: str = typer.Option(
         None,
         "--ai-tools",
         help="AI tools to generate templates for (comma-separated): github-copilot (others coming soon)",
     ),
-    ignore_agent_tools: bool = typer.Option(
-        False, "--ignore-agent-tools", help="Skip checks for AI agent tools"
-    ),
+    ignore_agent_tools: bool = typer.Option(False, "--ignore-agent-tools", help="Skip checks for AI agent tools"),
     here: bool = typer.Option(
         True,
         "--here/--new-dir",
         help="Install templates in current directory (default) or create new directory",
     ),
-    force: bool = typer.Option(
-        False, "--force", help="Overwrite existing files without asking for confirmation"
-    ),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing files without asking for confirmation"),
     offline: bool = typer.Option(
         False,
         "--offline",
@@ -69,11 +63,7 @@ def init_command(
     """
     from rich.console import Console
 
-    from ..utils import (
-        create_project_structure,
-        select_ai_tools,
-        select_app_type,
-    )
+    from ..utils import create_project_structure, select_ai_tools, select_app_type
 
     # Show banner first
     console_manager.show_banner()
@@ -100,25 +90,19 @@ def init_command(
         # Check if current directory has any files
         existing_items = list(project_path.iterdir())
         if existing_items:
-            console_manager.print_warning(
-                f"Installing templates in current directory: {project_path.name}"
-            )
-            console_manager.print_dim(
-                f"Found {len(existing_items)} existing items - templates will be added/merged"
-            )
+            console_manager.print_warning(f"Installing templates in current directory: {project_path.name}")
+            console_manager.print_dim(f"Found {len(existing_items)} existing items - templates will be added/merged")
     else:
-        project_path = Path(project_name).resolve()
+        project_path = Path.cwd() / project_name
         # Check if project directory already exists
-        if project_path.exists():
+        if project_path.exists() and not force:
             console_manager.print_error(f"Directory '{project_name}' already exists")
             raise typer.Exit(1)
 
     # App type selection
     if app_type:
         if app_type not in APP_TYPES:
-            console_manager.print_error(
-                f"Invalid app type '{app_type}'. Choose from: {', '.join(APP_TYPES.keys())}"
-            )
+            console_manager.print_error(f"Invalid app type '{app_type}'. Choose from: {', '.join(APP_TYPES.keys())}")
             raise typer.Exit(1)
         selected_app_type = app_type
     else:
@@ -195,9 +179,7 @@ def init_command(
 
     # Show file summary
     console_manager.print_newline()
-    console_manager.show_panel(
-        file_tracker.get_summary(), "[bold cyan]Files Summary[/bold cyan]", "cyan"
-    )
+    console_manager.show_panel(file_tracker.get_summary(), "[bold cyan]Files Summary[/bold cyan]", "cyan")
 
     # Next steps
     steps_lines = []
@@ -208,9 +190,7 @@ def init_command(
         steps_lines.append("1. Open VS Code in this directory")
         step_num = 2
 
-    steps_lines.append(
-        f"{step_num}. Use your selected AI assistant(s) with the installed templates:"
-    )
+    steps_lines.append(f"{step_num}. Use your selected AI assistant(s) with the installed templates:")
     for ai_tool in selected_ai_tools:
         if ai_tool in AI_TOOLS:
             tool_config = AI_TOOLS[ai_tool]
@@ -220,9 +200,7 @@ def init_command(
             else:
                 ai_dir = ai_tool.replace("-", "_")
                 template_path = f".github/{ai_dir}/"
-            steps_lines.append(
-                f"   • [bold]{tool_config['name']}[/bold]: Reference `{template_path}` templates"
-            )
+            steps_lines.append(f"   • [bold]{tool_config['name']}[/bold]: Reference `{template_path}` templates")
             ai_command = tool_config["keywords"].get("{AI_COMMAND}", "See instructions")
             steps_lines.append(f"     Command: {ai_command}")
 
@@ -230,9 +208,7 @@ def init_command(
         steps_lines.append(f"{step_num + 1}. Review MCP protocol documentation and examples")
         step_num += 1
     elif selected_app_type == "python-cli":
-        steps_lines.append(
-            f"{step_num + 1}. Review Python CLI development guide in AI-specific instructions"
-        )
+        steps_lines.append(f"{step_num + 1}. Review Python CLI development guide in AI-specific instructions")
         step_num += 1
 
     step_num += 1
@@ -240,9 +216,9 @@ def init_command(
 
     # Lazy import Panel when needed
     from rich.panel import Panel
-    steps_panel = Panel(
-        "\n".join(steps_lines), title="Next steps", border_style="cyan", padding=(1, 2)
-    )
+
+    steps_panel = Panel("\n".join(steps_lines), title="Next steps", border_style="cyan", padding=(1, 2))
     console = Console()
     console.print()
     console.print(steps_panel)
+    raise typer.Exit(0)
