@@ -3,6 +3,7 @@
 This module provides a centralized location for all configuration constants
 with a compatibility layer to ensure smooth migration from the monolithic CLI.
 """
+
 from dataclasses import dataclass
 from typing import Dict, List
 
@@ -10,7 +11,7 @@ from typing import Dict, List
 @dataclass
 class AIToolConfig:
     """Configuration for an AI tool including templates and keywords."""
-    
+
     name: str
     description: str
     template_dir: str
@@ -18,17 +19,17 @@ class AIToolConfig:
     keywords: Dict[str, str]
 
 
-@dataclass  
+@dataclass
 class AppTypeConfig:
     """Configuration for an application type."""
-    
+
     description: str
     instruction_files: List[str]
 
 
 class ConfigCompatibilityLayer:
     """Provides backward-compatible access to configuration during migration.
-    
+
     This class enables gradual migration by providing the same interface as the
     original constants while allowing for future enhancements and validation.
     """
@@ -63,7 +64,11 @@ class ConfigCompatibilityLayer:
                     "prompts": ".claude.md",
                     "commands": ".claude.md",
                 },
-                "keywords": {"{AI_ASSISTANT}": "Claude", "{AI_SHORTNAME}": "Claude", "{AI_COMMAND}": "Open Claude interface"},
+                "keywords": {
+                    "{AI_ASSISTANT}": "Claude",
+                    "{AI_SHORTNAME}": "Claude",
+                    "{AI_COMMAND}": "Open Claude interface",
+                },
             },
             "cursor": {
                 "name": "Cursor AI",
@@ -75,7 +80,11 @@ class ConfigCompatibilityLayer:
                     "prompts": ".cursor.md",
                     "commands": ".cursor.md",
                 },
-                "keywords": {"{AI_ASSISTANT}": "Cursor AI", "{AI_SHORTNAME}": "Cursor", "{AI_COMMAND}": "Ctrl+K or Ctrl+L"},
+                "keywords": {
+                    "{AI_ASSISTANT}": "Cursor AI",
+                    "{AI_SHORTNAME}": "Cursor",
+                    "{AI_COMMAND}": "Ctrl+K or Ctrl+L",
+                },
             },
             "gemini": {
                 "name": "Google Gemini",
@@ -103,7 +112,10 @@ class ConfigCompatibilityLayer:
             },
             "python-cli": {
                 "description": "Python CLI - Command-line application using typer and rich",
-                "instruction_files": ["sddPythonCliDev", "CLIPythonDev"],  # New naming, legacy naming
+                "instruction_files": [
+                    "sddPythonCliDev",
+                    "CLIPythonDev",
+                ],  # New naming, legacy naming
             },
         }
 
@@ -117,7 +129,9 @@ class ConfigCompatibilityLayer:
  |_| |_|  | |_|    |_|  \_\\____/   \/   |_____|_____/     |_____/|_____/|_____/
 """
 
-        self._tagline = "Spec-Driven Development for GitHub Copilot (soon more: Cursor, Claude, Gemini)"
+        self._tagline = (
+            "Spec-Driven Development for GitHub Copilot (soon more: Cursor, Claude, Gemini)"
+        )
 
     @property
     def AI_TOOLS(self) -> Dict[str, Dict]:
@@ -141,55 +155,54 @@ class ConfigCompatibilityLayer:
 
     def get_ai_tool_config(self, tool_id: str) -> AIToolConfig:
         """Get typed AI tool configuration.
-        
+
         Args:
             tool_id: ID of the AI tool
-            
+
         Returns:
             AIToolConfig instance
-            
+
         Raises:
             KeyError: If tool_id is not found
         """
         if tool_id not in self._ai_tools_data:
             raise KeyError(f"AI tool '{tool_id}' not found")
-        
+
         data = self._ai_tools_data[tool_id]
         return AIToolConfig(
             name=data["name"],
             description=data["description"],
             template_dir=data["template_dir"],
             file_extensions=data["file_extensions"].copy(),
-            keywords=data["keywords"].copy()
+            keywords=data["keywords"].copy(),
         )
 
     def get_app_type_config(self, app_type: str) -> AppTypeConfig:
         """Get typed app type configuration.
-        
+
         Args:
             app_type: ID of the app type
-            
+
         Returns:
             AppTypeConfig instance
-            
+
         Raises:
             KeyError: If app_type is not found
         """
         if app_type not in self._app_types_data:
             raise KeyError(f"App type '{app_type}' not found")
-        
+
         data = self._app_types_data[app_type]
         return AppTypeConfig(
-            description=data["description"],
-            instruction_files=data["instruction_files"].copy()
+            description=data["description"], instruction_files=data["instruction_files"].copy()
         )
 
     def validate_ai_tool_id(self, tool_id: str) -> bool:
         """Validate if an AI tool ID exists.
-        
+
         Args:
             tool_id: ID to validate
-            
+
         Returns:
             True if tool exists
         """
@@ -197,10 +210,10 @@ class ConfigCompatibilityLayer:
 
     def validate_app_type(self, app_type: str) -> bool:
         """Validate if an app type exists.
-        
+
         Args:
             app_type: App type to validate
-            
+
         Returns:
             True if app type exists
         """

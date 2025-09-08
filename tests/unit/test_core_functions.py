@@ -8,10 +8,10 @@ from unittest.mock import patch
 import pytest
 
 # Add src directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # Import after path modification - this avoids E402 since it's necessary
-from improved_sdd_cli import (  # noqa: E402
+from src import (  # noqa: E402
     FileTracker,
     check_github_copilot,
     check_tool,
@@ -157,10 +157,10 @@ Use {AI_SHORTNAME} with {AI_COMMAND} to get started.
     def test_get_template_filename_github_copilot(self):
         """Test generating template filename for GitHub Copilot."""
         filename = get_template_filename("specMode.md", "github-copilot", "chatmodes")
-        assert filename == "specMode.chatmode.md"
+        assert filename == "specMode.copilot.md"
 
         filename = get_template_filename("CLIPythonDev.md", "github-copilot", "instructions")
-        assert filename == "CLIPythonDev.instructions.md"
+        assert filename == "CLIPythonDev.copilot.md"
 
     def test_get_template_filename_claude(self):
         """Test generating template filename for Claude."""
@@ -179,11 +179,11 @@ Use {AI_SHORTNAME} with {AI_COMMAND} to get started.
         """Test generating template filename edge cases."""
         # File without extension
         filename = get_template_filename("noext", "github-copilot", "chatmodes")
-        assert filename == "noext.chatmode.md"
+        assert filename == "noext.copilot.md"
 
-        # Multiple dots in filename
+        # Multiple dots in filename  
         filename = get_template_filename("file.test.md", "github-copilot", "prompts")
-        assert filename == "file.prompt.md"
+        assert filename == "file.test.copilot.md"
 
 
 @pytest.mark.unit

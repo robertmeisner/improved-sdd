@@ -11,7 +11,8 @@ During migration, command handlers will be separated from main CLI file.
 # Module version for migration tracking
 __version__ = "0.1.0-migration"
 
-# Import order will be established as commands are extracted:
-# from .init import init_command
-# from .delete import delete_command
-# from .check import check_command
+from .check import check_command
+from .delete import delete_command
+
+# Import commands as they are extracted:
+from .init import init_command

@@ -12,11 +12,11 @@ from typing import Any, Dict, Optional
 
 class TemplateError(Exception):
     """Base exception for template-related operations with rich context preservation.
-    
+
     This is the root exception for all template-related errors in the improved-sdd CLI.
     It provides enhanced context preservation including operation details, file paths,
     timestamps, and additional metadata to aid in debugging and error reporting.
-    
+
     Attributes:
         operation: The operation being performed when error occurred
         file_path: Path to the file being processed (if applicable)
@@ -34,7 +34,7 @@ class TemplateError(Exception):
         original_error: Optional[Exception] = None,
     ):
         """Initialize TemplateError with rich context.
-        
+
         Args:
             message: Human-readable error message
             operation: Description of operation being performed
@@ -53,25 +53,25 @@ class TemplateError(Exception):
     def __str__(self) -> str:
         """Format error with context information."""
         parts = [super().__str__()]
-        
+
         if self.operation:
             parts.append(f"Operation: {self.operation}")
-        
+
         if self.file_path:
             parts.append(f"File: {self.file_path}")
-        
+
         if self.context:
             context_str = ", ".join(f"{k}={v}" for k, v in self.context.items())
             parts.append(f"Context: {context_str}")
-        
+
         if self.original_error:
             parts.append(f"Caused by: {type(self.original_error).__name__}: {self.original_error}")
-        
+
         return " | ".join(parts)
 
     def get_context_summary(self) -> Dict[str, Any]:
         """Get a summary of all context information.
-        
+
         Returns:
             Dictionary containing all context information
         """
@@ -90,7 +90,7 @@ class TemplateError(Exception):
 
 class NetworkError(TemplateError):
     """Exception for network-related errors during template operations.
-    
+
     This exception is raised for network connectivity issues, DNS resolution failures,
     connection timeouts, and other network-related problems during template downloads
     or GitHub API interactions.
@@ -107,7 +107,7 @@ class NetworkError(TemplateError):
         status_code: Optional[int] = None,
     ):
         """Initialize NetworkError with network-specific context.
-        
+
         Args:
             message: Human-readable error message
             operation: Description of network operation being performed
@@ -123,7 +123,7 @@ class NetworkError(TemplateError):
             enhanced_context["url"] = url
         if status_code:
             enhanced_context["status_code"] = status_code
-        
+
         super().__init__(
             message=message,
             operation=operation or "network operation",
@@ -137,7 +137,7 @@ class NetworkError(TemplateError):
 
 class GitHubAPIError(TemplateError):
     """Exception for GitHub API-specific errors.
-    
+
     This exception is raised for GitHub API authentication issues, rate limiting,
     repository access problems, and other GitHub-specific API errors.
     """
@@ -154,7 +154,7 @@ class GitHubAPIError(TemplateError):
         rate_limit_remaining: Optional[int] = None,
     ):
         """Initialize GitHubAPIError with GitHub-specific context.
-        
+
         Args:
             message: Human-readable error message
             status_code: HTTP status code from GitHub API
@@ -173,7 +173,7 @@ class GitHubAPIError(TemplateError):
             enhanced_context["api_endpoint"] = api_endpoint
         if rate_limit_remaining is not None:
             enhanced_context["rate_limit_remaining"] = rate_limit_remaining
-        
+
         super().__init__(
             message=message,
             operation=operation or "GitHub API operation",
@@ -188,7 +188,7 @@ class GitHubAPIError(TemplateError):
 
 class RateLimitError(GitHubAPIError):
     """Exception for GitHub API rate limit errors.
-    
+
     This exception is raised when the GitHub API rate limit is exceeded.
     It includes information about when the rate limit will reset.
     """
@@ -204,7 +204,7 @@ class RateLimitError(GitHubAPIError):
         rate_limit_reset: Optional[int] = None,
     ):
         """Initialize RateLimitError with rate limit specific context.
-        
+
         Args:
             retry_after: Seconds to wait before retrying
             operation: Description of operation that hit rate limit
@@ -222,7 +222,7 @@ class RateLimitError(GitHubAPIError):
             enhanced_context["rate_limit_reset_timestamp"] = rate_limit_reset
             reset_time = datetime.fromtimestamp(rate_limit_reset)
             enhanced_context["rate_limit_reset_time"] = reset_time.isoformat()
-        
+
         super().__init__(
             message="GitHub API rate limit exceeded",
             status_code=429,
@@ -238,7 +238,7 @@ class RateLimitError(GitHubAPIError):
 
 class TimeoutError(NetworkError):
     """Exception for timeout errors during network operations.
-    
+
     This exception is raised when network operations exceed their timeout limits,
     including connection timeouts and read timeouts.
     """
@@ -254,7 +254,7 @@ class TimeoutError(NetworkError):
         url: Optional[str] = None,
     ):
         """Initialize TimeoutError with timeout-specific context.
-        
+
         Args:
             message: Human-readable error message
             timeout_seconds: Timeout duration that was exceeded
@@ -268,7 +268,7 @@ class TimeoutError(NetworkError):
         enhanced_context = context or {}
         if timeout_seconds:
             enhanced_context["timeout_seconds"] = timeout_seconds
-        
+
         super().__init__(
             message=message,
             operation=operation or "network operation with timeout",
@@ -282,7 +282,7 @@ class TimeoutError(NetworkError):
 
 class ValidationError(TemplateError):
     """Exception for template validation errors.
-    
+
     This exception is raised when template content, structure, or metadata
     fails validation checks.
     """
@@ -299,7 +299,7 @@ class ValidationError(TemplateError):
         original_error: Optional[Exception] = None,
     ):
         """Initialize ValidationError with validation-specific context.
-        
+
         Args:
             message: Human-readable error message
             validation_type: Type of validation that failed
@@ -318,7 +318,7 @@ class ValidationError(TemplateError):
             enhanced_context["expected_value"] = str(expected_value)
         if actual_value is not None:
             enhanced_context["actual_value"] = str(actual_value)
-        
+
         super().__init__(
             message=message,
             operation=operation or "template validation",
@@ -343,7 +343,7 @@ class ValidationError(TemplateError):
 # Backwards compatibility exports (maintain exact same names)
 __all__ = [
     "TemplateError",
-    "NetworkError", 
+    "NetworkError",
     "GitHubAPIError",
     "RateLimitError",
     "TimeoutError",

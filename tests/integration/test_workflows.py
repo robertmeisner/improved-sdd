@@ -10,9 +10,9 @@ import pytest
 from typer.testing import CliRunner
 
 # Add src directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from improved_sdd_cli import FileTracker, app, create_project_structure
+from src import app, FileTracker, create_project_structure
 
 
 @pytest.mark.integration

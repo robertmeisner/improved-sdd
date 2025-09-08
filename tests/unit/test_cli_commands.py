@@ -12,13 +12,11 @@ import pytest
 from typer.testing import CliRunner
 
 # Add src directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from improved_sdd_cli import (
-    AI_TOOLS,
-    APP_TYPES,
-    FileTracker,
-    app,
+from src import app, FileTracker
+from src.core.config import AI_TOOLS, APP_TYPES
+from src.utils import (
     create_project_structure,
     customize_template_content,
     get_template_filename,
@@ -50,9 +48,9 @@ class TestCLICommands:
         assert "init" in result.output.lower()
         assert "project" in result.output.lower()
 
-    @patch("src.improved_sdd_cli.select_ai_tools")
-    @patch("src.improved_sdd_cli.select_app_type")
-    @patch("src.improved_sdd_cli.create_project_structure")
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
     def test_init_command_new_project(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command creating new project."""
         # Setup mocks
@@ -72,9 +70,9 @@ class TestCLICommands:
                 assert call_args[1]["app_type"] == "mcp-server"
                 assert call_args[1]["ai_tools"] == ["github-copilot"]
 
-    @patch("src.improved_sdd_cli.select_ai_tools")
-    @patch("src.improved_sdd_cli.select_app_type")
-    @patch("src.improved_sdd_cli.create_project_structure")
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
     def test_init_command_here_mode(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with --here flag."""
         # Setup mocks
@@ -89,9 +87,9 @@ class TestCLICommands:
                 assert result.exit_code == 0
                 mock_create_project.assert_called_once()
 
-    @patch("src.improved_sdd_cli.select_ai_tools")
-    @patch("src.improved_sdd_cli.select_app_type")
-    @patch("src.improved_sdd_cli.create_project_structure")
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
     def test_init_command_with_force_flag(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with --force flag."""
         # Setup mocks
@@ -116,9 +114,9 @@ class TestCLICommands:
         assert result.exit_code != 0
         assert "cannot use" in result.output.lower() or "error" in result.output.lower()
 
-    @patch("src.improved_sdd_cli.select_ai_tools")
-    @patch("src.improved_sdd_cli.select_app_type")
-    @patch("src.improved_sdd_cli.create_project_structure")
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
     def test_init_command_template_options(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with template-related options."""
         # Setup mocks
@@ -136,7 +134,7 @@ class TestCLICommands:
             assert call_args[1]["offline"] == True
             assert call_args[1]["template_repo"] == "custom/repo"
 
-    @patch("src.improved_sdd_cli.create_project_structure")
+    @patch("src.utils.create_project_structure")
     def test_init_command_template_creation_error(self, mock_create_project):
         """Test init command when template creation fails."""
         # Setup mock to raise exception
@@ -154,7 +152,7 @@ class TestCLICommands:
         assert result.exit_code == 0
         assert "improved-sdd" in result.output.lower()
 
-    @patch("src.improved_sdd_cli.check_tool")
+    @patch("src.utils.check_tool")
     def test_check_tools_command(self, mock_check_tool):
         """Test check-tools command."""
         # Setup mock to return tool availability
@@ -165,7 +163,7 @@ class TestCLICommands:
         assert result.exit_code == 0
         assert "tool" in result.output.lower()
 
-    @patch("src.improved_sdd_cli.TemplateResolver")
+    @patch("src.services.template_resolver.TemplateResolver")
     def test_init_command_file_tracking(self, mock_resolver_class):
         """Test that file creation and modification tracking works."""
         # Setup complex mock for TemplateResolver
@@ -223,9 +221,9 @@ class TestCLICommands:
         result = self.runner.invoke(app, ["init", "test-project", "--ai-tools", "invalid-tool"])
         assert result.exit_code != 0
 
-    @patch("src.improved_sdd_cli.select_ai_tools")
-    @patch("src.improved_sdd_cli.select_app_type")
-    @patch("src.improved_sdd_cli.create_project_structure")
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
     def test_init_command_user_interaction_simulation(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with simulated user interaction."""
         # Setup mocks

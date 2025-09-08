@@ -10,10 +10,10 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Add src directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # Import after path modification
-from improved_sdd_cli import CacheManager  # noqa: E402
+from src import CacheManager  # noqa: E402
 
 
 @pytest.mark.unit

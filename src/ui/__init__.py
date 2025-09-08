@@ -11,6 +11,8 @@ During migration, UI components will be abstracted from business logic.
 # Module version for migration tracking
 __version__ = "0.1.0-migration"
 
-# Import order will be established as UI components are extracted:
-# from .console import ConsoleManager, console_manager
-# from .progress import ProgressTracker
+# Import console management components
+from .console import ConsoleManager, console_manager
+
+# Import progress tracking components
+from .progress import ProgressTracker, progress_tracker

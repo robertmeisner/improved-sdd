@@ -3,6 +3,7 @@
 This module contains all the dataclasses and enums used throughout the CLI
 for representing template sources, progress information, and resolution results.
 """
+
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path

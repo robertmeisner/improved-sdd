@@ -14,32 +14,25 @@ __version__ = "0.1.0-migration"
 
 # Import configuration (available after Task 2.1)
 from .config import (
-    AIToolConfig,
-    AppTypeConfig,
-    ConfigCompatibilityLayer,
-    config,
     AI_TOOLS,
     APP_TYPES,
     BANNER,
     TAGLINE,
+    AIToolConfig,
+    AppTypeConfig,
+    ConfigCompatibilityLayer,
+    config,
 )
+from .container import ServiceContainer, container
 
 # Import exceptions (available after Task 2.2)
 from .exceptions import (
-    TemplateError,
-    NetworkError,
     GitHubAPIError,
+    NetworkError,
     RateLimitError,
+    TemplateError,
     TimeoutError,
     ValidationError,
-)
-
-# Import models and enums (available after Task 1.3)
-from .models import (
-    ProgressInfo,
-    TemplateResolutionResult,
-    TemplateSource,
-    TemplateSourceType,
 )
 
 # Import protocols and container (available after Task 1.2)
@@ -52,7 +45,14 @@ from .interfaces import (
     ServiceContainerProtocol,
     TemplateResolverProtocol,
 )
-from .container import ServiceContainer, container
+
+# Import models and enums (available after Task 1.3)
+from .models import (
+    ProgressInfo,
+    TemplateResolutionResult,
+    TemplateSource,
+    TemplateSourceType,
+)
 
 # Import order for future modules:
 # All modules have been imported
@@ -64,24 +64,24 @@ __all__ = [
     "ConfigCompatibilityLayer",
     "config",
     "AI_TOOLS",
-    "APP_TYPES", 
+    "APP_TYPES",
     "BANNER",
     "TAGLINE",
     # Exceptions
     "TemplateError",
     "NetworkError",
-    "GitHubAPIError", 
+    "GitHubAPIError",
     "RateLimitError",
     "TimeoutError",
     "ValidationError",
     # Models and enums
     "ProgressInfo",
-    "TemplateResolutionResult", 
+    "TemplateResolutionResult",
     "TemplateSource",
     "TemplateSourceType",
     # Protocols
     "CacheManagerProtocol",
-    "ConsoleProtocol", 
+    "ConsoleProtocol",
     "FileTrackerProtocol",
     "GitHubDownloaderProtocol",
     "ProgressTrackerProtocol",

@@ -1,0 +1,21 @@
+{
+  "timestamp": 1757280720.9834974,
+  "cli_path": "C:\\Users\\Robert\\Documents\\Projects\\improved-sdd\\src\\improved_sdd_cli.py",
+  "python_version": "3.13.5 | packaged by Anaconda, Inc. | (main, Jun 12 2025, 16:37:03) [MSC v.1929 64 bit (AMD64)]",
+  "startup_time": {
+    "mean": 0.2686073600023519,
+    "median": 0.2649251999973785,
+    "min": 0.25160300004063174,
+    "max": 0.2956034999806434,
+    "std_dev": 0.015896165496227403,
+    "runs": 10
+  },
+  "import_time": {
+    "mean": 0.26189553999574855,
+    "median": 0.25894714999594726,
+    "min": 0.24989589996403083,
+    "max": 0.28627540002344176,
+    "std_dev": 0.012280303950062353,
+    "runs": 10
+  }
+}
