@@ -9,7 +9,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
@@ -75,9 +75,7 @@ class TestCommandIntegration:
         # Change to the temporary directory
         os.chdir(temp_project_dir)
 
-        with patch(
-            "src.utils.TemplateResolver.resolve_templates_with_transparency"
-        ) as mock_resolve:
+        with patch("src.utils.TemplateResolver.resolve_templates_with_transparency") as mock_resolve:
             # Setup mocks
             mock_resolve.return_value = TemplateResolutionResult(
                 source=mock_template_source,
@@ -87,9 +85,7 @@ class TestCommandIntegration:
             )
 
             # Run init command
-            result = runner.invoke(
-                app, ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--here"]
-            )
+            result = runner.invoke(app, ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--here"])
 
             assert result.exit_code == 0
 
@@ -104,9 +100,7 @@ class TestCommandIntegration:
         # Change to the temporary directory
         os.chdir(temp_project_dir)
 
-        with patch(
-            "src.utils.TemplateResolver.resolve_templates_with_transparency"
-        ) as mock_resolve:
+        with patch("src.utils.TemplateResolver.resolve_templates_with_transparency") as mock_resolve:
             # Setup mocks
             mock_resolve.return_value = TemplateResolutionResult(
                 source=mock_template_source,
@@ -154,9 +148,7 @@ class TestCommandIntegration:
         existing_file.parent.mkdir()
         existing_file.write_text("existing content")
 
-        with patch(
-            "src.utils.TemplateResolver.resolve_templates_with_transparency"
-        ) as mock_resolve:
+        with patch("src.utils.TemplateResolver.resolve_templates_with_transparency") as mock_resolve:
             # Setup mocks
             mock_resolve.return_value = TemplateResolutionResult(
                 source=mock_template_source,
@@ -341,9 +333,7 @@ class TestCommandIntegration:
         os.chdir(temp_project_dir)
 
         # Test init with template resolution failure
-        with patch(
-            "src.utils.TemplateResolver.resolve_templates_with_transparency"
-        ) as mock_resolve:
+        with patch("src.utils.TemplateResolver.resolve_templates_with_transparency") as mock_resolve:
             mock_resolve.side_effect = Exception("Template resolution failed")
 
             result = runner.invoke(app, ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot"])
@@ -356,7 +346,6 @@ class TestCommandIntegration:
     async def test_async_service_integration(self, mock_template_source, temp_project_dir):
         """Test integration with async services like GitHubDownloader."""
 
-        from src.core.interfaces import CacheManagerProtocol, FileTrackerProtocol, GitHubDownloaderProtocol
         from src.services.github_downloader import GitHubDownloader
         from src.utils import TemplateResolver
 
@@ -410,9 +399,7 @@ class TestCommandIntegration:
         # Change to the temporary directory
         os.chdir(temp_project_dir)
 
-        with patch(
-            "src.utils.TemplateResolver"
-        ) as mock_resolver_class:
+        with patch("src.utils.TemplateResolver") as mock_resolver_class:
             # Setup mocks
             mock_resolver_instance = mock_resolver_class.return_value
             mock_resolver_instance.resolve_templates_with_transparency.return_value = TemplateResolutionResult(
@@ -429,12 +416,7 @@ class TestCommandIntegration:
 
             assert result.exit_code == 0
             # Verify offline mode was passed to resolver
-            mock_resolver_class.assert_called_with(
-                Path.cwd(),
-                offline=True,
-                force_download=False,
-                template_repo=None
-            )
+            mock_resolver_class.assert_called_with(Path.cwd(), offline=True, force_download=False, template_repo=None)
 
     def test_force_download_integration(self, runner, temp_project_dir, mock_template_source):
         """Test init command force download integration."""
@@ -442,9 +424,7 @@ class TestCommandIntegration:
         # Change to the temporary directory
         os.chdir(temp_project_dir)
 
-        with patch(
-            "src.utils.TemplateResolver"
-        ) as mock_resolver_class:
+        with patch("src.utils.TemplateResolver") as mock_resolver_class:
             # Setup mocks
             mock_resolver_instance = mock_resolver_class.return_value
             mock_resolver_instance.resolve_templates_with_transparency.return_value = TemplateResolutionResult(
@@ -470,9 +450,4 @@ class TestCommandIntegration:
 
             assert result.exit_code == 0
             # Verify force download was passed to resolver
-            mock_resolver_class.assert_called_with(
-                Path.cwd(),
-                offline=False,
-                force_download=True,
-                template_repo=None
-            )
+            mock_resolver_class.assert_called_with(Path.cwd(), offline=False, force_download=True, template_repo=None)

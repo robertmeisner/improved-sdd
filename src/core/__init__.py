@@ -13,27 +13,11 @@ During migration, this module will be gradually populated with extracted code.
 __version__ = "0.1.0-migration"
 
 # Import configuration (available after Task 2.1)
-from .config import (
-    AI_TOOLS,
-    APP_TYPES,
-    BANNER,
-    TAGLINE,
-    AIToolConfig,
-    AppTypeConfig,
-    ConfigCompatibilityLayer,
-    config,
-)
+from .config import AI_TOOLS, APP_TYPES, BANNER, TAGLINE, AIToolConfig, AppTypeConfig, ConfigCompatibilityLayer, config
 from .container import ServiceContainer, container
 
 # Import exceptions (available after Task 2.2)
-from .exceptions import (
-    GitHubAPIError,
-    NetworkError,
-    RateLimitError,
-    TemplateError,
-    TimeoutError,
-    ValidationError,
-)
+from .exceptions import GitHubAPIError, NetworkError, RateLimitError, TemplateError, TimeoutError, ValidationError
 
 # Import protocols and container (available after Task 1.2)
 from .interfaces import (

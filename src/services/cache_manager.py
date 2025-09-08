@@ -131,7 +131,8 @@ class CacheManager(CacheManagerProtocol):
 
                 console = Console()
                 console.print(
-                    f"[cyan]🧩 Cleaned up {cleaned_count} orphaned cache director{'y' if cleaned_count == 1 else 'ies'}[/cyan]"
+                    f"[cyan]🧩 Cleaned up {cleaned_count} orphaned cache "
+                    f"director{'y' if cleaned_count == 1 else 'ies'}[/cyan]"
                 )
 
         except Exception as e:

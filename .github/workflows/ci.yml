@@ -182,14 +182,15 @@ jobs:
 
     - name: Test CLI check command (Unix)
       if: runner.os != 'Windows'
+      env:
+        CI: true
       run: |
-        echo "y" | python src/improved_sdd_cli.py check || echo "Check command completed"
+        python src/improved_sdd_cli.py check
 
     - name: Test CLI check command (Windows)
       if: runner.os == 'Windows'
       shell: powershell
+      env:
+        CI: true
       run: |
-        # Use PowerShell here-string to provide input
-        $input = "y"
-        $input | python src/improved_sdd_cli.py check
-        if ($LASTEXITCODE -ne 0) { Write-Host "Check command completed" }
+        python src/improved_sdd_cli.py check

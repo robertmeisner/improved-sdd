@@ -12,8 +12,8 @@ from typer.testing import CliRunner
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.services.file_tracker import FileTracker
 from src.improved_sdd_cli import app
+from src.services.file_tracker import FileTracker
 from src.utils import create_project_structure
 
 
@@ -85,7 +85,13 @@ class TestCompleteWorkflows:
     @patch("typer.confirm")
     @patch("src.improved_sdd_cli.console_manager.show_banner")
     def test_init_then_delete_workflow(
-        self, mock_banner, mock_confirm, runner: CliRunner, temp_dir: Path, mock_script_location, mock_templates_dir: Path
+        self,
+        mock_banner,
+        mock_confirm,
+        runner: CliRunner,
+        temp_dir: Path,
+        mock_script_location,
+        mock_templates_dir: Path,
     ):
         """Test init followed by delete workflow."""
         # First, initialize project
@@ -117,7 +123,9 @@ class TestCompleteWorkflows:
         assert not chatmodes_file.exists()
 
     @patch("src.improved_sdd_cli.console_manager.show_banner")
-    def test_multiple_ai_tools_workflow(self, mock_banner, runner: CliRunner, temp_dir: Path, mock_script_location, mock_templates_dir: Path):
+    def test_multiple_ai_tools_workflow(
+        self, mock_banner, runner: CliRunner, temp_dir: Path, mock_script_location, mock_templates_dir: Path
+    ):
         """Test workflow with multiple AI tools."""
         with patch("pathlib.Path.cwd", return_value=temp_dir):
             with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
@@ -139,7 +147,13 @@ class TestCompleteWorkflows:
     @patch("typer.confirm")
     @patch("src.improved_sdd_cli.console_manager.show_banner")
     def test_overwrite_existing_files_workflow(
-        self, mock_banner, mock_confirm, runner: CliRunner, project_with_existing_files: Path, mock_script_location, mock_templates_dir: Path
+        self,
+        mock_banner,
+        mock_confirm,
+        runner: CliRunner,
+        project_with_existing_files: Path,
+        mock_script_location,
+        mock_templates_dir: Path,
     ):
         """Test workflow when overwriting existing files."""
         mock_confirm.return_value = True  # User confirms overwrite
@@ -312,7 +326,9 @@ class TestTemplateDownloadIntegration:
 
         # Create specific files expected by the CLI
         (local_templates / "chatmodes" / "sddSpecDriven.chatmode.md").write_text("# Local Spec Mode for {AI_ASSISTANT}")
-        (local_templates / "instructions" / "sddPythonCliDev.instructions.md").write_text("# Local Python CLI Dev for {AI_ASSISTANT}")
+        (local_templates / "instructions" / "sddPythonCliDev.instructions.md").write_text(
+            "# Local Python CLI Dev for {AI_ASSISTANT}"
+        )
 
         with patch("pathlib.Path.cwd", return_value=temp_dir):
             result = runner.invoke(
@@ -341,9 +357,12 @@ class TestTemplateDownloadIntegration:
 
         # Mock bundled templates to simulate proper CLI installation
         workspace_templates = Path.cwd() / ".sdd_templates"
-        
+
         with patch("pathlib.Path.cwd", return_value=temp_dir):
-            with patch("src.services.template_resolver.TemplateResolver.get_bundled_templates_path", return_value=workspace_templates):
+            with patch(
+                "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+                return_value=workspace_templates,
+            ):
                 result = runner.invoke(
                     app,
                     ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--force"],
@@ -359,12 +378,15 @@ class TestTemplateDownloadIntegration:
     def test_offline_mode_workflow(self, mock_banner, runner: CliRunner, temp_dir: Path):
         """Test complete offline mode workflow."""
         # Test offline mode flag
-        
+
         # Mock bundled templates to simulate proper CLI installation
         workspace_templates = Path.cwd() / ".sdd_templates"
-        
+
         with patch("pathlib.Path.cwd", return_value=temp_dir):
-            with patch("src.services.template_resolver.TemplateResolver.get_bundled_templates_path", return_value=workspace_templates):
+            with patch(
+                "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+                return_value=workspace_templates,
+            ):
                 result = runner.invoke(
                     app,
                     ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--offline", "--force"],

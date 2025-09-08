@@ -1,6 +1,5 @@
 """Test configuration and fixtures for improved-sdd CLI tests."""
 
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Generator
@@ -102,7 +101,6 @@ def mock_script_location(temp_dir: Path, mock_templates_dir: Path):
 
     # Rather than mock Path, let's just patch the specific location where templates_source is set
     # In create_project_structure function
-    original_source = mock_templates_dir  # This will be our fake templates directory
 
     # We'll use this in the integration tests by manually patching where needed
     yield script_file

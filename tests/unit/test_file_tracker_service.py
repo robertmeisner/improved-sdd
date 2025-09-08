@@ -3,6 +3,7 @@
 Tests the extracted FileTracker service to ensure it works correctly
 in isolation and implements the FileTrackerProtocol properly.
 """
+
 import os
 import sys
 from pathlib import Path

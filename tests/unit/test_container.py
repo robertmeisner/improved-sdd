@@ -1,4 +1,5 @@
 """Tests for the dependency injection container."""
+
 import tempfile
 from pathlib import Path
 from typing import Protocol

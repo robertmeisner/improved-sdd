@@ -104,7 +104,7 @@ class TestCLICommands:
 
             # Verify force flag was passed
             call_args = mock_create_project.call_args
-            assert call_args[0][4] == True  # force is the 5th positional argument
+            assert call_args[0][4] is True  # force is the 5th positional argument
 
     def test_init_command_conflicting_options(self):
         """Test init command with conflicting --offline and --force-download."""
@@ -124,7 +124,20 @@ class TestCLICommands:
         mock_create_project.return_value = None
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = self.runner.invoke(app, ["init", "test-project", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--offline", "--template-repo", "custom/repo"])
+            result = self.runner.invoke(
+                app,
+                [
+                    "init",
+                    "test-project",
+                    "--app-type",
+                    "python-cli",
+                    "--ai-tools",
+                    "github-copilot",
+                    "--offline",
+                    "--template-repo",
+                    "custom/repo",
+                ],
+            )
 
             assert result.exit_code == 0
 
@@ -133,7 +146,7 @@ class TestCLICommands:
 
             # Verify template options were passed
             call_args = mock_create_project.call_args
-            assert call_args[0][5] == True  # offline is the 6th positional argument
+            assert call_args[0][5] is True  # offline is the 6th positional argument
             assert call_args[0][7] == "custom/repo"  # template_repo is the 8th positional argument
 
     @patch("src.utils.select_ai_tools")
@@ -158,6 +171,7 @@ class TestCLICommands:
     @patch("src.utils.check_tool")
     def test_check_command(self, mock_check_tool, mock_check_copilot, mock_offer_choice):
         """Test check command."""
+
         # Setup mocks with proper return values
         def check_tool_side_effect(tool, *args, **kwargs):
             return True  # All tools available
@@ -181,7 +195,9 @@ class TestCLICommands:
         mock_select_app.return_value = "python-cli"
         mock_create_project.return_value = None
 
-        result = self.runner.invoke(app, ["init", "test-project", "--app-type", "python-cli", "--ai-tools", "github-copilot"])
+        result = self.runner.invoke(
+            app, ["init", "test-project", "--app-type", "python-cli", "--ai-tools", "github-copilot"]
+        )
 
         assert result.exit_code == 0
         mock_create_project.assert_called_once()
@@ -318,7 +334,9 @@ class TestCLICommands:
         assert result.exit_code == 0
         # Verify force=True was passed as the 5th positional argument
         args, kwargs = mock_create_structure.call_args
-        assert len(args) == 8  # project_path, app_type, ai_tools, file_tracker, force, offline, force_download, template_repo
+        assert (
+            len(args) == 8
+        )  # project_path, app_type, ai_tools, file_tracker, force, offline, force_download, template_repo
         assert args[4] is True  # force parameter is the 5th positional argument
 
 
@@ -411,10 +429,9 @@ class TestCheckCommand:
     @patch("src.utils.check_tool")
     @patch("src.utils.check_github_copilot")
     @patch("src.ui.console_manager.show_banner")
-    def test_check_all_tools_available(
-        self, mock_banner, mock_check_copilot, mock_check_tool, runner: CliRunner
-    ):
+    def test_check_all_tools_available(self, mock_banner, mock_check_copilot, mock_check_tool, runner: CliRunner):
         """Test check when all tools are available."""
+
         def check_tool_side_effect(tool, *args, **kwargs):
             return True  # All tools available
 
@@ -429,9 +446,7 @@ class TestCheckCommand:
     @patch("src.utils.check_tool")
     @patch("src.utils.check_github_copilot")
     @patch("src.ui.console_manager.show_banner")
-    def test_check_python_missing(
-        self, mock_banner, mock_check_copilot, mock_check_tool, runner: CliRunner
-    ):
+    def test_check_python_missing(self, mock_banner, mock_check_copilot, mock_check_tool, runner: CliRunner):
         """Test check when Python is missing."""
 
         def check_tool_side_effect(tool, hint, optional=False):
