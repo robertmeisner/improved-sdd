@@ -92,8 +92,9 @@ class TestTemplateResolver:
         (bundled_dir / "instructions").mkdir()
         (bundled_dir / "prompts").mkdir()
 
-        with patch.object(resolver, "get_local_templates_path", return_value=None), patch.object(
-            resolver, "get_bundled_templates_path", return_value=bundled_dir
+        with (
+            patch.object(resolver, "get_local_templates_path", return_value=None),
+            patch.object(resolver, "get_bundled_templates_path", return_value=bundled_dir),
         ):
             result = resolver.resolve_templates_with_transparency()
             assert result.success is True
@@ -104,9 +105,11 @@ class TestTemplateResolver:
         """Test resolve_templates_with_transparency when all sources fail."""
         resolver = TemplateResolver(project_path=temp_dir)
 
-        with patch.object(resolver, "get_local_templates_path", return_value=None), patch.object(
-            resolver, "get_bundled_templates_path", return_value=None
-        ), patch.object(resolver, "_attempt_github_download") as mock_download:
+        with (
+            patch.object(resolver, "get_local_templates_path", return_value=None),
+            patch.object(resolver, "get_bundled_templates_path", return_value=None),
+            patch.object(resolver, "_attempt_github_download") as mock_download,
+        ):
             mock_download.return_value = TemplateResolutionResult(
                 source=None, success=False, message="All sources failed", fallback_attempted=True
             )

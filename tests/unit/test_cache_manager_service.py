@@ -5,7 +5,6 @@ and cross-platform process checking functionality.
 """
 
 import os
-import platform
 import shutil
 import subprocess
 import sys
@@ -13,12 +12,10 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-from src.services.cache_manager import CacheManager
+from src.services.cache_manager import CacheManager  # noqa: E402
 
 
 class TestCacheManager:

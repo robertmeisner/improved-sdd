@@ -6,7 +6,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
@@ -14,17 +14,7 @@ from typer.testing import CliRunner
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.core.config import AI_TOOLS, APP_TYPES
-from src.improved_sdd_cli import app
-from src.services.file_tracker import FileTracker
-from src.utils import (
-    check_tool,
-    create_project_structure,
-    customize_template_content,
-    get_template_filename,
-    select_ai_tools,
-    select_app_type,
-)
+from src.improved_sdd_cli import app  # noqa: E402
 
 
 class TestCLICommands:
@@ -123,7 +113,7 @@ class TestCLICommands:
         mock_select_app.return_value = "python-cli"
         mock_create_project.return_value = None
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory():
             result = self.runner.invoke(
                 app,
                 [

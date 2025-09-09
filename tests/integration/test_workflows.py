@@ -1,10 +1,9 @@
 """Integration tests for improved-sdd CLI workflows."""
 
 import os
-import shutil
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
@@ -12,9 +11,9 @@ from typer.testing import CliRunner
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.improved_sdd_cli import app
-from src.services.file_tracker import FileTracker
-from src.utils import create_project_structure
+from src.improved_sdd_cli import app  # noqa: E402
+from src.services.file_tracker import FileTracker  # noqa: E402
+from src.utils import create_project_structure  # noqa: E402
 
 
 @pytest.mark.integration

@@ -30,7 +30,7 @@ def _get_panel():
 
 
 class TemplateResolver:
-    """Handles template resolution with priority-based system: 
+    """Handles template resolution with priority-based system:
     local .sdd_templates > bundled templates > GitHub download."""
 
     def __init__(

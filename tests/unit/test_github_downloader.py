@@ -1,6 +1,5 @@
 """Tests for the GitHubDownloader service module."""
 
-import asyncio
 import tempfile
 import zipfile
 from pathlib import Path

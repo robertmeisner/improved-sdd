@@ -8,13 +8,11 @@ import os
 import sys
 from pathlib import Path
 
-import pytest
-
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-from src.core.interfaces import FileTrackerProtocol
-from src.services.file_tracker import FileTracker
+from src.core.interfaces import FileTrackerProtocol  # noqa: E402
+from src.services.file_tracker import FileTracker  # noqa: E402
 
 
 class TestFileTracker:

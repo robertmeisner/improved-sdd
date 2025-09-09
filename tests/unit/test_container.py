@@ -2,8 +2,6 @@
 
 import tempfile
 from pathlib import Path
-from typing import Protocol
-from unittest.mock import Mock
 
 import pytest
 
@@ -12,7 +10,6 @@ from src.core.interfaces import (
     CacheManagerProtocol,
     FileTrackerProtocol,
     GitHubDownloaderProtocol,
-    TemplateResolverProtocol,
 )
 
 

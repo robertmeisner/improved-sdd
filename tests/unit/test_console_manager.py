@@ -3,8 +3,6 @@
 from io import StringIO
 from unittest.mock import Mock, call, patch
 
-import pytest
-
 from src.ui.console import ConsoleManager
 
 

@@ -7,11 +7,8 @@ This module tests the core layer components including:
 - Basic validation and integration
 """
 
-import json
-import tempfile
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -484,12 +481,8 @@ class TestCoreLayerIntegration:
             APP_TYPES,
             BANNER,
             TAGLINE,
-            GitHubAPIError,
-            NetworkError,
             ProgressInfo,
             TemplateError,
-            TemplateSource,
-            TemplateSourceType,
             config,
         )
 

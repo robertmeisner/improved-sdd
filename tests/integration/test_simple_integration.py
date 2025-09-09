@@ -11,8 +11,8 @@ from typer.testing import CliRunner
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from src.improved_sdd_cli import app
-from src.services.file_tracker import FileTracker
+from src.improved_sdd_cli import app  # noqa: E402
+from src.services.file_tracker import FileTracker  # noqa: E402
 
 
 @pytest.mark.integration
@@ -111,8 +111,6 @@ class TestBasicIntegration:
 
     def test_app_banner_group(self, runner: CliRunner):
         """Test that the app uses the custom banner group."""
-        from src.improved_sdd_cli import BannerGroup
-
         # The app should have the custom group class
         # We can test this by checking if the app has the expected behavior
         # rather than checking the internal class directly

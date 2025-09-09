@@ -17,10 +17,10 @@ from typer.testing import CliRunner
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-from src.core.models import TemplateResolutionResult, TemplateSource, TemplateSourceType
-from src.improved_sdd_cli import app
-from src.services.cache_manager import CacheManager
-from src.services.file_tracker import FileTracker
+from src.core.models import TemplateResolutionResult, TemplateSource, TemplateSourceType  # noqa: E402
+from src.improved_sdd_cli import app  # noqa: E402
+from src.services.cache_manager import CacheManager  # noqa: E402
+from src.services.file_tracker import FileTracker  # noqa: E402
 
 # Get the app instance from the module for the tests
 
