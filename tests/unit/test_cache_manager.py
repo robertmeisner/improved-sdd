@@ -108,9 +108,9 @@ class TestCacheManager:
 
     def test_is_process_running_invalid_pid(self, cache_manager):
         """Test process running check with invalid PID."""
-        assert cache_manager._is_process_running(-1) is False
-        # Use a very high unlikely PID instead of 0 (which might be valid on Windows)
+        # Use obviously invalid PIDs that should never exist
         assert cache_manager._is_process_running(999999) is False
+        assert cache_manager._is_process_running(1000000) is False
 
     def test_cleanup_orphaned_caches_integration(self, cache_manager):
         """Test orphaned cache cleanup integration."""

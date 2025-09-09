@@ -227,10 +227,10 @@ class TemplateResolver:
             self._show_offline_instructions()
         except TimeoutError as e:
             _get_console().print(f"[yellow]⚠ Download timeout: {e}[/yellow]")
-            _get_console().print("[cyan]💡 Try again with a better internet connection[/cyan]")
+            _get_console().print("[cyan]Tip: Try again with a better internet connection[/cyan]")
         except ValidationError as e:
             _get_console().print(f"[yellow]⚠ Template validation failed: {e}[/yellow]")
-            _get_console().print("[cyan]💡 The downloaded templates may be corrupted or invalid[/cyan]")
+            _get_console().print("[cyan]Tip: The downloaded templates may be corrupted or invalid[/cyan]")
         except Exception as e:
             _get_console().print(f"[red]✗ Unexpected error during GitHub download: {e}[/red]")
 
@@ -317,7 +317,7 @@ class TemplateResolver:
         )
 
         _get_console().print(
-            _get_panel()(offline_instructions, title="💡 Offline Mode", border_style="cyan", padding=(1, 2))
+            _get_panel()(offline_instructions, title="Offline Mode", border_style="cyan", padding=(1, 2))
         )
 
     def _show_manual_setup_instructions(self) -> None:

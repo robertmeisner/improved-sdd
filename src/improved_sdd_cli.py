@@ -59,7 +59,7 @@ class BannerGroup(TyperGroup):
 
         # Add tip after the help content
         formatter.write("\n")
-        formatter.write("💡 Tip: Use 'COMMAND --help' for detailed options and examples.\n")
+        formatter.write("Tip: Use 'COMMAND --help' for detailed options and examples.\n")
         formatter.write("   Example: improved-sdd init --help\n")
         formatter.write("\n")
 

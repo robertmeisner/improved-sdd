@@ -433,14 +433,25 @@ class TestCheckCommand:
         assert result.exit_code == 0
         assert "All AI assistant tools are available" in result.stdout
 
-    @patch("src.utils.check_tool")
-    @patch("src.utils.check_github_copilot")
+    @patch("src.utils.os.getenv")
+    @patch("src.commands.check.check_tool")
+    @patch("src.commands.check.check_github_copilot")
     @patch("src.ui.console_manager.show_banner")
-    def test_check_python_missing(self, mock_banner, mock_check_copilot, mock_check_tool, runner: CliRunner):
+    def test_check_python_missing(
+        self, mock_banner, mock_check_copilot, mock_check_tool, mock_getenv, runner: CliRunner
+    ):
         """Test check when Python is missing."""
 
+        # Mock os.getenv to return None for CI checks but handle specific calls
+        def getenv_side_effect(key, default=None):
+            if key in ["CI", "GITHUB_ACTIONS"]:
+                return None  # Not in CI mode
+            return default
+
+        mock_getenv.side_effect = getenv_side_effect
+
         def check_tool_side_effect(tool, hint, optional=False):
-            return tool != "python"
+            return tool != "python"  # False for python (not found), True for others
 
         mock_check_tool.side_effect = check_tool_side_effect
         mock_check_copilot.return_value = True
@@ -450,14 +461,24 @@ class TestCheckCommand:
         assert result.exit_code == 1
         assert "Python is required" in result.stdout or "python" in result.stdout.lower()
 
-    @patch("src.utils.offer_user_choice")
-    @patch("src.utils.check_tool")
-    @patch("src.utils.check_github_copilot")
+    @patch("os.getenv")
+    @patch("src.commands.check.offer_user_choice")
+    @patch("src.commands.check.check_tool")
+    @patch("src.commands.check.check_github_copilot")
     @patch("src.ui.console_manager.show_banner")
     def test_check_optional_tools_missing_user_declines(
-        self, mock_banner, mock_check_copilot, mock_check_tool, mock_offer_choice, runner: CliRunner
+        self, mock_banner, mock_check_copilot, mock_check_tool, mock_offer_choice, mock_getenv, runner: CliRunner
     ):
         """Test check when optional tools are missing and user declines."""
+
+        # Mock os.getenv to return None for CI checks
+        def getenv_side_effect(key, default=None):
+            if key in ["CI", "GITHUB_ACTIONS"]:
+                return None  # Not in CI mode
+            return default
+
+        mock_getenv.side_effect = getenv_side_effect
+
         mock_check_tool.return_value = True  # Python available
         mock_check_copilot.return_value = False  # VS Code/Copilot missing
         mock_offer_choice.return_value = False  # User declines to continue

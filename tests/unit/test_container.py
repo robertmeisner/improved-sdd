@@ -6,11 +6,7 @@ from pathlib import Path
 import pytest
 
 from src.core.container import ServiceContainer, container
-from src.core.interfaces import (
-    CacheManagerProtocol,
-    FileTrackerProtocol,
-    GitHubDownloaderProtocol,
-)
+from src.core.interfaces import CacheManagerProtocol, FileTrackerProtocol, GitHubDownloaderProtocol
 
 
 class TestServiceContainer:

@@ -476,15 +476,7 @@ class TestCoreLayerIntegration:
     def test_all_core_imports_work(self):
         """Test that all core components can be imported together."""
         # This test ensures no circular import issues
-        from src.core import (
-            AI_TOOLS,
-            APP_TYPES,
-            BANNER,
-            TAGLINE,
-            ProgressInfo,
-            TemplateError,
-            config,
-        )
+        from src.core import AI_TOOLS, APP_TYPES, BANNER, TAGLINE, ProgressInfo, TemplateError, config
 
         # Basic functionality check
         assert config is not None

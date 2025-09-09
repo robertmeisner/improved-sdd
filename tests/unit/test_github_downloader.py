@@ -372,14 +372,14 @@ class TestGitHubDownloader:
         malicious_zip = temp_dir / "malicious.zip"
         with zipfile.ZipFile(malicious_zip, "w") as zip_file:
             # Try to write outside target directory
-            zip_file.writestr("../../../etc/passwd", "malicious content")
+            zip_file.writestr("../../../malicious_file_outside_target.txt", "malicious content")
             zip_file.writestr("improved-sdd-main/sdd_templates/chatmodes/safe.md", "safe content")
 
         extracted_files = downloader._extract_with_protection(malicious_zip, temp_dir)
 
         # Verify malicious file was not extracted outside target directory
-        passwd_file = temp_dir.parent.parent.parent / "etc" / "passwd"
-        assert not passwd_file.exists()
+        malicious_file = temp_dir.parent.parent.parent / "malicious_file_outside_target.txt"
+        assert not malicious_file.exists()
 
         # Verify safe files were extracted
         assert any("safe.md" in str(f) for f in extracted_files)
