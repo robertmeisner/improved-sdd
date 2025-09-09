@@ -29,7 +29,10 @@ class TestCompleteWorkflows:
         project_path = temp_dir / project_name
 
         with patch("pathlib.Path.cwd", return_value=temp_dir):
-            with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+            with patch(
+                "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+                return_value=mock_templates_dir,
+            ):
                 result = runner.invoke(
                     app,
                     [
@@ -71,7 +74,10 @@ class TestCompleteWorkflows:
         mock_input.side_effect = ["1", "1"]
 
         with patch("pathlib.Path.cwd", return_value=temp_dir):
-            with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+            with patch(
+                "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+                return_value=mock_templates_dir,
+            ):
                 result = runner.invoke(app, ["init", "--force"])
 
         assert result.exit_code == 0
@@ -95,7 +101,10 @@ class TestCompleteWorkflows:
         """Test init followed by delete workflow."""
         # First, initialize project
         with patch("pathlib.Path.cwd", return_value=temp_dir):
-            with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+            with patch(
+                "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+                return_value=mock_templates_dir,
+            ):
                 init_result = runner.invoke(
                     app, ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--force"]
                 )
@@ -127,7 +136,10 @@ class TestCompleteWorkflows:
     ):
         """Test workflow with multiple AI tools."""
         with patch("pathlib.Path.cwd", return_value=temp_dir):
-            with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+            with patch(
+                "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+                return_value=mock_templates_dir,
+            ):
                 result = runner.invoke(
                     app, ["init", "--app-type", "mcp-server", "--ai-tools", "github-copilot,claude", "--force"]
                 )
@@ -141,7 +153,7 @@ class TestCompleteWorkflows:
         assert (github_dir / "chatmodes" / "sddSpecDriven.chatmode.md").exists()
 
         # Claude files (in claude subdirectory)
-        assert (github_dir / "claude" / "chatmodes" / "sddSpecDriven.claude.md").exists()
+        assert (github_dir / "claude" / "chatmodes" / "sddSpecDriven.chatmode.claude.md").exists()
 
     @patch("typer.confirm")
     @patch("src.improved_sdd_cli.console_manager.show_banner")
@@ -158,7 +170,10 @@ class TestCompleteWorkflows:
         mock_confirm.return_value = True  # User confirms overwrite
 
         with patch("pathlib.Path.cwd", return_value=project_with_existing_files):
-            with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+            with patch(
+                "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+                return_value=mock_templates_dir,
+            ):
                 result = runner.invoke(app, ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot"])
 
         assert result.exit_code == 0
@@ -173,7 +188,10 @@ class TestProjectStructureCreation:
         """Test creating project structure for Python CLI."""
         file_tracker = FileTracker()
 
-        with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+        with patch(
+            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+            return_value=mock_templates_dir,
+        ):
             create_project_structure(temp_project_dir, "python-cli", ["github-copilot"], file_tracker, force=True)
 
         # Verify correct instruction file was used
@@ -190,7 +208,10 @@ class TestProjectStructureCreation:
         """Test creating project structure for MCP server."""
         file_tracker = FileTracker()
 
-        with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+        with patch(
+            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+            return_value=mock_templates_dir,
+        ):
             create_project_structure(temp_project_dir, "mcp-server", ["github-copilot"], file_tracker, force=True)
 
         # Verify correct instruction file was used
@@ -207,7 +228,10 @@ class TestProjectStructureCreation:
         """Test that templates are properly customized for AI tools."""
         file_tracker = FileTracker()
 
-        with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+        with patch(
+            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+            return_value=mock_templates_dir,
+        ):
             create_project_structure(temp_project_dir, "python-cli", ["github-copilot"], file_tracker, force=True)
 
         # Check that template content was customized
@@ -224,7 +248,10 @@ class TestProjectStructureCreation:
         """Test creating structure for multiple AI tools."""
         file_tracker = FileTracker()
 
-        with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+        with patch(
+            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+            return_value=mock_templates_dir,
+        ):
             create_project_structure(
                 temp_project_dir, "python-cli", ["github-copilot", "claude"], file_tracker, force=True
             )
@@ -236,7 +263,7 @@ class TestProjectStructureCreation:
         assert "GitHub Copilot" in copilot_content
 
         # Check Claude files (claude subdirectory)
-        claude_file = temp_project_dir / ".github" / "claude" / "chatmodes" / "sddSpecDriven.claude.md"
+        claude_file = temp_project_dir / ".github" / "claude" / "chatmodes" / "sddSpecDriven.chatmode.claude.md"
         assert claude_file.exists()
         claude_content = claude_file.read_text()
         assert "Claude" in claude_content
@@ -249,7 +276,10 @@ class TestProjectStructureCreation:
         mock_confirm.return_value = False  # User declines to overwrite
         file_tracker = FileTracker()
 
-        with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=mock_templates_dir):
+        with patch(
+            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
+            return_value=mock_templates_dir,
+        ):
             create_project_structure(
                 project_with_existing_files, "python-cli", ["github-copilot"], file_tracker, force=False
             )
@@ -294,7 +324,9 @@ class TestFullSystemIntegration:
         # Mock script location to point to non-existent templates
         non_existent = temp_dir / "non-existent"
 
-        with patch("src.utils.TemplateResolver.get_bundled_templates_path", return_value=non_existent):
+        with patch(
+            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path", return_value=non_existent
+        ):
             with patch("pathlib.Path.cwd", return_value=temp_dir):
                 result = runner.invoke(
                     app, ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--force"]
@@ -350,17 +382,16 @@ class TestTemplateDownloadIntegration:
         assert "Using local templates" in result.stdout
 
     @patch("src.improved_sdd_cli.console_manager.show_banner")
-    def test_template_download_when_no_local_templates(self, mock_banner, runner: CliRunner, temp_dir: Path):
+    def test_template_download_when_no_local_templates(
+        self, mock_banner, runner: CliRunner, temp_dir: Path, mock_templates_dir: Path
+    ):
         """Test template download workflow when no local templates exist."""
         # Don't create any local templates - should trigger download or bundled fallback
-
-        # Mock bundled templates to simulate proper CLI installation
-        workspace_templates = Path.cwd() / ".sdd_templates"
 
         with patch("pathlib.Path.cwd", return_value=temp_dir):
             with patch(
                 "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
-                return_value=workspace_templates,
+                return_value=mock_templates_dir,
             ):
                 result = runner.invoke(
                     app,
@@ -374,17 +405,14 @@ class TestTemplateDownloadIntegration:
         # The exact behavior depends on network connectivity and bundled templates availability
 
     @patch("src.improved_sdd_cli.console_manager.show_banner")
-    def test_offline_mode_workflow(self, mock_banner, runner: CliRunner, temp_dir: Path):
+    def test_offline_mode_workflow(self, mock_banner, runner: CliRunner, temp_dir: Path, mock_templates_dir: Path):
         """Test complete offline mode workflow."""
         # Test offline mode flag
-
-        # Mock bundled templates to simulate proper CLI installation
-        workspace_templates = Path.cwd() / ".sdd_templates"
 
         with patch("pathlib.Path.cwd", return_value=temp_dir):
             with patch(
                 "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
-                return_value=workspace_templates,
+                return_value=mock_templates_dir,
             ):
                 result = runner.invoke(
                     app,
