@@ -1,5 +1,5 @@
 ---
-mode: agent
+mode: sddTesting
 ---
 
 # Spec Re-evaluation and Synchronization Request
