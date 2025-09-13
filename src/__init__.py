@@ -18,6 +18,7 @@ from .utils import (
     create_project_structure,
     customize_template_content,
     get_template_filename,
+    load_gitlab_flow_file,
     offer_user_choice,
 )
 
@@ -35,6 +36,7 @@ __all__ = [
     "check_tool",
     "customize_template_content",
     "get_template_filename",
+    "load_gitlab_flow_file",
     "offer_user_choice",
     "create_project_structure",
 ]

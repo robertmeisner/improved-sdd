@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "improved-sdd"
 version = "0.1.3"
-description = "Setup tool for Improved Spec-Driven Development projects with AI assistant templates"
+description = "Setup tool for Improved Spec-Driven Development projects with AI assistant templates and GitLab Flow integration"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
-keywords = ["spec-driven-development", "ai", "github-copilot", "templates", "cli", "development-tools"]
+keywords = ["spec-driven-development", "ai", "github-copilot", "templates", "cli", "development-tools", "gitlab-flow", "git-workflow"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

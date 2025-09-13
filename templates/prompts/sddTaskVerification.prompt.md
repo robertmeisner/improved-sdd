@@ -1,6 +1,3 @@
----
-mode: agent
----
 # Task Verification & Enhancement Framework
 
 ## Verification Protocol

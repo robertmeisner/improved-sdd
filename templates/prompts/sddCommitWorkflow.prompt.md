@@ -1,6 +1,3 @@
----
-mode: agent
----
 # Project-Wide Commit Analysis & Execution Framework
 
 ## EXECUTION PROTOCOL - Follow These Steps Precisely

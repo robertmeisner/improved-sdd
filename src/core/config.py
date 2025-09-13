@@ -4,8 +4,10 @@ This module provides a centralized location for all configuration constants
 with a compatibility layer to ensure smooth migration from the monolithic CLI.
 """
 
+import os
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -132,6 +134,48 @@ class ConfigCompatibilityLayer:
             },
         }
 
+        # Define GitLab Flow configuration following AI tools pattern
+        self._gitlab_flow_config = {
+            "name": "GitLab Flow Integration",
+            "description": "GitLab Flow workflow guidance with platform-specific git commands",
+            "template_dir": "gitlab-flow",
+            "enabled": False,  # Default disabled, enabled via CLI flag
+            "template_files": {
+                "setup": "gitlab-flow-setup.md",
+                "commit": "gitlab-flow-commit.md",
+                "pr": "gitlab-flow-pr.md",
+            },
+            "keywords": {
+                "{GITLAB_FLOW_SETUP}": "gitlab-flow-setup.md",
+                "{GITLAB_FLOW_COMMIT}": "gitlab-flow-commit.md",
+                "{GITLAB_FLOW_PR}": "gitlab-flow-pr.md",
+            },
+            "platform_commands": {
+                "windows": {
+                    "GIT_STATUS": "git status",
+                    "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
+                    "COMMIT": 'git add . ; git commit -m "{message}"',
+                    "PUSH_PR": 'git push -u origin feature/spec-{spec-name} ; gh pr create --title "Spec: {spec-name}" --body "Implementation of {spec-name} specification"',
+                    "AUTO_COMMIT": 'git add . ; git commit -m "{commit-message}"',
+                },
+                "unix": {
+                    "GIT_STATUS": "git status",
+                    "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
+                    "COMMIT": 'git add . && git commit -m "{message}"',
+                    "PUSH_PR": 'git push -u origin feature/spec-{spec-name} && gh pr create --title "Spec: {spec-name}" --body "Implementation of {spec-name} specification"',
+                    "AUTO_COMMIT": 'git add . && git commit -m "{commit-message}"',
+                },
+            },
+            "commit_types": {
+                "feat": "New feature implementation",
+                "docs": "Documentation updates",
+                "test": "Test implementation",
+                "fix": "Bug fix",
+                "refactor": "Code refactoring",
+                "style": "Code style improvements",
+            },
+        }
+
         # Define banner and tagline
         self._banner = r"""
 . _   __  __ _____ _____    _____       _______ _____        _____ _____  _____
@@ -183,6 +227,16 @@ class ConfigCompatibilityLayer:
     def DEFAULT_GITHUB_BRANCH(self) -> str:
         """Get default GitHub branch for templates."""
         return self._github_config["default_branch"]
+
+    @property
+    def GITLAB_FLOW_CONFIG(self) -> Dict[str, Any]:
+        """Get GitLab Flow configuration following AI tools pattern."""
+        return self._gitlab_flow_config.copy()
+
+    def get_gitlab_flow_config(self) -> Dict[str, Any]:
+        """Get GitLab Flow configuration with current state."""
+        config = self._gitlab_flow_config.copy()
+        return config
 
     @property
     def FALLBACK_GITHUB_BRANCHES(self) -> List[str]:
@@ -286,6 +340,56 @@ class ConfigCompatibilityLayer:
         if not repo or not isinstance(repo, str):
             return False
         return "/" in repo and len(repo.split("/")) == 2 and all(part.strip() for part in repo.split("/"))
+
+    def get_gitlab_flow_keywords(
+        self, enabled: bool = False, platform: str = "windows", template_dir: str = ""
+    ) -> Dict[str, str]:
+        """Get GitLab Flow keywords with content loaded from markdown files.
+
+        Args:
+            enabled: Whether GitLab Flow is enabled
+            platform: Target platform (windows/unix) for command syntax
+            template_dir: Base template directory path
+
+        Returns:
+            Dict mapping GitLab Flow keywords to their content
+        """
+        if not enabled:
+            # Return empty content for all GitLab Flow keywords when disabled
+            return {keyword: "" for keyword in self._gitlab_flow_config["keywords"].keys()}
+
+        # Detect platform if not specified
+        if platform == "auto":
+            platform = "windows" if os.name == "nt" else "unix"
+
+        # Get platform-specific commands
+        commands = self._gitlab_flow_config["platform_commands"].get(
+            platform, self._gitlab_flow_config["platform_commands"]["windows"]
+        )
+
+        # Load markdown content and replace platform-specific placeholders
+        keywords = {}
+        for keyword, filename in self._gitlab_flow_config["keywords"].items():
+            file_path = Path(template_dir) / "gitlab-flow" / filename if template_dir else None
+
+            if file_path and file_path.exists():
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+
+                    # Replace platform-specific command placeholders
+                    for cmd_key, cmd_value in commands.items():
+                        content = content.replace(f"{{{cmd_key}}}", cmd_value)
+
+                    keywords[keyword] = content
+                except (IOError, OSError) as e:
+                    # Graceful fallback for file reading errors
+                    keywords[keyword] = f"<!-- GitLab Flow file error: {filename} - {str(e)} -->"
+            else:
+                # Graceful fallback for missing files
+                keywords[keyword] = f"<!-- GitLab Flow file not found: {filename} -->"
+
+        return keywords
 
 
 # Global configuration instance for CLI application

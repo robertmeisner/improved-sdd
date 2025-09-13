@@ -1,6 +1,3 @@
----
-mode: agent
----
 # Single File/Class Verification & Enhancement Framework
 
 ## Verification Protocol
