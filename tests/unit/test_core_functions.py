@@ -368,9 +368,11 @@ class TestGitLabFlowConfig:
             # Don't create any GitLab Flow files - test missing file handling
             keywords = config.get_gitlab_flow_keywords(enabled=True, template_dir=temp_dir)
 
-            # Should return fallback comments for missing files
+            # Should return enhanced fallback comments for missing files
             for keyword in keywords.values():
-                assert "GitLab Flow file not found" in keyword
+                assert "GitLab Flow Template Missing" in keyword
+                assert "template not found" in keyword
+                assert "Troubleshooting:" in keyword
 
     def test_get_gitlab_flow_keywords_file_read_error(self):
         """Test graceful handling of file read errors."""
@@ -385,8 +387,161 @@ class TestGitLabFlowConfig:
             with patch("builtins.open", side_effect=PermissionError("Access denied")):
                 keywords = config.get_gitlab_flow_keywords(enabled=True, template_dir=temp_dir)
 
-                # Should return error fallback
-                assert "GitLab Flow file error" in keywords["{GITLAB_FLOW_SETUP}"]
+                # Should return enhanced error fallback
+                assert "GitLab Flow Template Error" in keywords["{GITLAB_FLOW_SETUP}"]
+                assert "Error loading GitLab Flow template" in keywords["{GITLAB_FLOW_SETUP}"]
+                assert "Troubleshooting:" in keywords["{GITLAB_FLOW_SETUP}"]
+
+    def test_validate_gitlab_flow_templates_valid_directory(self):
+        """Test template validation with valid directory and files."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create GitLab Flow directory and files
+            gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
+            gitlab_flow_dir.mkdir()
+            
+            # Create all expected template files (based on actual mapping)
+            (gitlab_flow_dir / "gitlab-flow-setup.md").write_text("Setup content")
+            (gitlab_flow_dir / "gitlab-flow-commit.md").write_text("Commit content")
+            (gitlab_flow_dir / "gitlab-flow-pr.md").write_text("PR content")
+            
+            # Should pass validation
+            result = config.validate_gitlab_flow_templates(temp_dir)
+            assert result["valid"] is True
+            assert len(result["existing_files"]) == 3
+            assert len(result["missing_files"]) == 0
+
+    def test_validate_gitlab_flow_templates_missing_directory(self):
+        """Test template validation with missing gitlab-flow directory."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Don't create gitlab-flow directory
+            result = config.validate_gitlab_flow_templates(temp_dir)
+            
+            assert result["valid"] is False
+            assert len(result["missing_files"]) > 0
+            assert any("gitlab-flow" in rec for rec in result["recommendations"])
+
+    def test_validate_gitlab_flow_templates_missing_files(self):
+        """Test template validation with missing template files."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create GitLab Flow directory but not all files
+            gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
+            gitlab_flow_dir.mkdir()
+            
+            # Only create some files
+            (gitlab_flow_dir / "gitlab-flow-setup.md").write_text("Setup content")
+            # Missing: commit, pr files
+            
+            result = config.validate_gitlab_flow_templates(temp_dir)
+            
+            assert result["valid"] is False
+            assert len(result["missing_files"]) == 2  # missing 2 files
+            assert len(result["existing_files"]) == 1  # setup file exists
+            
+            # Check that missing files include the expected ones
+            missing_filenames = [f["filename"] for f in result["missing_files"]]
+            assert "gitlab-flow-commit.md" in missing_filenames
+            assert "gitlab-flow-pr.md" in missing_filenames
+
+    def test_validate_gitlab_flow_templates_empty_files(self):
+        """Test template validation with empty template files."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create GitLab Flow directory and empty files
+            gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
+            gitlab_flow_dir.mkdir()
+            
+            # Create all files but make some empty
+            (gitlab_flow_dir / "gitlab-flow-setup.md").write_text("")
+            (gitlab_flow_dir / "gitlab-flow-commit.md").write_text("")
+            (gitlab_flow_dir / "gitlab-flow-pr.md").write_text("PR content")  # One valid
+            
+            result = config.validate_gitlab_flow_templates(temp_dir)
+            
+            # All files exist, so validation should pass structurally
+            # The function checks existence, not content
+            assert result["valid"] is True
+            assert len(result["existing_files"]) == 3
+            assert len(result["missing_files"]) == 0
+            
+            # Check file sizes - empty files should have 0 bytes
+            file_sizes = {f["filename"]: f["size_bytes"] for f in result["existing_files"]}
+            assert file_sizes["gitlab-flow-setup.md"] == 0
+            assert file_sizes["gitlab-flow-commit.md"] == 0
+            assert file_sizes["gitlab-flow-pr.md"] > 0  # Has content
+
+    def test_validate_gitlab_flow_templates_permission_error(self):
+        """Test template validation with permission errors."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create GitLab Flow directory
+            gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
+            gitlab_flow_dir.mkdir()
+            (gitlab_flow_dir / "gitlab-flow-setup.md").write_text("Content")
+            
+            # The function currently doesn't handle permission errors
+            # This test verifies the current behavior - error propagation
+            with patch("pathlib.Path.exists", side_effect=PermissionError("Access denied")):
+                with pytest.raises(PermissionError):
+                    config.validate_gitlab_flow_templates(temp_dir)
+
+    def test_gitlab_flow_template_caching(self):
+        """Test GitLab Flow template caching mechanism."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create GitLab Flow directory and files
+            gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
+            gitlab_flow_dir.mkdir()
+            (gitlab_flow_dir / "gitlab-flow-setup.md").write_text("Setup content")
+            (gitlab_flow_dir / "gitlab-flow-commit.md").write_text("Commit content")
+            (gitlab_flow_dir / "gitlab-flow-pr.md").write_text("PR content")
+            
+            # Clear any existing cache
+            config._gitlab_flow_cache = {
+                "last_template_dir": "",
+                "cached_content": {},
+                "cache_valid": False
+            }
+            
+            # First call should cache the content
+            keywords1 = config.get_gitlab_flow_keywords(enabled=True, template_dir=temp_dir)
+            
+            # Verify cache is populated
+            assert config._gitlab_flow_cache["cache_valid"] is True
+            assert config._gitlab_flow_cache["last_template_dir"] == temp_dir
+            # Cache stores content by platform-specific key
+            assert len(config._gitlab_flow_cache["cached_content"]) == 1
+            
+            # Second call should use cache (modify file to test cache)
+            (gitlab_flow_dir / "gitlab-flow-setup.md").write_text("Modified content")
+            keywords2 = config.get_gitlab_flow_keywords(enabled=True, template_dir=temp_dir)
+            
+            # Should be same content from cache (not modified file)
+            assert keywords1["{GITLAB_FLOW_SETUP}"] == keywords2["{GITLAB_FLOW_SETUP}"]
+            assert "Setup content" in keywords2["{GITLAB_FLOW_SETUP}"]
+            assert "Modified content" not in keywords2["{GITLAB_FLOW_SETUP}"]
+
+    def test_gitlab_flow_cache_invalidation(self):
+        """Test GitLab Flow cache invalidation when template directory changes."""
+        with tempfile.TemporaryDirectory() as temp_dir1, tempfile.TemporaryDirectory() as temp_dir2:
+            # Setup first directory
+            gitlab_flow_dir1 = Path(temp_dir1) / "gitlab-flow"
+            gitlab_flow_dir1.mkdir()
+            (gitlab_flow_dir1 / "gitlab-flow-setup.md").write_text("Content 1")
+            (gitlab_flow_dir1 / "gitlab-flow-commit.md").write_text("Content 1")
+            (gitlab_flow_dir1 / "gitlab-flow-pr.md").write_text("Content 1")
+            
+            # Setup second directory with different content
+            gitlab_flow_dir2 = Path(temp_dir2) / "gitlab-flow"
+            gitlab_flow_dir2.mkdir()
+            (gitlab_flow_dir2 / "gitlab-flow-setup.md").write_text("Content 2")
+            (gitlab_flow_dir2 / "gitlab-flow-commit.md").write_text("Content 2")
+            (gitlab_flow_dir2 / "gitlab-flow-pr.md").write_text("Content 2")
+            
+            # Get keywords from first directory
+            keywords1 = config.get_gitlab_flow_keywords(enabled=True, template_dir=temp_dir1)
+            assert "Content 1" in keywords1["{GITLAB_FLOW_SETUP}"]
+            
+            # Get keywords from second directory (should invalidate cache)
+            keywords2 = config.get_gitlab_flow_keywords(enabled=True, template_dir=temp_dir2)
+            assert "Content 2" in keywords2["{GITLAB_FLOW_SETUP}"]
+            assert "Content 1" not in keywords2["{GITLAB_FLOW_SETUP}"]
 
     def test_gitlab_flow_config_structure(self):
         """Test GitLab Flow configuration structure follows expected pattern."""
