@@ -20,7 +20,7 @@ Use these conventional commit message formats for consistency:
 feat: Add feasibility assessment for {feature-name}
 
 - Assess technical requirements and complexity
-- Identify potential risks and mitigation strategies  
+- Identify potential risks and mitigation strategies
 - Estimate effort and resources needed
 - Document recommendation and next steps
 ```

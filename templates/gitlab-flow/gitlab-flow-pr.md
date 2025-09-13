@@ -8,7 +8,7 @@ Before creating a pull request, ensure you have completed:
 
 **✅ Specification Complete**:
 - [ ] Feasibility assessment approved
-- [ ] Requirements document approved  
+- [ ] Requirements document approved
 - [ ] Design document approved
 - [ ] Implementation tasks approved
 
@@ -55,7 +55,7 @@ Brief summary of the feature specification and implementation.
 ## Testing Coverage
 
 - [ ] Unit tests implemented
-- [ ] Integration tests added  
+- [ ] Integration tests added
 - [ ] Edge cases covered
 - [ ] Performance requirements met
 
