@@ -234,7 +234,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
         Returns:
             Path to downloaded temporary file
         """
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             # Use the streaming response directly from client.stream
             async with client.stream("GET", archive_url) as response:
                 # Response.status_code is expected to be an int by tests/mocks
@@ -338,7 +338,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                     raise TemplateError("ZIP file is empty")
 
                 # Check for templates folder
-                templates_prefix = f"{self.repo_name}-{self.branch}/sdd_templates/"
+                templates_prefix = f"{self.repo_name}-{self.branch}/{DOWNLOAD_TEMPLATES_DIR}/"
                 template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 if not template_files:
