@@ -13,6 +13,7 @@ import typer
 
 # Import configuration and UI components
 from .core import AI_TOOLS, APP_TYPES
+from .core.models import MergedTemplateSource
 from .services import FileTracker, TemplateResolver
 from .ui import console_manager
 
@@ -280,6 +281,76 @@ def get_template_filename(original_name: str, ai_tool: str, template_type: str) 
     return f"{base_name}{extension}"
 
 
+def _process_template_file(
+    template_file_path: Path,
+    template_type: str,
+    target_dir: Path,
+    app_type: str,
+    ai_tool: str,
+    file_tracker: FileTracker,
+    force: bool,
+    source_label: str,
+) -> bool:
+    """Process a single template file for installation.
+
+    Args:
+        template_file_path: Path to the template file to process
+        template_type: Type of template (e.g., 'prompts', 'chatmodes')
+        target_dir: Target directory for installation
+        app_type: Application type for filtering instructions
+        ai_tool: AI tool being configured
+        file_tracker: FileTracker instance for tracking changes
+        force: Whether to overwrite existing files
+        source_label: Label indicating source (e.g., 'local', 'downloaded')
+
+    Returns:
+        True if file was processed successfully, False if skipped
+    """
+    # For 'instructions', only install if it matches the app_type
+    if template_type == "instructions":
+        allowed_instructions = APP_TYPES.get(app_type, {}).get("instructions", [])
+        if template_file_path.name not in allowed_instructions:
+            return False  # Skip this instruction file
+
+    # Read template content
+    try:
+        content = template_file_path.read_text(encoding="utf-8")
+    except Exception as e:
+        console_manager.print_error(f"    Failed to read {template_file_path.name}: {e}")
+        return False
+
+    # Customize content for this AI tool
+    customized_content = customize_template_content(content, ai_tool)
+
+    # Generate AI-specific filename
+    output_filename = get_template_filename(template_file_path.name, ai_tool, template_type)
+    output_path = target_dir / output_filename
+
+    # Check if file exists and handle force flag
+    if output_path.exists() and not force:
+        if typer.confirm(
+            f"  Overwrite existing file '{output_path.relative_to(target_dir.parent.parent)}'?", default=False
+        ):
+            file_tracker.track_file_modification(output_path)
+        else:
+            console_manager.print_warning(f"    Skipped {output_filename} (from {source_label})")
+            return False
+    else:
+        file_tracker.track_file_creation(output_path)
+
+    # Write customized template
+    try:
+        output_path.write_text(customized_content, encoding="utf-8")
+        if output_path in file_tracker.created_files:
+            console_manager.print_success(f"    Created {output_filename} (from {source_label})")
+        else:
+            console_manager.print_success(f"    Updated {output_filename} (from {source_label})")
+        return True
+    except Exception as e:
+        console_manager.print_error(f"    Failed to write {output_filename}: {e}")
+        return False
+
+
 def create_project_structure(
     project_path: Path,
     app_type: str,
@@ -320,18 +391,21 @@ def create_project_structure(
         )
         raise typer.Exit(1)
 
-    templates_source = resolution_result.source.path
-
-    # Verify template source is accessible
-    if not templates_source.exists():
-        console_manager.print_error(f"Template source not accessible: {templates_source}")
-        raise typer.Exit(1)
-
-    # Show additional resolution context for transparency
-    if resolution_result.fallback_attempted:
-        console_manager.print_info(f"Templates found: {resolution_result.source.source_type.value}")
-        console_manager.print_dim(f"Source: {templates_source}")
+    # Handle different source types
+    if resolution_result.is_merged:
+        # Merged source - need to handle multiple paths
+        merged_source = resolution_result.source
+        console_manager.print_info(f"Templates found: {merged_source}")
     else:
+        # Single source (local, bundled, or github)
+        templates_source = resolution_result.source.path
+
+        # Verify template source is accessible
+        if not templates_source.exists():
+            console_manager.print_error(f"Template source not accessible: {templates_source}")
+            raise typer.Exit(1)
+
+        # Show additional resolution context for transparency
         console_manager.print_info(f"Templates found: {resolution_result.source.source_type.value}")
         console_manager.print_dim(f"Source: {templates_source}")
 
@@ -349,64 +423,98 @@ def create_project_structure(
         template_types = ["chatmodes", "instructions", "prompts", "commands"]
 
         for template_type in template_types:
-            template_dir = templates_source / template_type
-            if not template_dir.exists():
-                console_manager.print_warning(f"  No {template_type} templates found")
-                continue
+            # Determine template source for this type - now with file-level granularity
+            if resolution_result.is_merged:
+                merged_source = resolution_result.source
+                template_dir = None
+                source_label = "merged"
 
-            target_dir = target_base_dir / template_type
-            target_dir.mkdir(parents=True, exist_ok=True)
+                # For merged sources, we need to handle file-by-file installation
+                # We'll collect files from both sources as needed
+                if template_type in merged_source.local_files or template_type in merged_source.downloaded_files:
+                    # This template type has files available - we'll handle them individually
+                    target_dir = target_base_dir / template_type
+                    target_dir.mkdir(parents=True, exist_ok=True)
 
-            # Process all .md files in the template directory
-            template_files = list(template_dir.glob("*.md"))
-            if not template_files:
-                console_manager.print_warning(f"  No {template_type} template files found")
-                continue
+                    # Get all available files for this template type
+                    all_available_files = merged_source.get_all_available_files()
+                    available_files_for_type = all_available_files.get(template_type, set())
 
-            console_manager.print_info(f"  Installing {len(template_files)} {template_type} template(s)...")
+                    if not available_files_for_type:
+                        console_manager.print_warning(f"  No {template_type} template files found")
+                        continue
 
-            for template_file in template_files:
-                # For 'instructions', only install if it matches the app_type
-                if template_type == "instructions":
-                    allowed_instructions = APP_TYPES.get(app_type, {}).get("instructions", [])
-                    if template_file.name not in allowed_instructions:
-                        continue  # Skip this instruction file
+                    console_manager.print_info(
+                        f"  Installing {len(available_files_for_type)} {template_type} template(s) from merged sources..."
+                    )
 
-                # Read template content
-                try:
-                    content = template_file.read_text(encoding="utf-8")
-                except Exception as e:
-                    console_manager.print_error(f"    Failed to read {template_file.name}: {e}")
+                    # Process each file individually
+                    for template_filename in available_files_for_type:
+                        # Determine source for this specific file
+                        file_source_path = merged_source.get_file_source(template_type, template_filename)
+                        if not file_source_path or not file_source_path.exists():
+                            console_manager.print_warning(f"    Skipping {template_filename} - source not found")
+                            continue
+
+                        # Determine if it's from local or downloaded
+                        is_local_file = (
+                            template_type in merged_source.local_files
+                            and template_filename in merged_source.local_files[template_type]
+                        )
+                        file_source_label = "local" if is_local_file else "downloaded"
+
+                        # Process this individual template file
+                        if not _process_template_file(
+                            template_file_path=file_source_path,
+                            template_type=template_type,
+                            target_dir=target_dir,
+                            app_type=app_type,
+                            ai_tool=ai_tool,
+                            file_tracker=file_tracker,
+                            force=force,
+                            source_label=file_source_label,
+                        ):
+                            continue  # Skip this file if processing failed
+
+                    continue  # Move to next template type
+                else:
+                    console_manager.print_warning(f"  No {template_type} templates found in merged sources")
+                    continue
+            else:
+                # Single source (local, bundled, or github)
+                template_dir = templates_source / template_type
+                source_label = resolution_result.source.source_type.value
+
+            # Handle single-source template directories (non-merged)
+            if template_dir is not None:
+                if not template_dir.exists():
+                    console_manager.print_warning(f"  No {template_type} templates found")
                     continue
 
-                # Customize content for this AI tool
-                customized_content = customize_template_content(content, ai_tool)
+                target_dir = target_base_dir / template_type
+                target_dir.mkdir(parents=True, exist_ok=True)
 
-                # Generate AI-specific filename
-                output_filename = get_template_filename(template_file.name, ai_tool, template_type)
-                output_path = target_dir / output_filename
+                # Process all .md files in the template directory
+                template_files = list(template_dir.glob("*.md"))
+                if not template_files:
+                    console_manager.print_warning(f"  No {template_type} template files found")
+                    continue
 
-                # Check if file exists and handle force flag
-                if output_path.exists() and not force:
-                    if typer.confirm(
-                        f"  Overwrite existing file '{output_path.relative_to(project_path)}'?", default=False
-                    ):
-                        file_tracker.track_file_modification(output_path)
-                    else:
-                        console_manager.print_warning(f"    Skipped {output_filename}")
-                        continue
-                else:
-                    file_tracker.track_file_creation(output_path)
+                console_manager.print_info(
+                    f"  Installing {len(template_files)} {template_type} template(s) from {source_label}..."
+                )
 
-                # Write customized template
-                try:
-                    output_path.write_text(customized_content, encoding="utf-8")
-                    if output_path in file_tracker.created_files:
-                        console_manager.print_success(f"    Created {output_filename}")
-                    else:
-                        console_manager.print_success(f"    Overwrote {output_filename}")
-                except Exception as e:
-                    console_manager.print_error(f"    Failed to create {output_filename}: {e}")
+                for template_file in template_files:
+                    _process_template_file(
+                        template_file_path=template_file,
+                        template_type=template_type,
+                        target_dir=target_dir,
+                        app_type=app_type,
+                        ai_tool=ai_tool,
+                        file_tracker=file_tracker,
+                        force=force,
+                        source_label=source_label,
+                    )
 
     # Handle app-specific instructions
     ai_tools_names = [AI_TOOLS[tool]["name"] for tool in ai_tools if tool in AI_TOOLS]

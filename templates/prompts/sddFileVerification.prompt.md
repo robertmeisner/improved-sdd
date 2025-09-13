@@ -60,7 +60,7 @@ mode: agent
 | | Line X | | | 🔴🟠🟡🟢 |
 
 ### 🔧 Recommended Fixes
-```typescript
+```typescript,java,...
 // Before (problematic code)
 [current implementation]
 

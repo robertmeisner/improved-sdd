@@ -70,10 +70,15 @@ class TestTemplateResolver:
         templates_dir = temp_dir / "sdd_templates"
         templates_dir.mkdir()
 
-        # Create required subdirectories
+        # Create required subdirectories and add template files
         (templates_dir / "chatmodes").mkdir()
         (templates_dir / "instructions").mkdir()
         (templates_dir / "prompts").mkdir()
+
+        # Add actual template files so it's not empty
+        (templates_dir / "chatmodes" / "test.chatmode.md").write_text("# Test chatmode")
+        (templates_dir / "instructions" / "test.instructions.md").write_text("# Test instructions")
+        (templates_dir / "prompts" / "test.prompt.md").write_text("# Test prompt")
 
         with patch.object(resolver, "get_local_templates_path", return_value=templates_dir):
             result = resolver.resolve_templates_with_transparency()

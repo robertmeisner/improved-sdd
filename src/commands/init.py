@@ -9,9 +9,36 @@ from pathlib import Path
 
 import typer
 
-from ..core import AI_TOOLS, APP_TYPES
+from ..core import AI_TOOLS, APP_TYPES, LOCAL_TEMPLATES_DIR
 from ..services import FileTracker
 from ..ui import console_manager
+
+
+def _count_existing_templates(project_path: Path) -> tuple[int, int]:
+    """Count existing template files and GitHub workflow files.
+
+    Only counts LOCAL_TEMPLATES_DIR (user's local templates), not DOWNLOAD_TEMPLATES_DIR (download directory).
+
+    Returns:
+        tuple: (template_files_count, github_files_count)
+    """
+    template_count = 0
+    github_count = 0
+
+    # Count files in local templates directory (user's local templates only)
+    sdd_templates_path = project_path / LOCAL_TEMPLATES_DIR
+    if sdd_templates_path.exists():
+        template_files = list(sdd_templates_path.rglob("*.md"))
+        template_count = len(template_files)
+
+    # Count files in .github directory
+    github_path = project_path / ".github"
+    if github_path.exists():
+        github_files = list(github_path.rglob("*"))
+        github_files = [f for f in github_files if f.is_file()]
+        github_count = len(github_files)
+
+    return template_count, github_count
 
 
 def init_command(
@@ -87,11 +114,30 @@ def init_command(
         project_name = Path.cwd().name
         project_path = Path.cwd()
 
-        # Check if current directory has any files
-        existing_items = list(project_path.iterdir())
-        if existing_items:
+        # Check for existing templates instead of all files
+        template_count, github_count = _count_existing_templates(project_path)
+        total_existing_templates = template_count + github_count
+
+        if total_existing_templates > 0:
             console_manager.print_warning(f"Installing templates in current directory: {project_path.name}")
-            console_manager.print_dim(f"Found {len(existing_items)} existing items - templates will be added/merged")
+            if template_count > 0 and github_count > 0:
+                console_manager.print_dim(
+                    f"Found {template_count} existing template files and {github_count} GitHub files - new templates will be added/merged"
+                )
+            elif template_count > 0:
+                console_manager.print_dim(
+                    f"Found {template_count} existing template files - new templates will be added/merged"
+                )
+            elif github_count > 0:
+                console_manager.print_dim(
+                    f"Found {github_count} existing GitHub files - new templates will be added/merged"
+                )
+        else:
+            # Check if directory has any files at all for general warning
+            existing_items = list(project_path.iterdir())
+            if existing_items:
+                console_manager.print_warning(f"Installing templates in current directory: {project_path.name}")
+                console_manager.print_dim("No existing templates found - installing fresh template set")
     else:
         project_path = Path.cwd() / project_name
         # Check if project directory already exists

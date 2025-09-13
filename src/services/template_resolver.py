@@ -1,15 +1,17 @@
 """Template resolver service for handling template source resolution.
 
 This module provides the TemplateResolver class which implements a priority-based
-template resolution system: local .sdd_templates > bundled templates > GitHub download.
+template resolution system: local templates > bundled templates > GitHub download.
+It also supports merging local templates with downloaded ones to create complete sets.
 """
 
 import asyncio
 from pathlib import Path
 from typing import Optional
 
+from src.core.config import DEFAULT_GITHUB_BRANCH, DEFAULT_GITHUB_REPO, DOWNLOAD_TEMPLATES_DIR, LOCAL_TEMPLATES_DIR
 from src.core.exceptions import GitHubAPIError, NetworkError, RateLimitError, TimeoutError, ValidationError
-from src.core.models import TemplateResolutionResult, TemplateSource, TemplateSourceType
+from src.core.models import MergedTemplateSource, TemplateResolutionResult, TemplateSource, TemplateSourceType
 
 from .cache_manager import CacheManager
 from .github_downloader import GitHubDownloader
@@ -31,7 +33,7 @@ def _get_panel():
 
 class TemplateResolver:
     """Handles template resolution with priority-based system:
-    local .sdd_templates > bundled templates > GitHub download."""
+    local templates > bundled templates > GitHub download."""
 
     def __init__(
         self,
@@ -56,8 +58,7 @@ class TemplateResolver:
 
         # Parse custom repository if provided
         if template_repo:
-            repo_parts = template_repo.split("/")
-            self.github_downloader = GitHubDownloader(repo_owner=repo_parts[0], repo_name=repo_parts[1])
+            self.github_downloader = GitHubDownloader.from_repo_string(template_repo)
         else:
             self.github_downloader = GitHubDownloader()
 
@@ -66,21 +67,74 @@ class TemplateResolver:
         # Clean up orphaned caches on startup
         self.cache_manager.cleanup_orphaned_caches()
 
-    def get_local_templates_path(self) -> Optional[Path]:
-        """Check for local .sdd_templates directory in project or parent directories.
+    # Template structure constants
+    REQUIRED_TEMPLATE_TYPES = {"chatmodes", "instructions", "prompts", "commands"}
+
+    def get_available_template_files(self, templates_path: Path) -> dict[str, set[str]]:
+        """Get all available template files organized by template type.
+
+        Args:
+            templates_path: Path to templates directory
 
         Returns:
-            Path to local .sdd_templates if found, None otherwise
+            Dict mapping template types to sets of available filenames
+            e.g., {'prompts': {'file1.prompt.md', 'file2.prompt.md'}, 'chatmodes': {'mode1.chatmode.md'}}
+        """
+        if not templates_path.exists() or not templates_path.is_dir():
+            return {}
+
+        available_files = {}
+        for template_type in self.REQUIRED_TEMPLATE_TYPES:
+            type_dir = templates_path / template_type
+            if type_dir.exists() and type_dir.is_dir():
+                # Get all .md files in this template type directory
+                md_files = {f.name for f in type_dir.glob("*.md")}
+                if md_files:  # Only include if there are actual files
+                    available_files[template_type] = md_files
+        return available_files
+
+    def get_missing_template_files(self, templates_path: Path, reference_path: Path) -> dict[str, set[str]]:
+        """Get template files that are missing compared to a reference template set.
+
+        Args:
+            templates_path: Path to templates directory to check
+            reference_path: Path to reference templates (e.g., bundled or downloaded)
+
+        Returns:
+            Dict mapping template types to sets of missing filenames
+        """
+        available_files = self.get_available_template_files(templates_path)
+        reference_files = self.get_available_template_files(reference_path)
+
+        missing_files = {}
+        for template_type, ref_files in reference_files.items():
+            local_files = available_files.get(template_type, set())
+            missing = ref_files - local_files
+            if missing:
+                missing_files[template_type] = missing
+
+        # Also include entire template types that are missing locally
+        for template_type in self.REQUIRED_TEMPLATE_TYPES:
+            if template_type not in available_files and template_type in reference_files:
+                missing_files[template_type] = reference_files[template_type]
+
+        return missing_files
+
+    def get_local_templates_path(self) -> Optional[Path]:
+        """Check for local templates directory in project or parent directories.
+
+        Returns:
+            Path to local templates directory if found, None otherwise
         """
         # Check current project directory first
-        local_path = self.project_path / ".sdd_templates"
+        local_path = self.project_path / LOCAL_TEMPLATES_DIR
         if local_path.exists() and local_path.is_dir():
             return local_path
 
         # Check parent directories up to filesystem root
         current_path = self.project_path.parent
         while current_path != current_path.parent:  # Stop at filesystem root
-            local_path = current_path / ".sdd_templates"
+            local_path = current_path / LOCAL_TEMPLATES_DIR
             if local_path.exists() and local_path.is_dir():
                 return local_path
             current_path = current_path.parent
@@ -93,7 +147,7 @@ class TemplateResolver:
         Returns:
             Path to bundled templates if they exist, None otherwise
         """
-        bundled_path = self.script_dir.parent / ".sdd_templates"
+        bundled_path = self.script_dir.parent / LOCAL_TEMPLATES_DIR
         if bundled_path.exists() and bundled_path.is_dir():
             return bundled_path
         return None
@@ -102,14 +156,14 @@ class TemplateResolver:
         """Resolve template source using priority system.
 
         Priority order:
-        1. Local .sdd_templates (project or parent directories)
+        1. Local templates (project or parent directories)
         2. Bundled templates directory
         3. GitHub download to temporary cache
 
         Returns:
             Path to templates source, None if no source found
         """
-        # Priority 1: Local .sdd_templates
+        # Priority 1: Local templates
         local_path = self.get_local_templates_path()
         if local_path:
             return local_path
@@ -132,6 +186,9 @@ class TemplateResolver:
     def resolve_templates_with_transparency(self) -> TemplateResolutionResult:
         """Resolve template source with full transparency and logging, respecting CLI options.
 
+        New behavior: If user has local templates, use those and download
+        only the missing template types. This creates a union of local + downloaded templates.
+
         Returns:
             TemplateResolutionResult with detailed information about resolution
         """
@@ -149,22 +206,46 @@ class TemplateResolver:
             _get_console().print("[blue]⬇ Force download mode - downloading from GitHub...[/blue]")
             return self._attempt_github_download()
 
-        # Check local .sdd_templates first (unless force download)
+        # Check for local templates and determine what's needed
         local_path = self.get_local_templates_path()
         if local_path:
-            source = TemplateSource(
-                path=local_path,
-                source_type=TemplateSourceType.LOCAL,
-                size_bytes=self._get_directory_size(local_path),
-            )
-            _get_console().print(f"[green]✓ Using local templates from {local_path}[/green]")
-            return TemplateResolutionResult(
-                source=source,
-                success=True,
-                message=f"Using local templates from {local_path}",
-                fallback_attempted=False,
-            )
+            local_files = self.get_available_template_files(local_path)
 
+            if not local_files:
+                # Local templates exist but are empty - proceed with normal fallback
+                pass
+            else:
+                # We have some local files - need to determine what's missing
+                if self.offline:
+                    # In offline mode, use whatever local files we have
+                    total_local_files = sum(len(files) for files in local_files.values())
+                    _get_console().print(
+                        f"[cyan]ℹ Using {total_local_files} local template files in offline mode[/cyan]"
+                    )
+
+                    source = TemplateSource(
+                        path=local_path,
+                        source_type=TemplateSourceType.LOCAL,
+                        size_bytes=self._get_directory_size(local_path),
+                    )
+                    return TemplateResolutionResult(
+                        source=source,
+                        success=True,
+                        message=f"Using {total_local_files} local template files",
+                        fallback_attempted=False,
+                    )
+                else:
+                    # Online mode - merge with downloaded templates
+                    _get_console().print(f"[cyan]ℹ Found local template files in {len(local_files)} categories[/cyan]")
+                    for template_type, files in local_files.items():
+                        _get_console().print(f"  {template_type}: {len(files)} files")
+
+                    _get_console().print(
+                        f"[blue]⬇ Downloading complete template set to merge with local files...[/blue]"
+                    )
+                    return self._attempt_file_level_merge(local_path, local_files)
+
+        # No local templates - fall back to existing logic
         # Fallback to bundled templates
         bundled_path = self.get_bundled_templates_path()
         if bundled_path:
@@ -196,6 +277,199 @@ class TemplateResolver:
         repo_msg = f" from {self.template_repo}" if self.template_repo else ""
         _get_console().print(f"[blue]⬇ No local templates found, attempting GitHub download{repo_msg}...[/blue]")
         return self._attempt_github_download()
+
+    def _attempt_file_level_merge(self, local_path: Path, local_files: dict[str, set[str]]) -> TemplateResolutionResult:
+        """Attempt to create merged template source by downloading and merging at file level.
+
+        Args:
+            local_path: Path to local templates directory
+            local_files: Dict of local template files by type
+
+        Returns:
+            TemplateResolutionResult with merged source or error
+        """
+        try:
+            # Download complete templates to cache
+            github_path = self._download_github_templates()
+            if not github_path:
+                _get_console().print("[yellow]⚠ Failed to download templates from GitHub[/yellow]")
+                # Fall back to using only local templates
+                source = TemplateSource(
+                    path=local_path,
+                    source_type=TemplateSourceType.LOCAL,
+                    size_bytes=self._get_directory_size(local_path),
+                )
+                local_count = sum(len(files) for files in local_files.values())
+                return TemplateResolutionResult(
+                    source=source,
+                    success=True,
+                    message=f"Using {local_count} local template files only (download failed)",
+                    fallback_attempted=True,
+                )
+
+            # Get downloaded template files
+            downloaded_files = self.get_available_template_files(github_path)
+
+            # Calculate merge statistics
+            local_count = sum(len(files) for files in local_files.values())
+            downloaded_count = sum(len(files) for files in downloaded_files.values())
+
+            # Create merged source with file-level tracking
+            merged_source = MergedTemplateSource(
+                local_path=local_path,
+                downloaded_path=github_path,
+                local_files=local_files,
+                downloaded_files=downloaded_files,
+            )
+
+            # Calculate unique files (local takes priority)
+            all_files = merged_source.get_all_available_files()
+            total_unique_files = sum(len(files) for files in all_files.values())
+
+            success_msg = f"Merged {local_count} local files with {downloaded_count} downloaded files ({total_unique_files} unique files total)"
+            _get_console().print(f"[green]✓ {success_msg}[/green]")
+
+            # Show detailed breakdown
+            for template_type in sorted(all_files.keys()):
+                local_in_type = len(local_files.get(template_type, set()))
+                downloaded_in_type = len(downloaded_files.get(template_type, set()))
+                unique_in_type = len(all_files[template_type])
+                _get_console().print(
+                    f"  {template_type}: {local_in_type} local + {downloaded_in_type} downloaded = {unique_in_type} unique"
+                )
+
+            return TemplateResolutionResult(
+                source=merged_source,
+                success=True,
+                message=success_msg,
+                fallback_attempted=True,
+            )
+
+        except (NetworkError, GitHubAPIError, TimeoutError, ValidationError) as e:
+            _get_console().print(f"[yellow]⚠ Could not download templates for merging: {e}[/yellow]")
+            _get_console().print(f"[cyan]ℹ Proceeding with local templates only[/cyan]")
+
+            # Fall back to using only local templates
+            source = TemplateSource(
+                path=local_path,
+                source_type=TemplateSourceType.LOCAL,
+                size_bytes=self._get_directory_size(local_path),
+            )
+            local_count = sum(len(files) for files in local_files.values())
+            return TemplateResolutionResult(
+                source=source,
+                success=True,
+                message=f"Using {local_count} local template files only (download failed: {e})",
+                fallback_attempted=True,
+            )
+        except Exception as e:
+            _get_console().print(f"[red]✗ Unexpected error during template merge: {e}[/red]")
+            # Fall back to using only local templates
+            source = TemplateSource(
+                path=local_path,
+                source_type=TemplateSourceType.LOCAL,
+                size_bytes=self._get_directory_size(local_path),
+            )
+            local_count = sum(len(files) for files in local_files.values())
+            return TemplateResolutionResult(
+                source=source,
+                success=True,
+                message=f"Using {local_count} local template files due to merge error: {e}",
+                fallback_attempted=True,
+            )
+
+    def _attempt_merged_resolution(
+        self, local_path: Path, local_types: set[str], missing_types: set[str]
+    ) -> TemplateResolutionResult:
+        """Attempt to create merged template source by downloading missing types.
+
+        Args:
+            local_path: Path to local templates directory
+            local_types: Set of template types available locally
+            missing_types: Set of template types that need to be downloaded
+
+        Returns:
+            TemplateResolutionResult with merged source or error
+        """
+        try:
+            # Download complete templates to cache
+            github_path = self._download_github_templates()
+            if not github_path:
+                _get_console().print("[yellow]⚠ Failed to download templates from GitHub[/yellow]")
+                # Fall back to using partial local templates
+                source = TemplateSource(
+                    path=local_path,
+                    source_type=TemplateSourceType.LOCAL,
+                    size_bytes=self._get_directory_size(local_path),
+                )
+                return TemplateResolutionResult(
+                    source=source,
+                    success=False,
+                    message=f"Using partial local templates (missing: {', '.join(sorted(missing_types))})",
+                    fallback_attempted=True,
+                )
+
+            # Verify downloaded templates have the missing types
+            downloaded_types = self.get_available_template_types(github_path)
+            available_from_download = missing_types.intersection(downloaded_types)
+            still_missing = missing_types - available_from_download
+
+            if still_missing:
+                _get_console().print(
+                    f"[yellow]⚠ Downloaded templates also missing: {', '.join(sorted(still_missing))}[/yellow]"
+                )
+
+            # Create merged source
+            merged_source = MergedTemplateSource(
+                local_path=local_path,
+                downloaded_path=github_path,
+                local_types=local_types,
+                downloaded_types=available_from_download,
+            )
+
+            success_msg = f"Merged local templates ({', '.join(sorted(local_types))}) with downloaded ({', '.join(sorted(available_from_download))})"
+            if still_missing:
+                success_msg += f" - still missing: {', '.join(sorted(still_missing))}"
+
+            _get_console().print(f"[green]✓ {success_msg}[/green]")
+
+            return TemplateResolutionResult(
+                source=merged_source,
+                success=True,
+                message=success_msg,
+                fallback_attempted=True,
+            )
+
+        except (NetworkError, GitHubAPIError, TimeoutError, ValidationError) as e:
+            _get_console().print(f"[yellow]⚠ Could not download missing templates: {e}[/yellow]")
+            _get_console().print(f"[cyan]ℹ Proceeding with partial local templates[/cyan]")
+
+            # Fall back to using partial local templates
+            source = TemplateSource(
+                path=local_path,
+                source_type=TemplateSourceType.LOCAL,
+                size_bytes=self._get_directory_size(local_path),
+            )
+            return TemplateResolutionResult(
+                source=source,
+                success=False,
+                message=f"Using partial local templates (missing: {', '.join(sorted(missing_types))}) - download failed: {e}",
+                fallback_attempted=True,
+            )
+        except Exception as e:
+            _get_console().print(f"[red]✗ Unexpected error during template merge: {e}[/red]")
+            # Fall back to using partial local templates
+            source = TemplateSource(
+                path=local_path,
+                source_type=TemplateSourceType.LOCAL,
+                size_bytes=self._get_directory_size(local_path),
+            )
+            return TemplateResolutionResult(
+                source=source,
+                success=False,
+                message=f"Using partial local templates due to merge error: {e}",
+                fallback_attempted=True,
+            )
 
     def _attempt_github_download(self) -> TemplateResolutionResult:
         """Attempt to download templates from GitHub with error handling."""
@@ -263,7 +537,7 @@ class TemplateResolver:
             return None
 
     def has_local_templates(self) -> bool:
-        """Check if local .sdd_templates are available."""
+        """Check if local templates are available."""
         return self.get_local_templates_path() is not None
 
     def has_bundled_templates(self) -> bool:
@@ -310,10 +584,10 @@ class TemplateResolver:
         offline_instructions = (
             "[bold cyan]Working Offline[/bold cyan]\n\n"
             "To use templates without internet access:\n"
-            "1. Create a [bold].sdd_templates[/bold] folder in your project directory\n"
+            f"1. Create a [bold]{LOCAL_TEMPLATES_DIR}[/bold] folder in your project directory\n"
             "2. Copy template files from the repository manually:\n"
-            "   [dim]https://github.com/robertmeisner/improved-sdd/tree/main/templates[/dim]\n"
-            "3. Or work from a directory that already has [bold].sdd_templates[/bold]"
+            f"   [dim]https://github.com/{DEFAULT_GITHUB_REPO}/tree/{DEFAULT_GITHUB_BRANCH}/{DOWNLOAD_TEMPLATES_DIR}[/dim]\n"
+            f"3. Or work from a directory that already has [bold]{LOCAL_TEMPLATES_DIR}[/bold]"
         )
 
         _get_console().print(
@@ -328,9 +602,9 @@ class TemplateResolver:
             "[bold cyan]Option 1: Download Templates[/bold cyan]\n"
             "1. Visit: [dim]https://github.com/robertmeisner/improved-sdd[/dim]\n"
             "2. Download or clone the repository\n"
-            "3. Copy the [bold]templates/[/bold] folder to [bold].sdd_templates/[/bold] in your project\n\n"
+            f"3. Copy the [bold]templates/[/bold] folder to [bold]{LOCAL_TEMPLATES_DIR}/[/bold] in your project\n\n"
             "[bold cyan]Option 2: Create Basic Structure[/bold cyan]\n"
-            "1. Create [bold].sdd_templates/[/bold] folder manually\n"
+            f"1. Create [bold]{LOCAL_TEMPLATES_DIR}/[/bold] folder manually\n"
             "2. Add basic template files as needed\n\n"
             "[bold cyan]Option 3: Use Different Directory[/bold cyan]\n"
             "Run this command from a directory that already has templates"

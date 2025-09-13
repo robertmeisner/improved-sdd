@@ -168,7 +168,7 @@ class ServiceContainer:
         """Create GitHubDownloader instance with default configuration."""
         from ..services.github_downloader import GitHubDownloader
 
-        return GitHubDownloader(repo_owner="robertmeisner", repo_name="improved-sdd")
+        return GitHubDownloader()
 
 
 # Global service container instance for CLI application

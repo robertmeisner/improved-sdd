@@ -5,7 +5,7 @@ with a compatibility layer to ensure smooth migration from the monolithic CLI.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 @dataclass
@@ -36,6 +36,19 @@ class ConfigCompatibilityLayer:
 
     def __init__(self):
         """Initialize configuration with original data structures."""
+        # Template directory names
+        self._template_dirs = {
+            "local_templates": ".sdd_templates",  # User's local templates directory
+            "download_templates": "templates",  # Downloaded templates directory (renamed from sdd_templates)
+        }
+
+        # GitHub repository configuration
+        self._github_config = {
+            "default_repo": "robertmeisner/improved-sdd",  # Default repository for templates
+            "default_branch": "master",  # Default branch to download from
+            "fallback_branches": ["main", "master"],  # Branches to try if default fails
+        }
+
         # Define AI tools configuration
         self._ai_tools_data = {
             "github-copilot": {
@@ -151,6 +164,31 @@ class ConfigCompatibilityLayer:
         """Get application tagline."""
         return self._tagline
 
+    @property
+    def LOCAL_TEMPLATES_DIR(self) -> str:
+        """Get local templates directory name (.sdd_templates)."""
+        return self._template_dirs["local_templates"]
+
+    @property
+    def DOWNLOAD_TEMPLATES_DIR(self) -> str:
+        """Get download templates directory name (templates)."""
+        return self._template_dirs["download_templates"]
+
+    @property
+    def DEFAULT_GITHUB_REPO(self) -> str:
+        """Get default GitHub repository for templates."""
+        return self._github_config["default_repo"]
+
+    @property
+    def DEFAULT_GITHUB_BRANCH(self) -> str:
+        """Get default GitHub branch for templates."""
+        return self._github_config["default_branch"]
+
+    @property
+    def FALLBACK_GITHUB_BRANCHES(self) -> List[str]:
+        """Get list of fallback branches to try if default fails."""
+        return self._github_config["fallback_branches"].copy()
+
     def get_ai_tool_config(self, tool_id: str) -> AIToolConfig:
         """Get typed AI tool configuration.
 
@@ -223,6 +261,32 @@ class ConfigCompatibilityLayer:
         """Get list of available app type IDs."""
         return list(self._app_types_data.keys())
 
+    def get_github_repo_config(self, custom_repo: Optional[str] = None) -> Dict[str, str]:
+        """Get GitHub repository configuration.
+
+        Args:
+            custom_repo: Optional custom repository in 'owner/repo' format
+
+        Returns:
+            Dict with 'repo' and 'branch' keys
+        """
+        if custom_repo:
+            return {"repo": custom_repo, "branch": self._github_config["default_branch"]}
+        return {"repo": self._github_config["default_repo"], "branch": self._github_config["default_branch"]}
+
+    def validate_github_repo_format(self, repo: str) -> bool:
+        """Validate GitHub repository format.
+
+        Args:
+            repo: Repository string to validate
+
+        Returns:
+            True if format is valid (owner/repo)
+        """
+        if not repo or not isinstance(repo, str):
+            return False
+        return "/" in repo and len(repo.split("/")) == 2 and all(part.strip() for part in repo.split("/"))
+
 
 # Global configuration instance for CLI application
 config = ConfigCompatibilityLayer()
@@ -232,3 +296,8 @@ AI_TOOLS = config.AI_TOOLS
 APP_TYPES = config.APP_TYPES
 BANNER = config.BANNER
 TAGLINE = config.TAGLINE
+LOCAL_TEMPLATES_DIR = config.LOCAL_TEMPLATES_DIR
+DOWNLOAD_TEMPLATES_DIR = config.DOWNLOAD_TEMPLATES_DIR
+DEFAULT_GITHUB_REPO = config.DEFAULT_GITHUB_REPO
+DEFAULT_GITHUB_BRANCH = config.DEFAULT_GITHUB_BRANCH
+FALLBACK_GITHUB_BRANCHES = config.FALLBACK_GITHUB_BRANCHES

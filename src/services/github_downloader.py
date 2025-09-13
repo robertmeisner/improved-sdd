@@ -11,6 +11,8 @@ import time
 from pathlib import Path
 from typing import Callable, Optional
 
+from src.core.config import DEFAULT_GITHUB_BRANCH, DEFAULT_GITHUB_REPO, DOWNLOAD_TEMPLATES_DIR
+
 # Lazy imports for heavy dependencies
 try:
     import httpx
@@ -52,16 +54,52 @@ from src.core.models import ProgressInfo, TemplateSource, TemplateSourceType
 class GitHubDownloader(GitHubDownloaderProtocol):
     """Handles downloading templates from GitHub repository with progress reporting."""
 
-    def __init__(self, repo_owner: str = "robertmeisner", repo_name: str = "improved-sdd"):
+    def __init__(self, repo_owner: str = None, repo_name: str = None, branch: str = None):
         """Initialize GitHub downloader.
 
         Args:
-            repo_owner: GitHub repository owner
-            repo_name: GitHub repository name
+            repo_owner: GitHub repository owner (defaults to config)
+            repo_name: GitHub repository name (defaults to config)
+            branch: Git branch to download from (defaults to config)
         """
+        # Parse default repo if no individual components provided
+        if repo_owner is None and repo_name is None:
+            default_parts = DEFAULT_GITHUB_REPO.split("/")
+            repo_owner = default_parts[0]
+            repo_name = default_parts[1]
+        elif repo_owner is None or repo_name is None:
+            # If only one is provided, use default for the other
+            default_parts = DEFAULT_GITHUB_REPO.split("/")
+            repo_owner = repo_owner or default_parts[0]
+            repo_name = repo_name or default_parts[1]
+
         self.repo_owner = repo_owner
         self.repo_name = repo_name
+        self.branch = branch or DEFAULT_GITHUB_BRANCH
         self.base_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}"
+
+    @classmethod
+    def from_repo_string(cls, repo: str, branch: str = None) -> "GitHubDownloader":
+        """Create GitHubDownloader from 'owner/repo' string.
+
+        Args:
+            repo: Repository in 'owner/repo' format
+            branch: Git branch to download from (defaults to config)
+
+        Returns:
+            GitHubDownloader instance
+
+        Raises:
+            ValueError: If repo format is invalid
+        """
+        if not repo or "/" not in repo:
+            raise ValueError("Repository must be in 'owner/repo' format")
+
+        parts = repo.split("/")
+        if len(parts) != 2 or not all(part.strip() for part in parts):
+            raise ValueError("Repository must be in 'owner/repo' format")
+
+        return cls(repo_owner=parts[0], repo_name=parts[1], branch=branch)
 
     async def download_templates(
         self,
@@ -97,7 +135,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
 
         try:
             # Download repository archive
-            archive_url = f"https://github.com/{self.repo_owner}/{self.repo_name}/archive/refs/heads/main.zip"
+            archive_url = f"https://github.com/{self.repo_owner}/{self.repo_name}/archive/refs/heads/{self.branch}.zip"
 
             # Setup progress tracking - use provided instance or create new one
             if progress_instance:
@@ -268,7 +306,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
         extracted_files = self._extract_with_protection(zip_path, target_dir, progress_callback)
 
         # Convert extracted zip-relative names to template-relative paths for validation
-        templates_prefix = f"{self.repo_name}-main/sdd_templates/"
+        templates_prefix = f"{self.repo_name}-{self.branch}/{DOWNLOAD_TEMPLATES_DIR}/"
         relative_files = [
             name[len(templates_prefix) :] for name in extracted_files if name.startswith(templates_prefix)
         ]
@@ -299,12 +337,12 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                 if not zip_ref.namelist():
                     raise TemplateError("ZIP file is empty")
 
-                # Check for sdd_templates folder
-                templates_prefix = f"{self.repo_name}-main/sdd_templates/"
+                # Check for templates folder
+                templates_prefix = f"{self.repo_name}-{self.branch}/sdd_templates/"
                 template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 if not template_files:
-                    raise TemplateError("No sdd_templates folder found in repository archive")
+                    raise TemplateError(f"No {DOWNLOAD_TEMPLATES_DIR} folder found in repository archive")
 
         except zipfile.BadZipFile:
             raise TemplateError("Downloaded file is not a valid ZIP archive")
@@ -327,7 +365,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
             progress_callback: Optional callback for extraction progress
 
         Returns:
-            List of extracted file paths (including sdd_templates prefix)
+            List of extracted file paths (including templates prefix)
 
         Raises:
             TemplateError: If extraction fails or path traversal detected
@@ -339,7 +377,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
 
         try:
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                templates_prefix = f"{self.repo_name}-main/sdd_templates/"
+                templates_prefix = f"{self.repo_name}-{self.branch}/{DOWNLOAD_TEMPLATES_DIR}/"
                 template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 # Calculate total extraction size for progress tracking
@@ -349,7 +387,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                 for file_path in template_files:
                     # Remove prefix to get relative path
                     relative_path = file_path[len(templates_prefix) :]
-                    if not relative_path:  # Skip the sdd_templates/ directory itself
+                    if not relative_path:  # Skip the templates/ directory itself
                         continue
 
                     # Path traversal protection
@@ -370,7 +408,7 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                     with zip_ref.open(file_info) as source, open(safe_path, "wb") as target:
                         shutil.copyfileobj(source, target)
 
-                    # Append original zip entry name (including sdd_templates prefix)
+                    # Append original zip entry name (including templates prefix)
                     extracted_files.append(file_path)
                     extracted_count += 1
 

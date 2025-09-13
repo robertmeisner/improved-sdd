@@ -13,7 +13,21 @@ During migration, this module will be gradually populated with extracted code.
 __version__ = "0.1.0-migration"
 
 # Import configuration (available after Task 2.1)
-from .config import AI_TOOLS, APP_TYPES, BANNER, TAGLINE, AIToolConfig, AppTypeConfig, ConfigCompatibilityLayer, config
+from .config import (
+    AI_TOOLS,
+    APP_TYPES,
+    BANNER,
+    DEFAULT_GITHUB_BRANCH,
+    DEFAULT_GITHUB_REPO,
+    DOWNLOAD_TEMPLATES_DIR,
+    FALLBACK_GITHUB_BRANCHES,
+    LOCAL_TEMPLATES_DIR,
+    TAGLINE,
+    AIToolConfig,
+    AppTypeConfig,
+    ConfigCompatibilityLayer,
+    config,
+)
 from .container import ServiceContainer, container
 
 # Import exceptions (available after Task 2.2)
@@ -46,6 +60,11 @@ __all__ = [
     "APP_TYPES",
     "BANNER",
     "TAGLINE",
+    "LOCAL_TEMPLATES_DIR",
+    "DOWNLOAD_TEMPLATES_DIR",
+    "DEFAULT_GITHUB_REPO",
+    "DEFAULT_GITHUB_BRANCH",
+    "FALLBACK_GITHUB_BRANCHES",
     # Exceptions
     "TemplateError",
     "NetworkError",
