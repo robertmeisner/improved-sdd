@@ -175,8 +175,8 @@ class TestTemplateInstallationUnion:
         merged_source = MergedTemplateSource(
             local_path=local_dir,
             downloaded_path=downloaded_dir,
-            local_types={"chatmodes"},
-            downloaded_types={"prompts"},
+            local_files={"chatmodes": {"test.chatmode.md"}},
+            downloaded_files={"prompts": {"test.prompt.md"}},
         )
 
         resolution_result = TemplateResolutionResult(
@@ -233,8 +233,8 @@ class TestTemplateInstallationUnion:
         merged_source = MergedTemplateSource(
             local_path=local_dir,
             downloaded_path=downloaded_dir,
-            local_types={"chatmodes"},
-            downloaded_types={"chatmodes"},  # Both have chatmodes
+            local_files={"chatmodes": {"test.chatmode.md"}},
+            downloaded_files={"chatmodes": {"test.chatmode.md"}},  # Both have chatmodes
         )
 
         resolution_result = TemplateResolutionResult(

@@ -84,7 +84,7 @@ class TestTemplateResolver:
             result = resolver.resolve_templates_with_transparency()
             assert result.success is True
             assert result.source is not None
-            assert result.source.source_type == TemplateSourceType.LOCAL
+            assert result.source.source_type == TemplateSourceType.MERGED  # Updated: now returns merged source
 
     def test_resolve_templates_with_transparency_bundled_fallback(self, temp_dir):
         """Test resolve_templates_with_transparency falls back to bundled."""

@@ -4,7 +4,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 import pytest
 
@@ -18,8 +18,8 @@ from src import (  # noqa: E402
     check_tool,
     customize_template_content,
     get_template_filename,
-    offer_user_choice,
     load_gitlab_flow_file,
+    offer_user_choice,
 )
 from src.core.config import config
 
@@ -317,13 +317,9 @@ class TestGitLabFlowConfig:
     def test_get_gitlab_flow_keywords_disabled(self):
         """Test get_gitlab_flow_keywords returns empty strings when disabled."""
         keywords = config.get_gitlab_flow_keywords(enabled=False)
-        
-        expected_keywords = [
-            "{GITLAB_FLOW_SETUP}",
-            "{GITLAB_FLOW_COMMIT}",
-            "{GITLAB_FLOW_PR}"
-        ]
-        
+
+        expected_keywords = ["{GITLAB_FLOW_SETUP}", "{GITLAB_FLOW_COMMIT}", "{GITLAB_FLOW_PR}"]
+
         # All keywords should be present but empty when disabled
         for keyword in expected_keywords:
             assert keyword in keywords
@@ -335,22 +331,18 @@ class TestGitLabFlowConfig:
             # Create mock GitLab Flow markdown files
             gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
             gitlab_flow_dir.mkdir()
-            
+
             setup_file = gitlab_flow_dir / "gitlab-flow-setup.md"
             setup_file.write_text("Setup: {GIT_STATUS} and {BRANCH_CREATE}")
-            
+
             commit_file = gitlab_flow_dir / "gitlab-flow-commit.md"
             commit_file.write_text("Commit: {COMMIT}")
-            
+
             pr_file = gitlab_flow_dir / "gitlab-flow-pr.md"
             pr_file.write_text("PR: {PUSH_PR}")
 
-            keywords = config.get_gitlab_flow_keywords(
-                enabled=True, 
-                platform="windows", 
-                template_dir=temp_dir
-            )
-            
+            keywords = config.get_gitlab_flow_keywords(enabled=True, platform="windows", template_dir=temp_dir)
+
             # Check Windows-specific command syntax (semicolon)
             assert ";" in keywords["{GITLAB_FLOW_COMMIT}"]  # Windows uses semicolon
             assert "git status" in keywords["{GITLAB_FLOW_SETUP}"]
@@ -361,16 +353,12 @@ class TestGitLabFlowConfig:
             # Create mock GitLab Flow markdown files
             gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
             gitlab_flow_dir.mkdir()
-            
+
             commit_file = gitlab_flow_dir / "gitlab-flow-commit.md"
             commit_file.write_text("Commit: {COMMIT}")
 
-            keywords = config.get_gitlab_flow_keywords(
-                enabled=True,
-                platform="unix", 
-                template_dir=temp_dir
-            )
-            
+            keywords = config.get_gitlab_flow_keywords(enabled=True, platform="unix", template_dir=temp_dir)
+
             # Check Unix-specific command syntax (double ampersand)
             assert "&&" in keywords["{GITLAB_FLOW_COMMIT}"]  # Unix uses &&
 
@@ -378,11 +366,8 @@ class TestGitLabFlowConfig:
         """Test graceful handling of missing GitLab Flow files."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Don't create any GitLab Flow files - test missing file handling
-            keywords = config.get_gitlab_flow_keywords(
-                enabled=True, 
-                template_dir=temp_dir
-            )
-            
+            keywords = config.get_gitlab_flow_keywords(enabled=True, template_dir=temp_dir)
+
             # Should return fallback comments for missing files
             for keyword in keywords.values():
                 assert "GitLab Flow file not found" in keyword
@@ -392,24 +377,21 @@ class TestGitLabFlowConfig:
         with tempfile.TemporaryDirectory() as temp_dir:
             gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
             gitlab_flow_dir.mkdir()
-            
+
             # Create a file but mock open to raise an error
             setup_file = gitlab_flow_dir / "gitlab-flow-setup.md"
             setup_file.write_text("test content")
-            
+
             with patch("builtins.open", side_effect=PermissionError("Access denied")):
-                keywords = config.get_gitlab_flow_keywords(
-                    enabled=True,
-                    template_dir=temp_dir
-                )
-                
+                keywords = config.get_gitlab_flow_keywords(enabled=True, template_dir=temp_dir)
+
                 # Should return error fallback
                 assert "GitLab Flow file error" in keywords["{GITLAB_FLOW_SETUP}"]
 
     def test_gitlab_flow_config_structure(self):
         """Test GitLab Flow configuration structure follows expected pattern."""
         gitlab_config = config.GITLAB_FLOW_CONFIG
-        
+
         # Check required structure elements
         assert "name" in gitlab_config
         assert "description" in gitlab_config
@@ -417,13 +399,13 @@ class TestGitLabFlowConfig:
         assert "template_files" in gitlab_config
         assert "keywords" in gitlab_config
         assert "platform_commands" in gitlab_config
-        
+
         # Check platform commands exist for both platforms
         assert "windows" in gitlab_config["platform_commands"]
         assert "unix" in gitlab_config["platform_commands"]
 
 
-@pytest.mark.unit  
+@pytest.mark.unit
 class TestGitLabFlowMarkdownLoading:
     """Test GitLab Flow markdown file loading functionality."""
 
@@ -432,19 +414,16 @@ class TestGitLabFlowMarkdownLoading:
         with tempfile.TemporaryDirectory() as temp_dir:
             gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
             gitlab_flow_dir.mkdir()
-            
+
             # Create test markdown file with placeholders
             test_file = gitlab_flow_dir / "test-file.md"
             test_content = "Test content with {GIT_STATUS} and {COMMIT} placeholders"
             test_file.write_text(test_content)
-            
-            platform_commands = {
-                "GIT_STATUS": "git status",
-                "COMMIT": "git add . ; git commit -m \"{message}\""
-            }
-            
+
+            platform_commands = {"GIT_STATUS": "git status", "COMMIT": 'git add . ; git commit -m "{message}"'}
+
             result = load_gitlab_flow_file("test-file.md", temp_dir, platform_commands)
-            
+
             # Check placeholders were replaced
             assert "git status" in result
             assert "git add . ; git commit" in result
@@ -455,9 +434,9 @@ class TestGitLabFlowMarkdownLoading:
         """Test graceful handling of missing GitLab Flow file."""
         with tempfile.TemporaryDirectory() as temp_dir:
             platform_commands = {"GIT_STATUS": "git status"}
-            
+
             result = load_gitlab_flow_file("missing-file.md", temp_dir, platform_commands)
-            
+
             # Should return graceful fallback message
             assert "GitLab Flow file not found" in result
             assert "missing-file.md" in result
@@ -467,17 +446,17 @@ class TestGitLabFlowMarkdownLoading:
         with tempfile.TemporaryDirectory() as temp_dir:
             gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
             gitlab_flow_dir.mkdir()
-            
+
             # Create file
             test_file = gitlab_flow_dir / "test-file.md"
             test_file.write_text("test content")
-            
+
             platform_commands = {}
-            
+
             # Mock permission error
             with patch("builtins.open", side_effect=PermissionError("Access denied")):
                 result = load_gitlab_flow_file("test-file.md", temp_dir, platform_commands)
-                
+
                 assert "Permission denied reading GitLab Flow file" in result
                 assert "test-file.md" in result
 
@@ -492,13 +471,13 @@ class TestGitLabFlowTemplateCustomization:
             # Create GitLab Flow markdown files
             gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
             gitlab_flow_dir.mkdir()
-            
+
             setup_file = gitlab_flow_dir / "gitlab-flow-setup.md"
             setup_file.write_text("## Setup\nRun {GIT_STATUS} to check status")
-            
+
             # Template content with both AI tool and GitLab Flow keywords
             content = """# Template for {AI_ASSISTANT}
-            
+
 {GITLAB_FLOW_SETUP}
 
 Use {AI_SHORTNAME} for development."""
@@ -508,15 +487,15 @@ Use {AI_SHORTNAME} for development."""
                 ai_tool="github-copilot",
                 gitlab_flow_enabled=True,
                 platform="windows",
-                template_dir=temp_dir
+                template_dir=temp_dir,
             )
-            
+
             # Check AI tool keywords were replaced
             assert "GitHub Copilot" in result
             assert "Copilot" in result
             assert "{AI_ASSISTANT}" not in result
             assert "{AI_SHORTNAME}" not in result
-            
+
             # Check GitLab Flow keywords were replaced
             assert "git status" in result
             assert "{GITLAB_FLOW_SETUP}" not in result
@@ -524,21 +503,17 @@ Use {AI_SHORTNAME} for development."""
     def test_customize_template_content_gitlab_flow_disabled(self):
         """Test customize_template_content with GitLab Flow disabled."""
         content = """# Template for {AI_ASSISTANT}
-        
+
 {GITLAB_FLOW_SETUP}
 
 Use {AI_SHORTNAME} for development."""
 
-        result = customize_template_content(
-            content=content,
-            ai_tool="github-copilot", 
-            gitlab_flow_enabled=False
-        )
-        
+        result = customize_template_content(content=content, ai_tool="github-copilot", gitlab_flow_enabled=False)
+
         # AI tool keywords should still be replaced
         assert "GitHub Copilot" in result
         assert "Copilot" in result
-        
+
         # GitLab Flow keywords should be empty (removed)
         assert "{GITLAB_FLOW_SETUP}" not in result
         # The empty replacement should remove the keyword entirely
@@ -552,7 +527,7 @@ Command: {AI_COMMAND}"""
 
         # Test without GitLab Flow parameters (backward compatibility)
         result = customize_template_content(content, "claude")
-        
+
         # AI tool keywords should work as before
         assert "Claude" in result
         assert "Open Claude interface" in result
@@ -566,11 +541,7 @@ Command: {AI_COMMAND}"""
 
 {GITLAB_FLOW_SETUP}"""
 
-        result = customize_template_content(
-            content=content,
-            ai_tool="unknown-tool",
-            gitlab_flow_enabled=True
-        )
-        
+        result = customize_template_content(content=content, ai_tool="unknown-tool", gitlab_flow_enabled=True)
+
         # Should return original content for unknown AI tool
         assert result == content

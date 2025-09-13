@@ -513,7 +513,7 @@ class TestMainApp:
         assert "Setup AI-optimized development templates and workflows" in app.info.help
 
 
-@pytest.mark.cli  
+@pytest.mark.cli
 class TestGitLabFlowCLI:
     """Test GitLab Flow CLI flag integration."""
 
@@ -522,7 +522,7 @@ class TestGitLabFlowCLI:
         self.runner = CliRunner()
 
     @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type") 
+    @patch("src.utils.select_app_type")
     @patch("src.utils.create_project_structure")
     def test_init_with_gitlab_flow_enabled(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with --gitlab-flow flag enabled."""
@@ -533,20 +533,16 @@ class TestGitLabFlowCLI:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir) / "test-project"
-            
-            result = self.runner.invoke(app, [
-                "init", 
-                str(project_dir),
-                "--gitlab-flow"
-            ])
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--gitlab-flow"])
 
             # Check command succeeded
             assert result.exit_code == 0
-            
+
             # Verify create_project_structure was called with GitLab Flow enabled
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
-            
+
             # GitLab Flow parameter is the 9th positional argument (index 8)
             assert call_args.args[8] is True  # gitlab_flow_enabled
             assert call_args.args[9] == "windows"  # platform
@@ -563,20 +559,16 @@ class TestGitLabFlowCLI:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir) / "test-project"
-            
-            result = self.runner.invoke(app, [
-                "init",
-                str(project_dir), 
-                "--no-gitlab-flow"
-            ])
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--no-gitlab-flow"])
 
             # Check command succeeded
             assert result.exit_code == 0
-            
+
             # Verify create_project_structure was called with GitLab Flow disabled
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
-            
+
             # GitLab Flow parameter is the 9th positional argument (index 8)
             assert call_args.args[8] is False  # gitlab_flow_enabled
 
@@ -592,15 +584,12 @@ class TestGitLabFlowCLI:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir) / "test-project"
-            
+
             # Run init without explicit GitLab Flow flag
-            result = self.runner.invoke(app, [
-                "init",
-                str(project_dir)
-            ])
+            result = self.runner.invoke(app, ["init", str(project_dir)])
 
             assert result.exit_code == 0
-            
+
             # Verify GitLab Flow is enabled by default
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
@@ -609,7 +598,7 @@ class TestGitLabFlowCLI:
     def test_init_help_includes_gitlab_flow(self):
         """Test that init help includes GitLab Flow option documentation."""
         result = self.runner.invoke(app, ["init", "--help"])
-        
+
         assert result.exit_code == 0
         assert "--gitlab-flow" in result.output
         assert "--no-gitlab-flow" in result.output
@@ -627,12 +616,8 @@ class TestGitLabFlowCLI:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir) / "test-project"
-            
-            result = self.runner.invoke(app, [
-                "init",
-                str(project_dir),
-                "--gitlab-flow"
-            ])
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--gitlab-flow"])
 
             assert result.exit_code == 0
             mock_create_project.assert_called_once()
@@ -650,12 +635,8 @@ class TestGitLabFlowCLI:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir) / "test-project"
-            
-            result = self.runner.invoke(app, [
-                "init",
-                str(project_dir),
-                "--gitlab-flow"
-            ])
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--gitlab-flow"])
 
             assert result.exit_code == 0
             mock_create_project.assert_called_once()
@@ -667,7 +648,9 @@ class TestGitLabFlowCLI:
     @patch("src.utils.create_project_structure")
     @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
-    def test_init_gitlab_flow_template_processing_integration(self, mock_select_app, mock_select_ai, mock_create_project):
+    def test_init_gitlab_flow_template_processing_integration(
+        self, mock_select_app, mock_select_ai, mock_create_project
+    ):
         """Test end-to-end GitLab Flow template processing integration."""
         mock_select_ai.return_value = ["github-copilot"]
         mock_select_app.return_value = "python-cli"
@@ -675,12 +658,8 @@ class TestGitLabFlowCLI:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir) / "test-project"
-            
-            result = self.runner.invoke(app, [
-                "init",
-                str(project_dir),
-                "--gitlab-flow"
-            ])
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--gitlab-flow"])
 
             assert result.exit_code == 0
             mock_create_project.assert_called_once()
@@ -688,7 +667,7 @@ class TestGitLabFlowCLI:
             assert call_args.args[8] == True  # gitlab_flow_enabled parameter
 
     @patch("src.utils.create_project_structure")
-    @patch("src.utils.select_ai_tools") 
+    @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
     def test_init_gitlab_flow_disabled_template_processing(self, mock_select_app, mock_select_ai, mock_create_project):
         """Test template processing when GitLab Flow is disabled."""
@@ -698,12 +677,8 @@ class TestGitLabFlowCLI:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir) / "test-project"
-            
-            result = self.runner.invoke(app, [
-                "init",
-                str(project_dir),
-                "--no-gitlab-flow"
-            ])
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--no-gitlab-flow"])
 
             assert result.exit_code == 0
             mock_create_project.assert_called_once()
