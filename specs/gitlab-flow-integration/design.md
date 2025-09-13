@@ -83,8 +83,8 @@ def customize_template_content(content: str, ai_tool: str, gitlab_flow_enabled: 
     if ai_tool in AI_TOOLS:
         for keyword, replacement in AI_TOOLS[ai_tool]["keywords"].items():
             content = content.replace(keyword, replacement)
-    
-    # New GitLab Flow keyword replacement  
+
+    # New GitLab Flow keyword replacement
     if gitlab_flow_enabled:
         gitlab_flow_config = config.get_gitlab_flow_config()
         for keyword, replacement in gitlab_flow_config["keywords"].items():
@@ -93,7 +93,7 @@ def customize_template_content(content: str, ai_tool: str, gitlab_flow_enabled: 
         # Replace GitLab Flow keywords with empty content
         for keyword in GITLAB_FLOW_KEYWORDS:
             content = content.replace(keyword, "")
-    
+
     return content
 ```
 
@@ -107,13 +107,13 @@ Extend the `ConfigCompatibilityLayer` class to include GitLab Flow configuration
 class ConfigCompatibilityLayer:
     def __init__(self):
         # ... existing configuration ...
-        
+
         # GitLab Flow configuration
         self._gitlab_flow_config = {
             "enabled": False,  # Default disabled
             "template_files": {
                 "setup": "gitlab-flow-setup.md",
-                "commit": "gitlab-flow-commit.md", 
+                "commit": "gitlab-flow-commit.md",
                 "pr": "gitlab-flow-pr.md",
             },
             "keywords": {
@@ -130,55 +130,55 @@ class ConfigCompatibilityLayer:
                     "push_pr": "git push -u origin {branch_name} ; gh pr create",
                 },
                 "unix": {
-                    "git_status": "git status", 
+                    "git_status": "git status",
                     "branch_create": "git checkout -b {branch_name}",
                     "commit": "git add . && git commit -m \"{message}\"",
                     "push_pr": "git push -u origin {branch_name} && gh pr create",
                 }
             }
         }
-    
+
     def get_gitlab_flow_config(self, enabled: bool = False) -> Dict[str, Any]:
         """Get GitLab Flow configuration with conditional keyword content."""
         config = self._gitlab_flow_config.copy()
         config["enabled"] = enabled
-        
+
         if not enabled:
             # Replace all keywords with empty content when disabled
             config["keywords"] = {k: "" for k in config["keywords"].keys()}
-        
+
         return config
-    
+
     def get_gitlab_flow_keywords(self, enabled: bool = False, platform: str = "windows", template_dir: str = "") -> Dict[str, str]:
         """Get GitLab Flow keywords with content loaded from markdown files."""
         if not enabled:
             return {k: "" for k in self._gitlab_flow_config["keywords"].keys()}
-        
+
         # Load markdown content and replace platform-specific commands
         keywords = {}
         commands = self._gitlab_flow_config["platform_commands"].get(
             platform, self._gitlab_flow_config["platform_commands"]["windows"]
         )
-        
+
         for keyword, file_reference in self._gitlab_flow_config["keywords"].items():
             if file_reference.startswith("{{LOAD_FILE:"):
                 filename = file_reference.replace("{{LOAD_FILE:", "").replace("}}", "")
                 file_path = os.path.join(template_dir, "gitlab-flow", filename)
-                
+
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         content = f.read()
-                    
+
                     # Replace platform-specific command placeholders
                     for cmd_key, cmd_value in commands.items():
                         content = content.replace(f"{{{cmd_key.upper()}}}", cmd_value)
-                    
+
                     keywords[keyword] = content
                 except FileNotFoundError:
                     keywords[keyword] = f"<!-- GitLab Flow file not found: {filename} -->"
             else:
                 keywords[keyword] = file_reference
-        
+
         return keywords
 ```
 
@@ -190,7 +190,7 @@ Create separate markdown files for clean separation of content:
 templates/
 ├── gitlab-flow/
 │   ├── gitlab-flow-setup.md           # Setup instructions with placeholders
-│   ├── gitlab-flow-commit.md          # Commit guidance with placeholders  
+│   ├── gitlab-flow-commit.md          # Commit guidance with placeholders
 │   └── gitlab-flow-pr.md              # PR creation with placeholders
 └── chatmodes/
     └── sddSpecDriven.chatmode.md       # Main chatmode with keywords
@@ -227,9 +227,9 @@ After completing and approving this phase:
 {COMMIT}
 ```
 
-**Commit Message Format**: 
+**Commit Message Format**:
 - Feasibility: "Add feasibility assessment for {feature-name}"
-- Requirements: "Add requirements for {feature-name}" 
+- Requirements: "Add requirements for {feature-name}"
 - Design: "Add design for {feature-name}"
 - Tasks: "Add implementation tasks for {feature-name}"
 ```
@@ -262,54 +262,54 @@ Extend the `customize_template_content()` function to handle GitLab Flow keyword
 ```python
 def customize_template_content(content: str, ai_tool: str, gitlab_flow_enabled: bool = False, platform: str = "windows", template_dir: str = "") -> str:
     """Customize template content for AI tool and optionally GitLab Flow.
-    
+
     Args:
         content: Template content to customize
         ai_tool: AI tool key for customization
         gitlab_flow_enabled: Whether to enable GitLab Flow keywords
         platform: Target platform (windows/unix)
         template_dir: Base template directory path
-    
+
     Returns:
         str: Customized template content with replaced keywords
     """
     customized_content = content
-    
+
     # Existing AI tool keyword replacement
     if ai_tool in AI_TOOLS:
         tool_config = AI_TOOLS[ai_tool]
         for keyword, replacement in tool_config["keywords"].items():
             customized_content = customized_content.replace(keyword, replacement)
-    
+
     # New GitLab Flow keyword replacement using markdown files
     gitlab_flow_keywords = config.get_gitlab_flow_keywords(gitlab_flow_enabled, platform, template_dir)
     for keyword, replacement in gitlab_flow_keywords.items():
         customized_content = customized_content.replace(keyword, replacement)
-    
+
     return customized_content
 
 def load_gitlab_flow_file(filename: str, template_dir: str, platform_commands: Dict[str, str]) -> str:
     """Load GitLab Flow markdown file and replace command placeholders.
-    
+
     Args:
         filename: Name of the markdown file to load
-        template_dir: Base template directory  
+        template_dir: Base template directory
         platform_commands: Platform-specific command replacements
-    
+
     Returns:
         str: Processed markdown content with platform commands
     """
     file_path = os.path.join(template_dir, "gitlab-flow", filename)
-    
+
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         # Replace platform-specific command placeholders
         for cmd_key, cmd_value in platform_commands.items():
             placeholder = f"{{{cmd_key.upper()}}}"
             content = content.replace(placeholder, cmd_value)
-        
+
         return content
     except FileNotFoundError:
         return f"<!-- GitLab Flow file not found: {filename} -->"
@@ -414,27 +414,27 @@ def init_project(
     gitlab_flow: bool = typer.Option(False, "--gitlab-flow", help="Enable GitLab Flow workflow integration"),
 ):
     """Initialize project with optional GitLab Flow integration."""
-    
+
     # ... existing initialization logic ...
-    
+
     # Detect platform for GitLab Flow commands
     platform = "windows" if os.name == "nt" else "unix"
-    
+
     # Get template directory path for GitLab Flow files
     template_base_dir = get_template_base_directory()  # Existing function
-    
+
     # Customize templates with GitLab Flow if enabled
     for template_file in template_files:
         content = read_template_file(template_file)
         customized_content = customize_template_content(
-            content, 
-            ai_tool, 
+            content,
+            ai_tool,
             gitlab_flow_enabled=gitlab_flow,
             platform=platform,
             template_dir=template_base_dir
         )
         write_customized_template(customized_content, output_path)
-    
+
     if gitlab_flow:
         # Verify GitLab Flow template files exist
         gitlab_flow_dir = os.path.join(template_base_dir, "gitlab-flow")
@@ -469,7 +469,7 @@ def get_template_base_directory() -> str:
 ```
 templates/
 ├── gitlab-flow/                    # GitLab Flow content directory
-│   ├── gitlab-flow-setup.md       # Branch setup instructions  
+│   ├── gitlab-flow-setup.md       # Branch setup instructions
 │   ├── gitlab-flow-commit.md      # Commit guidance
 │   ├── gitlab-flow-pr.md          # PR creation instructions
 │   └── README.md                  # Documentation for GitLab Flow templates
@@ -481,7 +481,7 @@ templates/
 
 This approach provides:
 - **Clean architecture**: Content files separate from logic
-- **Platform flexibility**: Command placeholders replaced per platform  
+- **Platform flexibility**: Command placeholders replaced per platform
 - **Easy maintenance**: Update workflow instructions without touching code
 - **Graceful degradation**: Missing files show helpful comments instead of errors
 
@@ -561,7 +561,7 @@ improved-sdd init [PROJECT_NAME] --gitlab-flow
 3. If user confirms, agent uses `run_in_terminal` tool to execute git commands:
    - Execute: `git add .` (stage all changes)
    - Generate conventional commit message based on task type and description
-   - Execute: `git commit -m "[generated message]"` 
+   - Execute: `git commit -m "[generated message]"`
    - Display terminal output to user
 4. If GitLab Flow enabled, agent provides terminal commands for branch management
 5. Agent stops and waits for user review before proceeding
@@ -585,7 +585,7 @@ improved-sdd init [PROJECT_NAME] --gitlab-flow
 - All git operations executed through terminal tools, no scripted automation
         ]
         separator = " && "
-    
+
     full_command = separator.join(commands)
     return execute_shell_command(full_command)
 ```

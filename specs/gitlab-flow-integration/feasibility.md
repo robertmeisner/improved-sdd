@@ -22,7 +22,7 @@ Integrate GitLab Flow workflow guidance into the sddSpecDriven chatmode through 
 
 ### Complexity Assessment: **LOW-MEDIUM**
 - **Low Complexity**: Extending existing proven keyword replacement system
-- **Low Complexity**: Creating markdown files with platform placeholders  
+- **Low Complexity**: Creating markdown files with platform placeholders
 - **Medium Complexity**: Platform-specific placeholder replacement logic
 - **Low Complexity**: CLI flag integration with existing template processing
 

@@ -96,7 +96,7 @@ The integration uses **markdown files as variable values** approach, where GitLa
 
 1. WHEN feasibility phase begins THEN `{GITLAB_FLOW_SETUP}` keyword SHALL load content from `gitlab-flow-setup.md` file
 2. WHEN each phase completes THEN `{GITLAB_FLOW_COMMIT}` keyword SHALL load content from `gitlab-flow-commit.md` file
-3. WHEN all phases complete THEN `{GITLAB_FLOW_PR}` keyword SHALL load content from `gitlab-flow-pr.md` file  
+3. WHEN all phases complete THEN `{GITLAB_FLOW_PR}` keyword SHALL load content from `gitlab-flow-pr.md` file
 4. WHEN GitLab Flow disabled THEN all keywords SHALL resolve to empty strings
 5. WHEN markdown files are loaded THEN platform-specific placeholders like `{GIT_STATUS}`, `{BRANCH_CREATE}` SHALL be replaced with appropriate commands
 
@@ -135,14 +135,14 @@ The integration uses **markdown files as variable values** approach, where GitLa
 #### Acceptance Criteria
 
 1. WHEN platform is Windows THEN git commands SHALL use PowerShell syntax
-2. WHEN platform is macOS/Linux THEN git commands SHALL use bash syntax  
+2. WHEN platform is macOS/Linux THEN git commands SHALL use bash syntax
 3. WHEN commands are generated THEN they SHALL include proper path separators for platform
 4. WHEN branch names are generated THEN they SHALL be valid for all platforms
 5. WHEN command chaining is used THEN platform-appropriate operators SHALL be used
 
 #### Test Scenarios
 - Scenario 1: Windows PowerShell commands work correctly
-- Scenario 2: macOS/Linux bash commands work correctly  
+- Scenario 2: macOS/Linux bash commands work correctly
 - Scenario 3: Path separators are platform-appropriate
 - Scenario 4: Command chaining uses correct operators
 
