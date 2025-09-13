@@ -306,7 +306,9 @@ class GitHubDownloader(GitHubDownloaderProtocol):
         extracted_files = self._extract_with_protection(zip_path, target_dir, progress_callback)
 
         # Convert extracted zip-relative names to template-relative paths for validation
-        templates_prefix = f"{self.repo_name}-{self.branch}/{DOWNLOAD_TEMPLATES_DIR}/"
+        # GitHub converts slashes to hyphens in branch names for ZIP files
+        normalized_branch = self.branch.replace('/', '-')
+        templates_prefix = f"{self.repo_name}-{normalized_branch}/{DOWNLOAD_TEMPLATES_DIR}/"
         relative_files = [
             name[len(templates_prefix) :] for name in extracted_files if name.startswith(templates_prefix)
         ]
@@ -338,7 +340,9 @@ class GitHubDownloader(GitHubDownloaderProtocol):
                     raise TemplateError("ZIP file is empty")
 
                 # Check for templates folder
-                templates_prefix = f"{self.repo_name}-{self.branch}/{DOWNLOAD_TEMPLATES_DIR}/"
+                # GitHub converts slashes to hyphens in branch names for ZIP files
+                normalized_branch = self.branch.replace('/', '-')
+                templates_prefix = f"{self.repo_name}-{normalized_branch}/{DOWNLOAD_TEMPLATES_DIR}/"
                 template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 if not template_files:
@@ -377,7 +381,9 @@ class GitHubDownloader(GitHubDownloaderProtocol):
 
         try:
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                templates_prefix = f"{self.repo_name}-{self.branch}/{DOWNLOAD_TEMPLATES_DIR}/"
+                # GitHub converts slashes to hyphens in branch names for ZIP files
+                normalized_branch = self.branch.replace('/', '-')
+                templates_prefix = f"{self.repo_name}-{normalized_branch}/{DOWNLOAD_TEMPLATES_DIR}/"
                 template_files = [name for name in zip_ref.namelist() if name.startswith(templates_prefix)]
 
                 # Calculate total extraction size for progress tracking

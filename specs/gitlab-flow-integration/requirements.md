@@ -190,6 +190,90 @@ The integration uses **markdown files as variable values** approach, where GitLa
 
 **Implementation Status**: PARTIALLY IMPLEMENTED - Terminal-based commit workflow needs integration in chatmode
 
+### Requirement 10: Configuration System Improvements [P2]
+
+**User Story:** As a developer maintaining the GitLab Flow integration, I want improved configuration system architecture, so that the codebase is more maintainable and consistent.
+
+#### Acceptance Criteria
+
+1. WHEN GitLab Flow default state is configured THEN it SHALL be consistent between config.py and CLI default values
+2. WHEN template paths are constructed THEN they SHALL use configurable template directory instead of hardcoded paths
+3. WHEN platform detection is needed THEN it SHALL use a reusable helper method
+4. WHEN GitLab Flow config is exported THEN it SHALL be included in legacy exports for consistency
+5. WHEN template validation is needed THEN validation methods SHALL be available
+
+#### Test Scenarios
+- Scenario 1: Default GitLab Flow state is consistent across config and CLI
+- Scenario 2: Template paths use configurable directories
+- Scenario 3: Platform detection helper method is reusable
+- Scenario 4: GitLab Flow config is properly exported
+- Scenario 5: Template validation methods work correctly
+
+**Implementation Status**: IDENTIFIED - Configuration improvements needed for maintainability
+
+### Requirement 11: Enhanced Error Handling and Validation [P2]
+
+**User Story:** As a developer using GitLab Flow integration, I want robust error handling and validation, so that I receive clear feedback when configuration issues occur.
+
+#### Acceptance Criteria
+
+1. WHEN GitLab Flow templates are missing THEN validation methods SHALL detect and report missing files
+2. WHEN template files are invalid THEN graceful error handling SHALL provide helpful messages
+3. WHEN platform detection fails THEN fallback mechanisms SHALL provide default behavior
+4. WHEN template loading fails THEN caching mechanisms SHALL prevent repeated failures
+5. WHEN configuration is invalid THEN validation SHALL prevent runtime errors
+
+#### Test Scenarios
+- Scenario 1: Missing template file validation works correctly
+- Scenario 2: Invalid template file error handling is graceful
+- Scenario 3: Platform detection failures have fallbacks
+- Scenario 4: Template loading failures are cached to prevent retries
+- Scenario 5: Configuration validation prevents runtime errors
+
+**Implementation Status**: IDENTIFIED - Enhanced error handling and validation needed
+
+### Requirement 12: Platform Keywords Consistency [P2]
+
+**User Story:** As a developer maintaining the GitLab Flow configuration, I want consistent keyword naming conventions across all platform-specific commands, so that the configuration is easier to understand and maintain.
+
+#### Acceptance Criteria
+
+1. WHEN platform-specific commands are defined THEN they SHALL use consistent bracket notation with other keywords
+2. WHEN platform keywords are referenced THEN the naming SHALL be consistent (platform_keywords vs platform_commands)
+3. WHEN new platform commands are added THEN they SHALL follow the established keyword pattern
+4. WHEN platform commands are processed THEN the replacement logic SHALL handle consistent keyword format
+5. WHEN platform keywords are validated THEN validation SHALL work with consistent naming
+
+#### Test Scenarios
+- Scenario 1: Platform commands use {GIT_STATUS} format instead of "GIT_STATUS"
+- Scenario 2: Configuration section renamed to platform_keywords for clarity
+- Scenario 3: Keyword replacement works with consistent bracket notation
+- Scenario 4: New platform commands follow established pattern
+- Scenario 5: Validation works with consistent keyword format
+
+**Implementation Status**: IDENTIFIED - Platform keyword consistency improvements needed
+
+### Requirement 13: GitLab Flow Template Optimization [P2]
+
+**User Story:** As a developer using GitLab Flow integration, I want optimized template organization that avoids duplication, so that the chatmode is cleaner and more maintainable.
+
+#### Acceptance Criteria
+
+1. WHEN GitLab Flow commit guidance is needed THEN it SHALL be provided in a single dedicated section
+2. WHEN chatmode templates are organized THEN GitLab Flow content SHALL be consolidated to avoid repetition
+3. WHEN commit workflow is triggered THEN users SHALL be directed to the dedicated GitLab Flow section
+4. WHEN GitLab Flow is disabled THEN the dedicated section SHALL be cleanly removed
+5. WHEN template maintenance is needed THEN changes SHALL be made in one location only
+
+#### Test Scenarios
+- Scenario 1: Single GitLab Flow section provides all commit guidance
+- Scenario 2: No duplication of gitlab-flow-commit.md content
+- Scenario 3: Clean template organization with dedicated sections
+- Scenario 4: Easy maintenance with single source of truth
+- Scenario 5: Proper section removal when GitLab Flow disabled
+
+**Implementation Status**: IDENTIFIED - Template organization optimization needed
+
 ### Requirement 9: Backward Compatibility [P1]
 
 **User Story:** As a developer with existing projects, I want GitLab Flow integration to be completely backward compatible, so that my existing workflows continue unchanged when I don't use GitLab Flow.

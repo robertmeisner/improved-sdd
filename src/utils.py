@@ -434,6 +434,7 @@ def create_project_structure(
     offline: bool = False,
     force_download: bool = False,
     template_repo: Optional[str] = None,
+    template_branch: Optional[str] = None,
     gitlab_flow_enabled: bool = False,
     platform: str = "windows",
 ) -> None:
@@ -453,13 +454,14 @@ def create_project_structure(
         offline: Force offline mode (disable GitHub downloads)
         force_download: Force GitHub download even if local templates exist
         template_repo: Custom GitHub repository for templates
+        template_branch: Git branch to download templates from
         gitlab_flow_enabled: Whether GitLab Flow integration is enabled
         platform: Target platform (windows/unix) for GitLab Flow commands
     """
 
     # Use TemplateResolver for priority-based template resolution with transparency
     resolver = TemplateResolver(
-        project_path, offline=offline, force_download=force_download, template_repo=template_repo
+        project_path, offline=offline, force_download=force_download, template_repo=template_repo, template_branch=template_branch
     )
     resolution_result = resolver.resolve_templates_with_transparency()
 
@@ -504,9 +506,16 @@ def create_project_structure(
             target_base_dir = project_path / ".github" / ai_tool
 
         # Install each template type for this AI tool
-        template_types = ["chatmodes", "instructions", "prompts", "commands"]
+        template_types = ["chatmodes", "instructions", "prompts", "commands", "gitlab-flow"]
 
         for template_type in template_types:
+            # Special handling for gitlab-flow templates - install at project root
+            if template_type == "gitlab-flow":
+                if not gitlab_flow_enabled:
+                    continue  # Skip gitlab-flow templates if not enabled
+                target_base_for_type = project_path / ".github" 
+            else:
+                target_base_for_type = target_base_dir
             # Determine template source for this type - now with file-level granularity
             if resolution_result.is_merged:
                 merged_source = resolution_result.source
@@ -517,7 +526,7 @@ def create_project_structure(
                 # We'll collect files from both sources as needed
                 if template_type in merged_source.local_files or template_type in merged_source.downloaded_files:
                     # This template type has files available - we'll handle them individually
-                    target_dir = target_base_dir / template_type
+                    target_dir = target_base_for_type / template_type
                     target_dir.mkdir(parents=True, exist_ok=True)
 
                     # Get all available files for this template type
@@ -578,7 +587,7 @@ def create_project_structure(
                     console_manager.print_warning(f"  No {template_type} templates found")
                     continue
 
-                target_dir = target_base_dir / template_type
+                target_dir = target_base_for_type / template_type
                 target_dir.mkdir(parents=True, exist_ok=True)
 
                 # Process all .md files in the template directory

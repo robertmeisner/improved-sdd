@@ -41,7 +41,7 @@ class ConfigCompatibilityLayer:
         # Template directory names
         self._template_dirs = {
             "local_templates": ".sdd_templates",  # User's local templates directory
-            "download_templates": "templates",  # Downloaded templates directory (renamed from sdd_templates)
+            "download_templates": "templates",  # Downloaded templates directory (includes chatmodes, instructions, prompts, commands, gitlab-flow)
         }
 
         # GitHub repository configuration
@@ -139,16 +139,21 @@ class ConfigCompatibilityLayer:
             "name": "GitLab Flow Integration",
             "description": "GitLab Flow workflow guidance with platform-specific git commands",
             "template_dir": "gitlab-flow",
-            "enabled": False,  # Default disabled, enabled via CLI flag
+            "enabled": True,  # Default enabled to match CLI
             "template_files": {
                 "setup": "gitlab-flow-setup.md",
                 "commit": "gitlab-flow-commit.md",
                 "pr": "gitlab-flow-pr.md",
             },
-            "keywords": {
+            "template_file_mapping": {
                 "{GITLAB_FLOW_SETUP}": "gitlab-flow-setup.md",
                 "{GITLAB_FLOW_COMMIT}": "gitlab-flow-commit.md",
                 "{GITLAB_FLOW_PR}": "gitlab-flow-pr.md",
+            },
+            "keywords": {
+                "{GITLAB_FLOW_SETUP}": "",  # Will be loaded from markdown files
+                "{GITLAB_FLOW_COMMIT}": "",  # Will be loaded from markdown files
+                "{GITLAB_FLOW_PR}": "",  # Will be loaded from markdown files
             },
             "platform_commands": {
                 "windows": {
@@ -341,6 +346,30 @@ class ConfigCompatibilityLayer:
             return False
         return "/" in repo and len(repo.split("/")) == 2 and all(part.strip() for part in repo.split("/"))
 
+    def _detect_platform_commands(self, platform: str = "windows") -> Dict[str, str]:
+        """Helper method to detect platform-specific git commands.
+        
+        Args:
+            platform: Target platform ("windows" or "unix")
+            
+        Returns:
+            Dictionary of platform-specific git commands
+        """
+        if platform.lower() == "windows":
+            return {
+                "GIT_STATUS": "git status",
+                "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
+                "COMMIT": "git add . ; git commit -m \"feat: Add {phase} for {feature-name}\"",
+                "PUSH_PR": "git push -u origin feature/spec-{feature-name} ; gh pr create --title \"Spec: {feature-name}\" --body \"Implementation of {feature-name} specification\""
+            }
+        else:  # Unix/Linux/macOS
+            return {
+                "GIT_STATUS": "git status",
+                "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
+                "COMMIT": "git add . && git commit -m \"feat: Add {phase} for {feature-name}\"",
+                "PUSH_PR": "git push -u origin feature/spec-{feature-name} && gh pr create --title \"Spec: {feature-name}\" --body \"Implementation of {feature-name} specification\""
+            }
+
     def get_gitlab_flow_keywords(
         self, enabled: bool = False, platform: str = "windows", template_dir: str = ""
     ) -> Dict[str, str]:
@@ -356,21 +385,20 @@ class ConfigCompatibilityLayer:
         """
         if not enabled:
             # Return empty content for all GitLab Flow keywords when disabled
-            return {keyword: "" for keyword in self._gitlab_flow_config["keywords"].keys()}
+            return {keyword: "" for keyword in self._gitlab_flow_config["template_file_mapping"].keys()}
 
         # Detect platform if not specified
         if platform == "auto":
             platform = "windows" if os.name == "nt" else "unix"
 
-        # Get platform-specific commands
-        commands = self._gitlab_flow_config["platform_commands"].get(
-            platform, self._gitlab_flow_config["platform_commands"]["windows"]
-        )
+        # Get platform-specific commands using helper method
+        commands = self._detect_platform_commands(platform)
 
         # Load markdown content and replace platform-specific placeholders
         keywords = {}
-        for keyword, filename in self._gitlab_flow_config["keywords"].items():
-            file_path = Path(template_dir) / "gitlab-flow" / filename if template_dir else None
+        for keyword, filename in self._gitlab_flow_config["template_file_mapping"].items():
+            # Use configurable template directory
+            file_path = Path(template_dir) / self._gitlab_flow_config["template_dir"] / filename if template_dir else None
 
             if file_path and file_path.exists():
                 try:
@@ -405,3 +433,4 @@ DOWNLOAD_TEMPLATES_DIR = config.DOWNLOAD_TEMPLATES_DIR
 DEFAULT_GITHUB_REPO = config.DEFAULT_GITHUB_REPO
 DEFAULT_GITHUB_BRANCH = config.DEFAULT_GITHUB_BRANCH
 FALLBACK_GITHUB_BRANCHES = config.FALLBACK_GITHUB_BRANCHES
+GITLAB_FLOW_CONFIG = config._gitlab_flow_config

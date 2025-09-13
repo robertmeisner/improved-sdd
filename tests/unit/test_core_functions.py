@@ -404,6 +404,39 @@ class TestGitLabFlowConfig:
         assert "windows" in gitlab_config["platform_commands"]
         assert "unix" in gitlab_config["platform_commands"]
 
+    def test_gitlab_flow_default_config(self):
+        """Test GitLab Flow default configuration."""
+        gitlab_config = config._gitlab_flow_config
+        
+        # Test default state is enabled (aligned with CLI default)
+        assert gitlab_config["enabled"] == True
+
+    def test_platform_detection_helper_windows(self):
+        """Test platform detection helper for Windows commands."""
+        commands = config._detect_platform_commands("windows")
+        
+        # Verify Windows-specific command syntax
+        assert "git add . ;" in commands["COMMIT"]
+        assert "git push -u origin feature/spec-{feature-name} ;" in commands["PUSH_PR"]
+        
+    def test_platform_detection_helper_unix(self):
+        """Test platform detection helper for Unix/Linux commands."""
+        commands = config._detect_platform_commands("unix")
+        
+        # Verify Unix-specific command syntax (&&)
+        assert "git add . &&" in commands["COMMIT"]
+        assert "git push -u origin feature/spec-{feature-name} &&" in commands["PUSH_PR"]
+        
+    def test_gitlab_flow_config_export(self):
+        """Test GitLab Flow config is properly exported."""
+        from src.core.config import GITLAB_FLOW_CONFIG
+        
+        # Verify export exists and has expected structure
+        assert GITLAB_FLOW_CONFIG is not None
+        assert "enabled" in GITLAB_FLOW_CONFIG
+        assert "template_dir" in GITLAB_FLOW_CONFIG
+        assert "template_file_mapping" in GITLAB_FLOW_CONFIG
+
 
 @pytest.mark.unit
 class TestGitLabFlowMarkdownLoading:

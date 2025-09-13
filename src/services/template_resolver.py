@@ -41,6 +41,7 @@ class TemplateResolver:
         offline: bool = False,
         force_download: bool = False,
         template_repo: Optional[str] = None,
+        template_branch: Optional[str] = None,
     ):
         """Initialize the resolver for a specific project path.
 
@@ -49,18 +50,24 @@ class TemplateResolver:
             offline: If True, disable GitHub downloads and use only local/bundled templates
             force_download: If True, bypass local templates and force GitHub download
             template_repo: Custom GitHub repository for templates (format: "owner/repo")
+            template_branch: Git branch to download templates from (defaults to repository's default branch)
         """
         self.project_path = project_path
         self.script_dir = Path(__file__).parent
         self.offline = offline
         self.force_download = force_download
         self.template_repo = template_repo
+        self.template_branch = template_branch
 
         # Parse custom repository if provided
         if template_repo:
-            self.github_downloader = GitHubDownloader.from_repo_string(template_repo)
+            self.github_downloader = GitHubDownloader.from_repo_string(template_repo, branch=template_branch)
         else:
-            self.github_downloader = GitHubDownloader()
+            # Use default repository with optional custom branch
+            if template_branch:
+                self.github_downloader = GitHubDownloader(branch=template_branch)
+            else:
+                self.github_downloader = GitHubDownloader()
 
         self.cache_manager = CacheManager()
 

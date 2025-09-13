@@ -695,6 +695,237 @@ Since Option A provides **reference documentation** rather than automation:
 # 5. Ignore GitLab Flow files completely if desired
 ```
 
+## Configuration System Improvements
+
+### Keyword Structure Consistency
+
+The GitLab Flow configuration now follows a consistent pattern with AI tools:
+
+```python
+# AI Tools Pattern (strings)
+"keywords": {
+    "{AI_ASSISTANT}": "Cursor AI",
+    "{AI_SHORTNAME}": "Cursor",
+}
+
+# GitLab Flow Pattern (file-based, now consistent)
+"template_file_mapping": {
+    "{GITLAB_FLOW_SETUP}": "gitlab-flow-setup.md",
+    "{GITLAB_FLOW_COMMIT}": "gitlab-flow-commit.md",
+    "{GITLAB_FLOW_PR}": "gitlab-flow-pr.md",
+},
+"keywords": {
+    "{GITLAB_FLOW_SETUP}": "",  # Populated from markdown files
+    "{GITLAB_FLOW_COMMIT}": "",  # Populated from markdown files  
+    "{GITLAB_FLOW_PR}": "",  # Populated from markdown files
+},
+```
+
+### Platform Detection Helper
+
+Extract platform detection to reusable method:
+
+```python
+def detect_platform(self) -> str:
+    """Detect current platform for command syntax.
+    
+    Returns:
+        "windows" for Windows systems, "unix" for Unix-like systems
+    """
+    return "windows" if os.name == "nt" else "unix"
+```
+
+### Template Validation Methods
+
+Add validation for GitLab Flow template files:
+
+```python
+def validate_gitlab_flow_templates(self, template_dir: str) -> Dict[str, bool]:
+    """Validate GitLab Flow template files exist.
+    
+    Args:
+        template_dir: Base template directory path
+        
+    Returns:
+        Dict mapping template files to existence status
+    """
+    validation_results = {}
+    template_base = Path(template_dir) / self._gitlab_flow_config["template_dir"]
+    
+    for keyword, filename in self._gitlab_flow_config["template_file_mapping"].items():
+        file_path = template_base / filename
+        validation_results[filename] = file_path.exists()
+    
+    return validation_results
+```
+
+### Template Caching Mechanism
+
+Implement caching to avoid repeated file I/O:
+
+```python
+class ConfigCompatibilityLayer:
+    def __init__(self):
+        # ... existing initialization ...
+        self._gitlab_flow_cache: Dict[str, str] = {}
+        self._cache_template_dir: Optional[str] = None
+    
+    def get_gitlab_flow_keywords(
+        self, enabled: bool = False, platform: str = "windows", template_dir: str = ""
+    ) -> Dict[str, str]:
+        """Get GitLab Flow keywords with caching."""
+        if not enabled:
+            return {keyword: "" for keyword in self._gitlab_flow_config["template_file_mapping"].keys()}
+        
+        # Check if cache is valid
+        if template_dir != self._cache_template_dir:
+            self._gitlab_flow_cache.clear()
+            self._cache_template_dir = template_dir
+        
+        # Use cached content if available
+        keywords = {}
+        for keyword, filename in self._gitlab_flow_config["template_file_mapping"].items():
+            cache_key = f"{platform}:{filename}"
+            
+            if cache_key in self._gitlab_flow_cache:
+                keywords[keyword] = self._gitlab_flow_cache[cache_key]
+            else:
+                # Load and cache content
+                content = self._load_template_file(filename, template_dir, platform)
+                self._gitlab_flow_cache[cache_key] = content
+                keywords[keyword] = content
+        
+        return keywords
+```
+
+## Platform Keywords Consistency
+
+### Current Inconsistency Problem
+
+The current configuration has inconsistent keyword notation:
+
+```python
+# GitLab Flow keywords use brackets
+"keywords": {
+    "{GITLAB_FLOW_SETUP}": "",
+    "{GITLAB_FLOW_COMMIT}": "",
+}
+
+# But platform commands don't use brackets
+"platform_commands": {
+    "windows": {
+        "GIT_STATUS": "git status",  # No brackets
+        "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
+    }
+}
+```
+
+### Improved Consistent Design
+
+Rename `platform_commands` to `platform_keywords` and use consistent bracket notation:
+
+```python
+"platform_keywords": {
+    "windows": {
+        "{GIT_STATUS}": "git status",
+        "{BRANCH_CREATE}": "git checkout -b feature/spec-{spec-name}",
+        "{COMMIT}": 'git add . ; git commit -m "{message}"',
+        "{PUSH_PR}": 'git push -u origin feature/spec-{spec-name} ; gh pr create',
+        "{AUTO_COMMIT}": 'git add . ; git commit -m "{commit-message}"',
+    },
+    "unix": {
+        "{GIT_STATUS}": "git status",
+        "{BRANCH_CREATE}": "git checkout -b feature/spec-{spec-name}",
+        "{COMMIT}": 'git add . && git commit -m "{message}"',
+        "{PUSH_PR}": 'git push -u origin feature/spec-{spec-name} && gh pr create',
+        "{AUTO_COMMIT}": 'git add . && git commit -m "{commit-message}"',
+    },
+}
+```
+
+### Benefits of Consistent Naming
+
+1. **Clarity**: `platform_keywords` better describes the content than `platform_commands`
+2. **Consistency**: All keywords use `{KEYWORD}` format throughout the system
+3. **Maintainability**: Easier to understand and modify keyword replacement logic
+4. **Validation**: Consistent pattern makes validation and testing simpler
+
+## GitLab Flow Template Optimization
+
+### Current Duplication Problem
+
+The current chatmode design adds GitLab Flow commit guidance after each phase:
+
+```markdown
+### 0. Feasibility Assessment
+...
+**After completing feasibility assessment:**
+{GITLAB_FLOW_COMMIT}
+
+### 1. Requirement Gathering
+...
+**After user approves requirements:**
+{GITLAB_FLOW_COMMIT}
+
+### 2. Create Feature Design Document
+...
+**After user approves design:**
+{GITLAB_FLOW_COMMIT}
+
+### 3. Create Task List
+...
+**After user approves tasks:**
+{GITLAB_FLOW_COMMIT}
+```
+
+This results in the same `gitlab-flow-commit.md` content being inserted 4 times.
+
+### Improved Consolidated Design
+
+Create a single dedicated GitLab Flow section:
+
+```markdown
+### GitLab Flow Workflow
+
+{GITLAB_FLOW_SETUP}
+
+**After Each Phase Completion:**
+{GITLAB_FLOW_COMMIT}
+
+**After All Implementation Complete:**
+{GITLAB_FLOW_PR}
+
+---
+
+### 0. Feasibility Assessment
+...
+**After completing feasibility assessment:** 
+✅ Mark phase complete, then refer to GitLab Flow Workflow section above for commit guidance
+
+### 1. Requirement Gathering
+...
+**After user approves requirements:**
+✅ Mark phase complete, then refer to GitLab Flow Workflow section above for commit guidance
+
+### 2. Create Feature Design Document
+...
+**After user approves design:**
+✅ Mark phase complete, then refer to GitLab Flow Workflow section above for commit guidance
+
+### 3. Create Task List
+...
+**After user approves tasks:**
+✅ Mark phase complete, then refer to GitLab Flow Workflow section above for commit guidance
+```
+
+### Benefits of Consolidated Design
+
+1. **No Duplication**: Single source of truth for GitLab Flow guidance
+2. **Cleaner Templates**: Reduced template size and complexity
+3. **Easier Maintenance**: Changes made in one location only
+4. **Better Organization**: Clear separation of workflow guidance
+5. **Conditional Removal**: Easy to remove entire GitLab Flow section when disabled
+
 ## Performance Considerations
 
 ### Efficient Terminal Operations

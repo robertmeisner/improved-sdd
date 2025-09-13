@@ -69,6 +69,9 @@ def init_command(
     template_repo: str = typer.Option(
         None, "--template-repo", help="Custom GitHub repository for templates (format: owner/repo)"
     ),
+    template_branch: str = typer.Option(
+        None, "--template-branch", help="Git branch to download templates from (defaults to repository's default branch)"
+    ),
     gitlab_flow: bool = typer.Option(
         True,
         "--gitlab-flow/--no-gitlab-flow",
@@ -225,6 +228,7 @@ def init_command(
             offline,
             force_download,
             template_repo,
+            template_branch,
             gitlab_flow,
             current_platform,
         )

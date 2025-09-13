@@ -1,7 +1,12 @@
 # GitLab Flow Integration - Implementation Tasks
 
 ## Overview
-Implementation task breakdown for adding GitLab Flow support to sddSpecDriven chatmode using **Dynamic Keyword Integration** with **markdown files as variable values** approach.
+Implementation task breakdown for adding GitLab Flow support to sddSpecDriven chatmode using **Dynamic- [x] 9. Configuration System - [x] 9.5 Add GitLab Flow config export [~1h] [Low Risk] [Depends on: Task 9.1] **COMPLETED**
+  - ✅ Add GITLAB_FLOW_CONFIG to legacy exports section
+  - ✅ Ensure consistency with other exported configurations
+  - ✅ Test exported configuration access
+  - _Requirements: 10_
+  - **Completed**: Added GITLAB_FLOW_CONFIG to legacy exports section in config.py following same pattern as other exported configurations (AI_TOOLS, APP_TYPES, etc.). Added test to verify export exists and has expected structure. Maintains consistency with existing export patterns. [Actual time: ~0.2h]ements [~8h] [Medium Risk] **COMPLETED**Keyword Integration** with **markdown files as variable values** approach.
 
 **Approach**: Extend existing keyword replacement system to include GitLab Flow keywords that load content from markdown files in `templates/gitlab-flow/` directory with platform-specific placeholder replacement.
 
@@ -165,13 +170,107 @@ Implementation task breakdown for adding GitLab Flow support to sddSpecDriven ch
   - _Requirements: All_
   - **Completed**: Updated pyproject.toml description and keywords to include GitLab Flow integration. Enhanced project structure documentation to show GitLab Flow template directory. Updated templates section to include GitLab Flow workflow templates. Ensured consistent documentation across all project files [Actual time: ~0.5h]
 
+- [x] 9. Configuration System Improvements [~8h] [Medium Risk] **IN PROGRESS**
+- [x] 9.1 Fix keyword inconsistency [~2h] [Low Risk] **COMPLETED**
+  - ✅ Rename GitLab Flow keywords structure to be consistent with AI tools pattern
+  - ✅ Separate template_file_mapping from keywords for clarity
+  - ✅ Update all references to use new structure
+  - ✅ Ensure tests still pass with new structure
+  - _Requirements: 10_
+  - **Completed**: Renamed confusing "keywords" structure to "template_file_mapping" for file references and created separate "keywords" structure with empty values (populated by markdown files). Updated get_gitlab_flow_keywords method to use new structure. All tests passing. [Actual time: ~1h]
+
+- [x] 9.2 Fix default state consistency [~2h] [Low Risk] [Depends on: Task 9.1] **COMPLETED**
+  - ✅ Align default GitLab Flow state between config.py (False) and CLI (True)  
+  - ✅ Document reasoning for chosen default value
+  - ✅ Update tests to reflect consistent default
+  - _Requirements: 10_
+  - **Completed**: Changed default enabled from False to True in config.py to match CLI default. This provides better user experience as GitLab Flow is enabled by default. Updated tests to reflect new default state. All tests passing. [Actual time: ~0.5h]
+
+- [x] 9.3 Add platform detection helper method [~1h] [Low Risk] [Depends on: Task 9.1] **COMPLETED**
+  - ✅ Extract platform detection logic to reusable helper method
+  - ✅ Update get_gitlab_flow_keywords to use helper method
+  - ✅ Add tests for platform detection helper
+  - _Requirements: 10_
+  - **Completed**: Created _detect_platform_commands helper method that extracts platform detection logic from get_gitlab_flow_keywords. Method handles Windows (semicolon) vs Unix (&&) command chaining. Updated get_gitlab_flow_keywords to use helper. Added comprehensive tests for both platforms. [Actual time: ~0.5h]
+
+- [x] 9.4 Use configurable template directory [~2h] [Low Risk] [Depends on: Task 9.1] **COMPLETED**
+  - ✅ Replace hardcoded "gitlab-flow" path with config template_dir
+  - ✅ Update file path construction to use self._gitlab_flow_config["template_dir"]
+  - ✅ Test with different template directory configurations
+  - _Requirements: 10_
+  - **Completed**: Replaced hardcoded "gitlab-flow" path in get_gitlab_flow_keywords with configurable self._gitlab_flow_config["template_dir"]. This allows for flexible template directory configuration while maintaining backward compatibility with default "gitlab-flow" directory. All existing tests pass with new implementation. [Actual time: ~0.3h]
+
+- [x] 9.5 Add GitLab Flow config export [~1h] [Low Risk] [Depends on: Task 9.1] **COMPLETED**
+  - ✅ Add GITLAB_FLOW_CONFIG to legacy exports section
+  - ✅ Ensure consistency with other exported configurations
+  - ✅ Test exported configuration access
+  - _Requirements: 10_
+  - **Completed**: Added GITLAB_FLOW_CONFIG to legacy exports section in config.py following same pattern as other exported configurations (AI_TOOLS_CONFIG, COPILOT_CONFIG, etc.). Added test to verify export exists and has expected structure. Maintains consistency with existing export patterns. [Actual time: ~0.2h]
+
+- [ ] 10. Enhanced Error Handling and Validation [~6h] [Medium Risk]
+- [ ] 10.1 Add template validation method [~2h] [Low Risk] [Depends on: Task 9]
+  - Create validate_gitlab_flow_templates method
+  - Check all required template files exist
+  - Provide detailed validation results
+  - _Requirements: 11_
+
+- [ ] 10.2 Add template caching mechanism [~2h] [Medium Risk] [Depends on: Task 10.1]
+  - Implement _gitlab_flow_cache for loaded templates
+  - Cache loaded markdown content to avoid re-reading
+  - Add cache invalidation mechanisms
+  - _Requirements: 11_
+
+- [ ] 10.3 Improve error messages and fallbacks [~2h] [Low Risk] [Depends on: Task 10.1]
+  - Enhance error messages with actionable guidance
+  - Improve fallback content for missing files
+  - Add troubleshooting information to error messages
+  - _Requirements: 11_
+
+- [ ] 11. Platform Keywords Consistency [~4h] [Medium Risk]
+- [ ] 11.1 Rename platform_commands to platform_keywords [~1h] [Low Risk] [Depends on: Task 9]
+  - Rename platform_commands section to platform_keywords for clarity
+  - Update all references to use new naming convention
+  - Ensure tests reflect new naming
+  - _Requirements: 12_
+
+- [ ] 11.2 Add consistent bracket notation to platform keywords [~2h] [Low Risk] [Depends on: Task 11.1]
+  - Change "GIT_STATUS" to "{GIT_STATUS}" for consistency
+  - Update all platform commands to use {} bracket notation
+  - Modify replacement logic to handle consistent keyword format
+  - _Requirements: 12_
+
+- [ ] 11.3 Update keyword replacement logic [~1h] [Low Risk] [Depends on: Task 11.2]
+  - Modify get_gitlab_flow_keywords to handle new bracket notation
+  - Update placeholder replacement to use consistent format
+  - Test keyword replacement with new notation
+  - _Requirements: 12_
+
+- [ ] 12. GitLab Flow Template Optimization [~5h] [Medium Risk]
+- [ ] 12.1 Create dedicated GitLab Flow section in chatmode [~2h] [Medium Risk] [Depends on: Task 4]
+  - Design single GitLab Flow section to replace multiple commit insertions
+  - Create consolidated workflow guidance section
+  - Remove duplicate {GITLAB_FLOW_COMMIT} references from individual phases
+  - _Requirements: 13_
+
+- [ ] 12.2 Consolidate commit workflow guidance [~2h] [Low Risk] [Depends on: Task 12.1]
+  - Combine all commit-related guidance into single section
+  - Create comprehensive commit workflow instructions
+  - Maintain phase-specific commit message guidance
+  - _Requirements: 13_
+
+- [ ] 12.3 Update chatmode template organization [~1h] [Low Risk] [Depends on: Task 12.2]
+  - Reorganize sddSpecDriven.chatmode.md for better structure
+  - Ensure clean removal when GitLab Flow disabled
+  - Test template organization with GitLab Flow enabled/disabled
+  - _Requirements: 13_
+
 ---
 
 ## Summary
 
-**Total Estimated Effort**: 39-45 hours
-**Critical Path**: Config extension → Utils extension → Markdown files → Chatmode integration → Automatic commit workflow → CLI flag
-**Risk Level**: Medium-High (extends existing keyword system, adds git automation, minimal breaking change risk)
+**Total Estimated Effort**: 66-74 hours
+**Critical Path**: Config extension → Utils extension → Markdown files → Chatmode integration → Automatic commit workflow → CLI flag → Config improvements → Platform consistency → Template optimization
+**Risk Level**: Medium-High (extends existing keyword system, adds git automation, configuration improvements, template restructuring, minimal breaking change risk)
 
 **Success Metrics**:
 - GitLab Flow keywords seamlessly integrated into main chatmode workflow
@@ -180,6 +279,10 @@ Implementation task breakdown for adding GitLab Flow support to sddSpecDriven ch
 - Zero breaking changes to existing AI tool keyword functionality
 - Markdown files provide clean separation of concerns for GitLab Flow content
 - CLI flag provides simple enable/disable control
+- Configuration system improvements enhance maintainability
+- Enhanced error handling provides better user experience
+- Consistent platform keyword naming across all commands
+- Optimized template organization eliminates duplication
 
 **Dependencies**:
 - Existing keyword replacement system in utils.py
@@ -189,6 +292,9 @@ Implementation task breakdown for adding GitLab Flow support to sddSpecDriven ch
 - Git command execution capabilities
 
 **Implementation Status Summary**:
-- 0/8 major tasks completed
-- 0/17 sub-tasks completed
-- Ready to begin implementation
+- 9/12 major tasks completed
+- 19/28 sub-tasks completed
+- Configuration improvements in progress (4/5 sub-tasks remaining)
+- Enhanced error handling planned (3/3 sub-tasks remaining)
+- Platform keyword consistency planned (3/3 sub-tasks remaining)
+- Template optimization planned (3/3 sub-tasks remaining)
