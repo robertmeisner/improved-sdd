@@ -22,7 +22,7 @@
 - [ ] Implement error handling and edge cases
 - [ ] Add appropriate logging and monitoring
 - [ ] Include security considerations
-- [ ] Document changes and decisions back in spec's requirements.md or design.md if needed
+- [ ] Document changes and decisions back in spec's 02_requirements.md or 03_design.md if needed
 
 ### 4. Validation & Testing
 - [ ] Test core functionality

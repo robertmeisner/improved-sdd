@@ -7,9 +7,9 @@ Re-evaluate and synchronize the provided spec with the current project state usi
 Provide a comprehensive re-evaluation covering:
 
 ### 1. Spec-to-Code Alignment Analysis
-- Compare requirements.md against actual implemented functionality
-- Verify design.md matches current architecture and implementation
-- Check tasks.md completion status and accuracy
+- Compare 02_requirements.md against actual implemented functionality
+- Verify 03_design.md matches current architecture and implementation
+- Check 04_tasks.md completion status and accuracy
 - Identify discrepancies between spec and reality
 
 ### 2. Current Implementation Assessment
@@ -19,7 +19,7 @@ Provide a comprehensive re-evaluation covering:
 - Assess current code quality and architecture decisions
 
 ### 3. Requirements Synchronization
-- Update requirements.md to reflect actual system capabilities
+- Update 02_requirements.md to reflect actual system capabilities
 - Add missing user stories for implemented functionality
 - Remove or mark obsolete requirements that are no longer relevant
 - Ensure acceptance criteria match current behavior
@@ -50,7 +50,7 @@ Provide a comprehensive re-evaluation covering:
 ## Instructions
 
 1. **Start with Project Analysis**: Use available tools to analyze the current project structure and codebase
-2. **Load Spec Files**: Read all existing spec files (requirements.md, design.md, tasks.md, feasibility.md if present)
+2. **Load Spec Files**: Read all existing spec files (01_feasibility.md, 02_requirements.md, 03_design.md, 04_tasks.md if present)
 3. **Compare and Contrast**: Systematically compare each spec section against actual implementation
 4. **Update Spec Documents**: Modify spec files to accurately reflect current state
 5. **Document Changes**: Clearly indicate what was updated and why
@@ -62,7 +62,7 @@ Provide a comprehensive re-evaluation covering:
 Structure your response with:
 - **Executive Summary**: High-level sync status and key findings
 - **Detailed Analysis**: Section-by-section comparison and updates
-- **Updated Spec Files**: Revised requirements.md, design.md, and tasks.md
+- **Updated Spec Files**: Revised 02_requirements.md, 03_design.md, and 04_tasks.md
 - **Change Log**: What was modified and rationale
 - **Recommendations**: Actions to prevent future desynchronization
 
