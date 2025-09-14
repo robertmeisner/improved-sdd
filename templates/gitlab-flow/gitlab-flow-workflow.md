@@ -34,10 +34,10 @@ feature/spec-{kebab-case-name}
 ```
 
 **2. Commit timing:**
-- ✅ **Feasibility approved** → Commit feasibility.md
-- ✅ **Requirements approved** → Commit requirements.md  
-- ✅ **Design approved** → Commit design.md
-- ✅ **Tasks approved** → Commit tasks.md
+- ✅ **Feasibility approved** → Commit 01_feasibility.md
+- ✅ **Requirements approved** → Commit 02_requirements.md  
+- ✅ **Design approved** → Commit 03_design.md
+- ✅ **Tasks approved** → Commit 04_tasks.md
 - ✅ **Each task completed** → Commit implementation
 
 ### Message Templates
