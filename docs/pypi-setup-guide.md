@@ -76,6 +76,8 @@ This guide provides step-by-step instructions for configuring PyPI and TestPyPI 
 
 ### 3.2 Configure GitHub Environments
 
+**Important**: The primary purpose of GitHub environments is to organize deployments and apply protection rules. The Environment URL field is optional and purely for documentation purposes.
+
 #### 3.2.1 Create TestPyPI Environment
 
 1. **Go to Environments**: Settings → Environments
@@ -84,9 +86,11 @@ This guide provides step-by-step instructions for configuring PyPI and TestPyPI 
    - **Name**: `testpypi`
    - Click "Configure environment"
 3. **Configure Environment**:
-   - **Environment URL**: `https://test.pypi.org/project/improved-sdd/`
-   - **Protection Rules**: None (automatic deployment)
+   - **Environment URL** (Optional): `https://test.pypi.org/project/improved-sdd/`
+     - *Note: This field may not be visible initially - it's optional for basic setup*
+   - **Protection Rules**: Leave all unchecked (automatic deployment)
    - **Environment Secrets**: None needed (uses repository secrets)
+   - **Deployment branches**: Leave default (All branches)
 4. **Save Configuration**: Click "Save protection rules"
 
 #### 3.2.2 Create PyPI Environment
@@ -96,11 +100,12 @@ This guide provides step-by-step instructions for configuring PyPI and TestPyPI 
    - **Name**: `pypi`
    - Click "Configure environment"
 2. **Configure Environment**:
-   - **Environment URL**: `https://pypi.org/project/improved-sdd/`
-   - **Protection Rules** (Optional):
-     - ✅ **Required reviewers**: Add yourself for extra safety
-     - ✅ **Wait timer**: 5 minutes (optional delay)
-     - ✅ **Deployment branches**: Selected branches/tags only
+   - **Environment URL** (Optional): `https://pypi.org/project/improved-sdd/`
+     - *Note: This field may not be visible initially - it's optional for basic setup*
+   - **Protection Rules** (Recommended for production):
+     - ☐ **Required reviewers**: Add yourself for extra safety (optional)
+     - ☐ **Wait timer**: 5 minutes (optional delay)
+     - ✅ **Deployment branches**: Recommended - "Selected branches and tags"
        - Add rule: `v*.*.*` (version tags only)
    - **Environment Secrets**: None needed (uses repository secrets)
 3. **Save Configuration**: Click "Save protection rules"
@@ -158,6 +163,11 @@ When rotating tokens:
 ## Part 6: Troubleshooting
 
 ### Common Issues
+
+#### Environment Configuration Issues
+- **Issue**: Cannot find "Environment URL" field
+- **Solution**: This field is optional and may not be visible in all GitHub configurations
+- **Action**: Skip the URL field - it's not required for basic publishing functionality
 
 #### Authentication Errors
 - **Issue**: `Invalid API token`

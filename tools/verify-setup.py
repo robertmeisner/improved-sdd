@@ -96,7 +96,7 @@ class SetupVerifier:
         results["file_exists"] = True
         
         try:
-            content = workflow_path.read_text()
+            content = workflow_path.read_text(encoding='utf-8')
             
             # Check for required jobs
             if "publish-testpypi:" in content:
@@ -182,9 +182,20 @@ class SetupVerifier:
             results["pyproject_toml"] = True
             
             try:
-                import tomllib
-                with open(pyproject_path, "rb") as f:
-                    data = tomllib.load(f)
+                # Try tomllib first (Python 3.11+), then fallback to tomli
+                try:
+                    import tomllib
+                    with open(pyproject_path, "rb") as f:
+                        data = tomllib.load(f)
+                except ImportError:
+                    # Fallback for older Python versions
+                    try:
+                        import tomli as tomllib
+                        with open(pyproject_path, "rb") as f:
+                            data = tomllib.load(f)
+                    except ImportError:
+                        # Final fallback - skip TOML parsing
+                        return results
                 
                 project = data.get("project", {})
                 if "name" in project:
