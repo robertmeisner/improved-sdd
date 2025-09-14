@@ -1,0 +1,265 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches: [ master, main ]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (build only, no publishing)'
+        required: false
+        default: false
+        type: boolean
+      target_env:
+        description: 'Target environment for manual publishing'
+        required: false
+        default: 'testpypi'
+        type: choice
+        options:
+          - testpypi
+          - pypi
+
+jobs:
+  wait-for-ci:
+    name: Wait for CI Workflows
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true'
+    
+    steps:
+    - name: Wait for Test Suite
+      uses: lewagon/wait-on-check-action@v1.3.4
+      with:
+        ref: ${{ github.ref }}
+        check-name: 'Test Suite'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 30
+        allowed-conclusions: success
+
+    - name: Wait for Security Scan
+      uses: lewagon/wait-on-check-action@v1.3.4
+      with:
+        ref: ${{ github.ref }}
+        check-name: 'Security Audit'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 30
+        allowed-conclusions: success,skipped
+
+  pre-publish-validation:
+    name: Pre-Publish Validation
+    runs-on: ubuntu-latest
+    needs: [wait-for-ci]
+    if: always() && (needs.wait-for-ci.result == 'success' || github.event_name == 'workflow_dispatch')
+    
+    outputs:
+      package-name: ${{ steps.package-info.outputs.name }}
+      package-version: ${{ steps.package-info.outputs.version }}
+      should-publish-testpypi: ${{ steps.conditions.outputs.testpypi }}
+      should-publish-pypi: ${{ steps.conditions.outputs.pypi }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+        pip install -e .
+
+    - name: Extract package information
+      id: package-info
+      run: |
+        python -c "
+        import tomllib
+        with open('pyproject.toml', 'rb') as f:
+            data = tomllib.load(f)
+            print(f'name={data[\"project\"][\"name\"]}')
+            print(f'version={data[\"project\"][\"version\"]}')
+        " >> $GITHUB_OUTPUT
+
+    - name: Determine publishing conditions
+      id: conditions
+      run: |
+        # TestPyPI: publish on master/main push or manual dispatch
+        if [[ "${{ github.event_name }}" == "push" && ("${{ github.ref }}" == "refs/heads/master" || "${{ github.ref }}" == "refs/heads/main") ]]; then
+          echo "testpypi=true" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.target_env }}" == "testpypi" && "${{ github.event.inputs.dry_run }}" != "true" ]]; then
+          echo "testpypi=true" >> $GITHUB_OUTPUT
+        else
+          echo "testpypi=false" >> $GITHUB_OUTPUT
+        fi
+        
+        # PyPI: publish only on version tags or manual dispatch to pypi
+        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+          echo "pypi=true" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.target_env }}" == "pypi" && "${{ github.event.inputs.dry_run }}" != "true" ]]; then
+          echo "pypi=true" >> $GITHUB_OUTPUT
+        else
+          echo "pypi=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Run critical tests
+      run: |
+        python -m pytest tests/unit/ -x --tb=short -q
+
+    - name: Verify CLI functionality
+      run: |
+        python -c "import sys; sys.path.insert(0, 'src'); import improved_sdd_cli; print('✓ CLI module import successful')"
+        python src/improved_sdd_cli.py --help | head -5
+        python src/improved_sdd_cli.py --version
+
+    - name: Build package
+      run: |
+        python -m build
+        echo "✓ Package built successfully"
+
+    - name: Check package integrity
+      run: |
+        python -m twine check dist/*
+        echo "✓ Package integrity check passed"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-${{ github.run_id }}
+        path: dist/
+        retention-days: 7
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    runs-on: ubuntu-latest
+    needs: [pre-publish-validation]
+    if: needs.pre-publish-validation.outputs.should-publish-testpypi == 'true'
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-${{ github.run_id }}
+        path: dist/
+
+    - name: Publish to TestPyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        skip-existing: true
+        verbose: true
+
+    - name: Wait for package availability
+      run: |
+        echo "Waiting for package to be available on TestPyPI..."
+        sleep 30
+
+    - name: Verify TestPyPI installation
+      run: |
+        python -m pip install --upgrade pip
+        pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ${{ needs.pre-publish-validation.outputs.package-name }}==${{ needs.pre-publish-validation.outputs.package-version }} || echo "⚠️ Installation verification failed - package may still be indexing"
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [pre-publish-validation]
+    if: needs.pre-publish-validation.outputs.should-publish-pypi == 'true'
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-${{ github.run_id }}
+        path: dist/
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        verbose: true
+
+    - name: Wait for package availability
+      run: |
+        echo "Waiting for package to be available on PyPI..."
+        sleep 60
+
+    - name: Verify PyPI installation
+      run: |
+        python -m pip install --upgrade pip
+        pip install ${{ needs.pre-publish-validation.outputs.package-name }}==${{ needs.pre-publish-validation.outputs.package-version }} || echo "⚠️ Installation verification failed - package may still be indexing"
+
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [pre-publish-validation, publish-pypi]
+    if: needs.publish-pypi.result == 'success' && startsWith(github.ref, 'refs/tags/')
+    
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release v${{ steps.version.outputs.version }}
+        body: |
+          # Release v${{ steps.version.outputs.version }}
+          
+          ## Installation
+          ```bash
+          pip install improved-sdd==${{ steps.version.outputs.version }}
+          ```
+          
+          ## Package Links
+          - 📦 [PyPI Package](https://pypi.org/project/improved-sdd/${{ steps.version.outputs.version }}/)
+          - 📖 [Documentation](https://github.com/robertmeisner/improved-sdd#readme)
+          - 🐛 [Report Issues](https://github.com/robertmeisner/improved-sdd/issues)
+          
+          ## Changes
+          See the [commit history](https://github.com/robertmeisner/improved-sdd/compare/v${{ steps.version.outputs.version }}...HEAD) for detailed changes in this release.
+        draft: false
+        prerelease: false
+
+  workflow-summary:
+    name: Workflow Summary
+    runs-on: ubuntu-latest
+    needs: [pre-publish-validation, publish-testpypi, publish-pypi, create-github-release]
+    if: always()
+    
+    steps:
+    - name: Summary
+      run: |
+        echo "## Publishing Workflow Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Package:** ${{ needs.pre-publish-validation.outputs.package-name }} v${{ needs.pre-publish-validation.outputs.package-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Ref:** ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Results" >> $GITHUB_STEP_SUMMARY
+        echo "- **Validation:** ${{ needs.pre-publish-validation.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **TestPyPI:** ${{ needs.publish-testpypi.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **PyPI:** ${{ needs.publish-pypi.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **GitHub Release:** ${{ needs.create-github-release.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ needs.publish-testpypi.result }}" == "success" ]]; then
+          echo "🧪 **TestPyPI:** https://test.pypi.org/project/improved-sdd/" >> $GITHUB_STEP_SUMMARY
+        fi
+        if [[ "${{ needs.publish-pypi.result }}" == "success" ]]; then
+          echo "📦 **PyPI:** https://pypi.org/project/improved-sdd/" >> $GITHUB_STEP_SUMMARY
+        fi
