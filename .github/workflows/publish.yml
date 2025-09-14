@@ -42,12 +42,48 @@ jobs:
         echo "SHA: ${{ github.sha }}"
         echo "Repository: ${{ github.repository }}"
 
-    - name: Wait for Test Suite
-      id: wait-tests
+    - name: Wait for Test Suite (Python 3.9)
+      id: wait-tests-39
       uses: lewagon/wait-on-check-action@v1.3.4
       with:
         ref: ${{ github.ref }}
-        check-name: 'Test Suite'
+        check-name: 'Test Suite (3.9)'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 30
+        allowed-conclusions: success
+        verbose: true
+      continue-on-error: true
+
+    - name: Wait for Test Suite (Python 3.10)
+      id: wait-tests-310
+      uses: lewagon/wait-on-check-action@v1.3.4
+      with:
+        ref: ${{ github.ref }}
+        check-name: 'Test Suite (3.10)'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 30
+        allowed-conclusions: success
+        verbose: true
+      continue-on-error: true
+
+    - name: Wait for Test Suite (Python 3.11)
+      id: wait-tests-311
+      uses: lewagon/wait-on-check-action@v1.3.4
+      with:
+        ref: ${{ github.ref }}
+        check-name: 'Test Suite (3.11)'
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 30
+        allowed-conclusions: success
+        verbose: true
+      continue-on-error: true
+
+    - name: Wait for Test Suite (Python 3.12)
+      id: wait-tests-312
+      uses: lewagon/wait-on-check-action@v1.3.4
+      with:
+        ref: ${{ github.ref }}
+        check-name: 'Test Suite (3.12)'
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         wait-interval: 30
         allowed-conclusions: success
@@ -55,12 +91,46 @@ jobs:
       continue-on-error: true
 
     - name: Check Test Suite Status
-      if: steps.wait-tests.outcome != 'success'
       run: |
-        echo "❌ Test Suite workflow failed or timed out"
-        echo "Status: ${{ steps.wait-tests.outcome }}"
-        echo "This will block publishing to ensure quality"
-        exit 1
+        echo "Checking Test Suite results across all Python versions..."
+        
+        # Check each Test Suite outcome
+        PYTHON_39_STATUS="${{ steps.wait-tests-39.outcome }}"
+        PYTHON_310_STATUS="${{ steps.wait-tests-310.outcome }}"
+        PYTHON_311_STATUS="${{ steps.wait-tests-311.outcome }}"
+        PYTHON_312_STATUS="${{ steps.wait-tests-312.outcome }}"
+        
+        echo "Test Suite (3.9): $PYTHON_39_STATUS"
+        echo "Test Suite (3.10): $PYTHON_310_STATUS"
+        echo "Test Suite (3.11): $PYTHON_311_STATUS"
+        echo "Test Suite (3.12): $PYTHON_312_STATUS"
+        
+        # Fail if any Test Suite failed
+        FAILED_COUNT=0
+        if [[ "$PYTHON_39_STATUS" != "success" ]]; then
+          echo "❌ Test Suite (Python 3.9) failed: $PYTHON_39_STATUS"
+          FAILED_COUNT=$((FAILED_COUNT + 1))
+        fi
+        if [[ "$PYTHON_310_STATUS" != "success" ]]; then
+          echo "❌ Test Suite (Python 3.10) failed: $PYTHON_310_STATUS"
+          FAILED_COUNT=$((FAILED_COUNT + 1))
+        fi
+        if [[ "$PYTHON_311_STATUS" != "success" ]]; then
+          echo "❌ Test Suite (Python 3.11) failed: $PYTHON_311_STATUS"
+          FAILED_COUNT=$((FAILED_COUNT + 1))
+        fi
+        if [[ "$PYTHON_312_STATUS" != "success" ]]; then
+          echo "❌ Test Suite (Python 3.12) failed: $PYTHON_312_STATUS"
+          FAILED_COUNT=$((FAILED_COUNT + 1))
+        fi
+        
+        if [[ $FAILED_COUNT -gt 0 ]]; then
+          echo "❌ $FAILED_COUNT Test Suite(s) failed or timed out"
+          echo "This will block publishing to ensure quality"
+          exit 1
+        else
+          echo "✅ All Test Suites passed successfully"
+        fi
 
     - name: Wait for Security Audit
       id: wait-security
@@ -94,7 +164,10 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| Workflow | Status | Conclusion |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|--------|------------|" >> $GITHUB_STEP_SUMMARY
-        echo "| Test Suite | ${{ steps.wait-tests.outcome }} | ${{ steps.wait-tests.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite (3.9) | ${{ steps.wait-tests-39.outcome }} | ${{ steps.wait-tests-39.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite (3.10) | ${{ steps.wait-tests-310.outcome }} | ${{ steps.wait-tests-310.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite (3.11) | ${{ steps.wait-tests-311.outcome }} | ${{ steps.wait-tests-311.conclusion }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Test Suite (3.12) | ${{ steps.wait-tests-312.outcome }} | ${{ steps.wait-tests-312.conclusion }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Security Audit | ${{ steps.wait-security.outcome }} | ${{ steps.wait-security.conclusion }} |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "✅ All required CI workflows completed successfully" >> $GITHUB_STEP_SUMMARY
