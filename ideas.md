@@ -543,4 +543,4 @@ Files:
 
  --add question cli about gitlab flow integration when running init command.
 
--Publishing to PyPI from github to tet with every version to TestPyPI and then to PyPI on git tag.
+-Publishing to PyPI from github to tet with every version to TestPyPI and then to PyPI on git tag. only from master branch. is it good idea??
