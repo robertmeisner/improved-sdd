@@ -1,5 +1,11 @@
 name: CI/CD Pipeline
 
+# Explicit permissions for security (least privilege principle)
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
 on:
   push:
     branches: [ main, develop, master, 'feature/**' ]

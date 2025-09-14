@@ -1,5 +1,11 @@
 name: Security Audit
 
+# Explicit permissions for security (least privilege principle)
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
 on:
   schedule:
     # Run weekly security scans
