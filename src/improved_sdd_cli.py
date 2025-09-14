@@ -38,18 +38,36 @@ import typer
 from typer.core import TyperGroup
 
 # Import commands lazily to avoid import errors at module level
+check_command, delete_command, init_command, console_manager = (None, None, None, None)
+
+
 def _import_commands():
     """Import commands lazily to handle different execution contexts."""
+    global check_command, delete_command, init_command, console_manager
+    # Return cached imports if already loaded
+    if all((check_command, delete_command, init_command, console_manager)):
+        return check_command, delete_command, init_command, console_manager
+
     try:
-        # When installed as package, these should work directly
-        from commands import check_command, delete_command, init_command
-        from ui import console_manager
-        return check_command, delete_command, init_command, console_manager
-    except ImportError:
-        # When running from source, use src prefix
-        from src.commands import check_command, delete_command, init_command
-        from src.ui import console_manager
-        return check_command, delete_command, init_command, console_manager
+        # When installed as a package, use relative imports
+        from .commands.check import check_command as check_fn
+        from .commands.delete import delete_command as delete_fn
+        from .commands.init import init_command as init_fn
+        from .ui.console import console_manager as cm
+    except (ImportError, ModuleNotFoundError):
+        # When running as a script, use src-prefixed imports
+        from src.commands.check import check_command as check_fn
+        from src.commands.delete import delete_command as delete_fn
+        from src.commands.init import init_command as init_fn
+        from src.ui.console import console_manager as cm
+
+    # Assign to global variables so they can be patched in tests
+    check_command = check_fn
+    delete_command = delete_fn
+    init_command = init_fn
+    console_manager = cm
+    
+    return check_command, delete_command, init_command, console_manager
 
 # Core constants and exceptions are now imported from core module
 
@@ -58,11 +76,12 @@ class BannerGroup(TyperGroup):
     """Custom group that shows banner before help and tip after help."""
 
     def format_help(self, ctx, formatter):
-        # Import console_manager lazily
-        check_command, delete_command, init_command, console_manager = _import_commands()
+        # Ensure commands are imported before showing help
+        _, _, _, local_console_manager = _import_commands()
         
         # Show banner before help
-        console_manager.show_banner()
+        if local_console_manager:
+            local_console_manager.show_banner()
         super().format_help(ctx, formatter)
 
         # Add tip after the help content
@@ -85,22 +104,34 @@ app = typer.Typer(
 def callback(ctx: typer.Context):
     """Show banner when no subcommand is provided."""
     if ctx.invoked_subcommand is None and "--help" not in sys.argv and "-h" not in sys.argv:
-        check_command, delete_command, init_command, console_manager = _import_commands()
-        console_manager.show_banner()
-        console_manager.show_centered_message("[dim]Run 'improved-sdd --help' for usage information[/dim]")
-        console_manager.print_newline()
+        _, _, _, local_console_manager = _import_commands()
+        if local_console_manager:
+            local_console_manager.show_banner()
+            local_console_manager.show_centered_message("[dim]Run 'improved-sdd --help' for usage information[/dim]")
+            local_console_manager.print_newline()
 
 
 def main():
-    # Import commands at runtime to register them
-    check_command, delete_command, init_command, console_manager = _import_commands()
-    
-    # Register the commands with the app
-    app.command(name="init")(init_command)
-    app.command(name="delete")(delete_command)
-    app.command(name="check")(check_command)
-    
+    """Entry point for the CLI application."""
+    # The app is already configured by the _setup_app call at the module level
     app()
+
+
+def _setup_app():
+    """Import and register commands for the Typer app."""
+    # Import commands at runtime to register them
+    check_fn, delete_fn, init_fn, _ = _import_commands()
+
+    # Register the commands with the app
+    if init_fn:
+        app.command(name="init")(init_fn)
+    if delete_fn:
+        app.command(name="delete")(delete_fn)
+    if check_fn:
+        app.command(name="check")(check_fn)
+# Configure the app immediately upon import
+_setup_app()
+
 
 
 if __name__ == "__main__":
