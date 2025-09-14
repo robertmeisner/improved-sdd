@@ -39,12 +39,13 @@ from typer.core import TyperGroup
 
 # Import commands
 try:
-    from src.commands import check_command, delete_command, init_command
-    from src.ui import console_manager
-except ImportError:
-    # If we're in the src directory and can't import src.*, try relative imports
+    # Try absolute imports first (when installed)
     from commands import check_command, delete_command, init_command
     from ui import console_manager
+except ImportError:
+    # If that fails, try with src prefix (when running from source)
+    from src.commands import check_command, delete_command, init_command
+    from src.ui import console_manager
 
 # Core constants and exceptions are now imported from core module
 
