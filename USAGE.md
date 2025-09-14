@@ -129,3 +129,62 @@ git status
 git checkout -b feature/spec-user-auth
 git add . && git commit -m "Add requirements for user-auth"
 ```
+
+## Version Management Utility
+
+The version management utility (`tools/bump_version.py`) provides professional semantic version management for releases.
+
+### Basic Usage
+
+```bash
+# Show current version and available bumps
+python tools/bump_version.py current
+
+# Bump version with dry-run preview
+python tools/bump_version.py bump patch --dry-run
+python tools/bump_version.py bump minor --dry-run  
+python tools/bump_version.py bump major --dry-run
+
+# Actually bump the version
+python tools/bump_version.py bump patch
+
+# Validate version format
+python tools/bump_version.py validate 1.2.3-alpha.1
+
+# Show documentation and examples
+python tools/bump_version.py info
+```
+
+### Release Workflow
+
+The tool provides step-by-step guidance for the complete release workflow:
+
+1. **Bump Version**: Update version in `pyproject.toml`
+2. **Commit Changes**: Git commit with version bump
+3. **Create Tag**: Git tag with version (triggers PyPI publishing)
+4. **Push Changes**: Push commits and tags to trigger automation
+
+**Example workflow**:
+```bash
+# 1. Bump version
+python tools/bump_version.py bump patch
+
+# 2. Follow the provided instructions:
+git add pyproject.toml
+git commit -m "chore: bump version to 0.1.4"
+git tag v0.1.4
+git push origin main
+git push origin v0.1.4
+
+# 3. Monitor at: https://github.com/robertmeisner/improved-sdd/actions
+```
+
+### Features
+
+- **Semantic Versioning**: Full SemVer support with prerelease/build metadata
+- **Rich UI**: Beautiful terminal output with tables and color coding
+- **Dry Run Mode**: Preview changes before applying them
+- **Validation**: Verify version formats before using them
+- **Error Handling**: Clear error messages with helpful tips
+- **Next Steps**: Automated Git workflow guidance
+- **PyPI Integration**: Direct integration with publishing automation

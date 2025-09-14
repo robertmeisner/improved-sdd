@@ -189,6 +189,59 @@ When rotating tokens:
 - **Solution**: Verify secrets exist with correct names
 - **Action**: Check secret names match `TEST_PYPI_API_TOKEN` and `PYPI_API_TOKEN`
 
+#### CI Workflow Dependencies
+- **Issue**: Publishing blocked because CI workflows failed
+- **Solution**: Fix CI issues first, or use manual override procedures
+- **Action**: Follow manual override procedures below
+
+### Manual Override Procedures
+
+When CI workflows fail but you need to publish urgently, use these procedures:
+
+#### Emergency Publishing (Use Sparingly)
+1. **Manual Workflow Dispatch**:
+   - Go to repository Actions tab
+   - Select "Publish to PyPI" workflow  
+   - Click "Run workflow"
+   - Enable "dry_run" to test first without actual publishing
+   - Select target environment (testpypi/pypi)
+
+2. **CI Workflow Troubleshooting**:
+   ```bash
+   # Check workflow status (requires GitHub CLI)
+   gh run list --workflow=ci.yml --limit=5
+   
+   # View specific workflow logs
+   gh run view [run-id] --log
+   
+   # Re-run failed workflows
+   gh run rerun [run-id] --failed
+   ```
+
+3. **Manual Package Upload** (Last Resort):
+   ```bash
+   # Build package locally
+   python -m build
+   
+   # Test upload to TestPyPI first
+   python -m twine upload --repository testpypi dist/*
+   
+   # Upload to PyPI (after testing)
+   python -m twine upload dist/*
+   ```
+
+#### Timeout Handling
+- **Issue**: CI workflows are stuck or running too long
+- **Solution**: The publishing workflow has built-in timeout handling
+- **Action**: Wait for automatic timeout, then investigate CI issues
+
+#### Force Publishing Override
+**Warning**: Only use this in emergency situations where CI is broken but code quality is verified through other means.
+
+1. Edit the workflow file temporarily to skip CI dependencies
+2. Use workflow_dispatch with manual approval
+3. Revert workflow changes immediately after publishing
+
 ## Completion Checklist
 
 - [ ] TestPyPI account created and verified

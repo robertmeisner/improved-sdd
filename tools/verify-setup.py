@@ -86,7 +86,8 @@ class SetupVerifier:
             "has_testpypi_job": False,
             "has_pypi_job": False,
             "has_required_triggers": False,
-            "has_environments": False
+            "has_environments": False,
+            "has_ci_dependencies": False
         }
         
         workflow_path = Path(WORKFLOW_FILE)
@@ -111,6 +112,12 @@ class SetupVerifier:
             # Check for environment references
             if "environment: testpypi" in content and "environment: pypi" in content:
                 results["has_environments"] = True
+            
+            # Check for CI workflow dependencies
+            if ("lewagon/wait-on-check-action" in content and 
+                "check-name: 'Test Suite'" in content and 
+                "check-name: 'Security Audit'" in content):
+                results["has_ci_dependencies"] = True
                 
         except Exception as e:
             console.print(f"[red]Error reading workflow file: {e}[/red]")
@@ -257,10 +264,20 @@ def verify(
     console.print("\n[bold]Workflow Configuration[/bold]")
     workflow_results = verifier.check_workflow_file()
     
+    # Define better display names for workflow checks
+    workflow_check_names = {
+        "file_exists": "Workflow File Exists",
+        "has_testpypi_job": "TestPyPI Publishing Job",
+        "has_pypi_job": "PyPI Publishing Job", 
+        "has_required_triggers": "Required Triggers (Push/Tags/Manual)",
+        "has_environments": "Environment References",
+        "has_ci_dependencies": "CI Workflow Dependencies"
+    }
+    
     for check, passed in workflow_results.items():
         status = "✓" if passed else "✗"
         color = "green" if passed else "red"
-        check_name = check.replace("_", " ").title()
+        check_name = workflow_check_names.get(check, check.replace("_", " ").title())
         console.print(f"[{color}]{status} {check_name}[/{color}]")
     
     # Check GitHub configuration (if token available)
