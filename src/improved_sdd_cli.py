@@ -24,28 +24,27 @@ Or install globally:
 import sys
 from pathlib import Path
 
-# Add the parent directory to sys.path if running directly
-if __name__ == "__main__":
-    # Get the directory containing this script (src)
-    script_dir = Path(__file__).parent
-    # Get the project root (parent of src)
-    project_root = script_dir.parent
-    # Add project root to sys.path so we can import src modules
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
+# Set up module search path
+# This ensures imports work both when running directly and when installed
+current_dir = Path(__file__).parent
+project_root = current_dir.parent
+
+# For development execution: add src to Python path
+if str(current_dir) not in sys.path:
+    sys.path.insert(0, str(current_dir))
+
+# For package execution: ensure project structure is available
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 import typer
 from typer.core import TyperGroup
 
-# Import commands
-try:
-    # Try absolute imports first (when installed)
-    from commands import check_command, delete_command, init_command
-    from ui import console_manager
-except ImportError:
-    # If that fails, try with src prefix (when running from source)
-    from src.commands import check_command, delete_command, init_command
-    from src.ui import console_manager
+# Now we can use direct imports since src is in the path
+from commands.check import check_command
+from commands.delete import delete_command  
+from commands.init import init_command
+from ui.console import console_manager
 
 # Core constants and exceptions are now imported from core module
 
