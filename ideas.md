@@ -1,7 +1,6 @@
 - modify chatmode: rename feasibility.md to 01_feasibility.md requirements.md to 02_requirements.md and design.md to 03_design.md tasks.md to 04_tasks.md
 rename feasibility.md and tasks.md to 04_tasks.md
--add __IN_PROGRESS__ file tos pec after you start to work on the tasks
-- add __DONE__ file to spec after you finish ALL tasks
+
 
 ## GitLab Flow Integration Ideas
 
@@ -497,3 +496,39 @@ done
 ```
 
 These scripts give you complete visibility across all branches without needing a centralized status file. The Python version provides rich formatting and can be easily extended with more features like filtering, sorting, and exporting to different formats.
+
+
+python src/improved_sdd_cli.py init --template-branch feature/spec-gitlab-flow-integration
+
+
+
+Only delete files created by the CLI. ive added .github\chatmodes\xxx.chatmode.md manually and it should stay.
+
+terminal :
+
+🔧 What kind of app are you building?
+
+1. mcp-server: MCP Server - Model Context Protocol server for AI integrations
+2. python-cli: Python CLI - Command-line application using typer and rich
+
+Select option (1-2) [default: 1]: 2
+Selected:  python-cli
+Files to be deleted for 'python-cli': 
+
+Files:
+  🗑️  .github\chatmodes\sddSpecDriven.chatmode.md
+  🗑️  .github\chatmodes\sddSpecDrivenSimple.chatmode.md
+  🗑️  .github\chatmodes\sddTesting.chatmode.md
+  🗑️  .github\chatmodes\xxx.chatmode.md
+  🗑️  .github\instructions\sddPythonCliDev.instructions.md
+  🗑️  .github\prompts\sddCommitWorkflow.prompt.md
+  🗑️  .github\prompts\sddFileVerification.prompt.md
+  🗑️  .github\prompts\sddProjectAnalysis.prompt.md
+  🗑️  .github\prompts\sddSpecSync.prompt.md
+  🗑️  .github\prompts\sddTaskExecution.prompt.md
+  🗑️  .github\prompts\sddTaskVerification.prompt.md
+  🗑️  .github\prompts\sddTestAll.prompt.md
+
+
+
+  always use thinking, todo, memory and project analyzes tools (MCP) available.
