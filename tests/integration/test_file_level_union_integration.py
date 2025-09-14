@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from src.core.models import TemplateSourceType
+from core.models import TemplateSourceType
 from src.services.template_resolver import TemplateResolver
 
 

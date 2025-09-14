@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.core.models import MergedTemplateSource, TemplateResolutionResult, TemplateSource, TemplateSourceType
+from core.models import MergedTemplateSource, TemplateResolutionResult, TemplateSource, TemplateSourceType
 from src.services.template_resolver import TemplateResolver
 
 

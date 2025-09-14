@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from src.core.exceptions import GitHubAPIError, NetworkError, TemplateError, TimeoutError
-from src.core.models import ProgressInfo, TemplateSource, TemplateSourceType
+from core.exceptions import GitHubAPIError, NetworkError, TemplateError, TimeoutError
+from core.models import ProgressInfo, TemplateSource, TemplateSourceType
 from src.services.github_downloader import GitHubDownloader
 
 

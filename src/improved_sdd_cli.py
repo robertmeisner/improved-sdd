@@ -41,11 +41,11 @@ from typer.core import TyperGroup
 check_command, delete_command, init_command, console_manager = (None, None, None, None)
 
 
-def _import_commands():
+def _import_commands(force=False):
     """Import commands lazily to handle different execution contexts."""
     global check_command, delete_command, init_command, console_manager
-    # Return cached imports if already loaded
-    if all((check_command, delete_command, init_command, console_manager)):
+    # Return cached imports if already loaded and not forcing
+    if not force and all((check_command, delete_command, init_command, console_manager)):
         return check_command, delete_command, init_command, console_manager
 
     try:
@@ -107,13 +107,16 @@ app = typer.Typer(
     cls=BannerGroup,
 )
 
+# Track if app has been set up
+_app_setup_done = False
+
 
 @app.callback()
 def callback(ctx: typer.Context):
     """Show banner when no subcommand is provided."""
     if ctx.invoked_subcommand is None and "--help" not in sys.argv and "-h" not in sys.argv:
         # Ensure app is set up before showing banner
-        _setup_app()
+        _ensure_app_setup()
         _, _, _, local_console_manager = _import_commands()
         if local_console_manager:
             local_console_manager.show_banner()
@@ -124,14 +127,22 @@ def callback(ctx: typer.Context):
 def main():
     """Entry point for the CLI application."""
     # Ensure app is set up before running
-    _setup_app()
+    _ensure_app_setup()
     app()
+
+
+def _ensure_app_setup(force=False):
+    """Ensure the app is set up before use."""
+    global _app_setup_done
+    if not _app_setup_done or force:
+        _setup_app()
+        _app_setup_done = True
 
 
 def _setup_app():
     """Import and register commands for the Typer app."""
     # Import commands at runtime to register them
-    check_fn, delete_fn, init_fn, _ = _import_commands()
+    check_fn, delete_fn, init_fn, _ = _import_commands(force=True)
 
     # Register the commands with the app
     if init_fn:

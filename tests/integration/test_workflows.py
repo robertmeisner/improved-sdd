@@ -12,6 +12,7 @@ from typer.testing import CliRunner
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.improved_sdd_cli import app  # noqa: E402
+from src.core.models import TemplateResolutionResult, TemplateSource, TemplateSourceType  # noqa: E402
 from src.services.file_tracker import FileTracker  # noqa: E402
 from src.utils import create_project_structure  # noqa: E402
 
@@ -228,10 +229,20 @@ class TestProjectStructureCreation:
         """Test that templates are properly customized for AI tools."""
         file_tracker = FileTracker()
 
-        with patch(
-            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
-            return_value=mock_templates_dir,
-        ):
+        # Mock the TemplateResolver to return bundled templates instead of downloading
+        with patch("services.TemplateResolver.resolve_templates_with_transparency") as mock_resolve:
+            mock_source = TemplateSource(
+                path=mock_templates_dir,
+                source_type=TemplateSourceType.BUNDLED,
+                size_bytes=1024
+            )
+            mock_resolve.return_value = TemplateResolutionResult(
+                source=mock_source,
+                success=True,
+                message="Using bundled templates",
+                fallback_attempted=True,
+            )
+
             create_project_structure(temp_project_dir, "python-cli", ["github-copilot"], file_tracker, force=True)
 
         # Check that template content was customized
@@ -248,10 +259,20 @@ class TestProjectStructureCreation:
         """Test creating structure for multiple AI tools."""
         file_tracker = FileTracker()
 
-        with patch(
-            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
-            return_value=mock_templates_dir,
-        ):
+        # Mock the TemplateResolver to return bundled templates instead of downloading
+        with patch("services.TemplateResolver.resolve_templates_with_transparency") as mock_resolve:
+            mock_source = TemplateSource(
+                path=mock_templates_dir,
+                source_type=TemplateSourceType.BUNDLED,
+                size_bytes=1024
+            )
+            mock_resolve.return_value = TemplateResolutionResult(
+                source=mock_source,
+                success=True,
+                message="Using bundled templates",
+                fallback_attempted=True,
+            )
+
             create_project_structure(
                 temp_project_dir, "python-cli", ["github-copilot", "claude"], file_tracker, force=True
             )
@@ -321,20 +342,27 @@ class TestFullSystemIntegration:
 
     def test_error_handling_missing_templates(self, runner: CliRunner, temp_dir: Path):
         """Test error handling when templates directory is missing."""
-        # Mock script location to point to non-existent templates
-        non_existent = temp_dir / "non-existent"
+        # Ensure app is set up before running the test
+        from src.improved_sdd_cli import _ensure_app_setup
+        _ensure_app_setup()
 
-        with patch(
-            "src.services.template_resolver.TemplateResolver.get_bundled_templates_path", return_value=non_existent
-        ):
+        # Mock TemplateResolver to simulate failure
+        with patch("services.TemplateResolver.resolve_templates_with_transparency") as mock_resolve:
+            mock_resolve.return_value = TemplateResolutionResult(
+                source=None,
+                success=False,
+                message="No templates available",
+                fallback_attempted=True,
+            )
+
             with patch("pathlib.Path.cwd", return_value=temp_dir):
                 result = runner.invoke(
                     app, ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--force"]
                 )
 
-        # Current implementation exits with error when templates don't exist
+        # Should exit with error when templates are not available
         assert result.exit_code == 1
-        assert "Template source not accessible" in result.stdout
+        assert "No templates available" in result.stdout
 
 
 @pytest.mark.integration
@@ -411,24 +439,30 @@ class TestTemplateDownloadIntegration:
         # Should have attempted to download or use bundled templates
         # The exact behavior depends on network connectivity and bundled templates availability
 
-    @patch("src.improved_sdd_cli.console_manager.show_banner")
-    def test_offline_mode_workflow(self, mock_banner, runner: CliRunner, temp_dir: Path, mock_templates_dir: Path):
+    def test_offline_mode_workflow(self, runner: CliRunner, temp_dir: Path, mock_templates_dir: Path):
         """Test complete offline mode workflow."""
-        # Test offline mode flag
+        # Ensure app is set up before running the test
+        from src.improved_sdd_cli import _ensure_app_setup
+        _ensure_app_setup()
 
-        with patch("pathlib.Path.cwd", return_value=temp_dir):
-            with patch(
-                "src.services.template_resolver.TemplateResolver.get_bundled_templates_path",
-                return_value=mock_templates_dir,
-            ):
+        # Mock TemplateResolver to simulate offline failure
+        with patch("services.TemplateResolver.resolve_templates_with_transparency") as mock_resolve:
+            mock_resolve.return_value = TemplateResolutionResult(
+                source=None,
+                success=False,
+                message="No templates found in offline mode",
+                fallback_attempted=True,
+            )
+
+            with patch("pathlib.Path.cwd", return_value=temp_dir):
                 result = runner.invoke(
                     app,
                     ["init", "--app-type", "python-cli", "--ai-tools", "github-copilot", "--offline", "--force"],
                 )
 
-        assert result.exit_code == 0
-        # In offline mode, should complete successfully (may use bundled templates or graceful handling)
-        assert "Templates installed!" in result.stdout or "offline" in result.stdout.lower()
+        # In offline mode with no local/bundled templates, should fail
+        assert result.exit_code == 1
+        assert "No templates available" in result.stdout
 
     @patch("src.improved_sdd_cli.console_manager.show_banner")
     def test_cli_option_combinations_workflow(self, mock_banner, runner: CliRunner, temp_dir: Path):

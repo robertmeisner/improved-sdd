@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.core.models import TemplateResolutionResult, TemplateSourceType
+from core.models import TemplateResolutionResult, TemplateSourceType
 from src.services.template_resolver import TemplateResolver
 
 

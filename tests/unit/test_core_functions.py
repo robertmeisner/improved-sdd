@@ -194,7 +194,7 @@ class TestToolChecking:
     """Test tool checking functions."""
 
     @patch("shutil.which")
-    @patch("src.ui.console.ConsoleManager.print_status")
+    @patch("ui.console_manager.print_status")
     def test_check_tool_found(self, mock_print_status, mock_which):
         """Test check_tool when tool is found."""
         mock_which.return_value = "/usr/bin/python"
@@ -205,7 +205,7 @@ class TestToolChecking:
         mock_print_status.assert_called_with("python", True)
 
     @patch("shutil.which")
-    @patch("src.ui.console.ConsoleManager.print_status")
+    @patch("ui.console_manager.print_status")
     def test_check_tool_not_found_required(self, mock_print_status, mock_which):
         """Test check_tool when required tool is not found."""
         mock_which.return_value = None
@@ -216,7 +216,7 @@ class TestToolChecking:
         mock_print_status.assert_called_with("python", False, "Install from python.org", False)
 
     @patch("shutil.which")
-    @patch("src.ui.console.ConsoleManager.print_status")
+    @patch("ui.console_manager.print_status")
     def test_check_tool_not_found_optional(self, mock_print_status, mock_which):
         """Test check_tool when optional tool is not found."""
         mock_which.return_value = None
@@ -227,8 +227,8 @@ class TestToolChecking:
         mock_print_status.assert_called_with("optional-tool", False, "Install hint", True)
 
     @patch("shutil.which")
-    @patch("src.ui.console.ConsoleManager.print_success")
-    @patch("src.ui.console.ConsoleManager.print_dim")
+    @patch("ui.console_manager.print_success")
+    @patch("ui.console_manager.print_dim")
     def test_check_github_copilot_vscode_found(self, mock_print_dim, mock_print_success, mock_which):
         """Test check_github_copilot when VS Code is found."""
         mock_which.return_value = "/usr/bin/code"
@@ -239,9 +239,9 @@ class TestToolChecking:
         mock_print_success.assert_called_with("VS Code found")
 
     @patch("shutil.which")
-    @patch("src.ui.console.ConsoleManager.print_warning")
-    @patch("src.ui.console.ConsoleManager.print")
-    @patch("src.ui.console.ConsoleManager.print_dim")
+    @patch("ui.console_manager.print_warning")
+    @patch("ui.console_manager.print")
+    @patch("ui.console_manager.print_dim")
     def test_check_github_copilot_vscode_not_found(self, mock_print_dim, mock_print, mock_print_warning, mock_which):
         """Test check_github_copilot when VS Code is not found."""
         mock_which.return_value = None

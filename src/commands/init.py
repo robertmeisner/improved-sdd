@@ -1,9 +1,3 @@
-"""Init command implementation for Improved-SDD CLI.
-
-This module contains the init command logic for installing templates
-and setting up AI-optimized development environments.
-"""
-
 import shutil
 from pathlib import Path
 
@@ -12,6 +6,9 @@ import typer
 from core import AI_TOOLS, APP_TYPES, LOCAL_TEMPLATES_DIR
 from services import FileTracker
 from ui import console_manager
+
+# Import for testing purposes
+from utils import create_project_structure, select_ai_tools, select_app_type
 
 
 def _count_existing_templates(project_path: Path) -> tuple[int, int]:
@@ -102,7 +99,7 @@ def init_command(
 
     from rich.console import Console
 
-    from utils import create_project_structure, select_ai_tools, select_app_type
+    # Functions are imported at module level
 
     # Detect platform for GitLab Flow commands
     current_platform = "windows" if platform.system() == "Windows" else "unix"
