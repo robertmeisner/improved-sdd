@@ -82,7 +82,9 @@ class TestCLICommands:
         mock_select_app.return_value = "python-cli"
         mock_create_project.return_value = None
 
-        result = self.runner.invoke(app, ["init", "--here", "--app-type", "python-cli", "--ai-tools", "claude"])
+        # Use a temporary directory instead of current directory to avoid environment differences
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = self.runner.invoke(app, ["init", temp_dir, "--app-type", "python-cli", "--ai-tools", "claude"])
 
         assert result.exit_code == 0
         # Verify command completed successfully (mocks don't work with lazy loading)
@@ -161,9 +163,9 @@ class TestCLICommands:
         assert result.exit_code == 0
         assert len(result.output) > 0
 
-    @patch("src.utils.offer_user_choice")
-    @patch("src.utils.check_github_copilot")
-    @patch("src.utils.check_tool")
+    @patch("utils.offer_user_choice")
+    @patch("utils.check_github_copilot")
+    @patch("utils.check_tool")
     def test_check_command(self, mock_check_tool, mock_check_copilot, mock_offer_choice):
         """Test check command."""
 
@@ -437,10 +439,10 @@ class TestCheckCommand:
         ]
         assert any(msg in result.stdout for msg in success_messages)
 
-    @patch("src.utils.os.getenv")
-    @patch("src.commands.check.check_tool")
-    @patch("src.commands.check.check_github_copilot")
-    @patch("src.ui.console_manager.show_banner")
+    @patch("os.getenv")
+    @patch("utils.check_tool")
+    @patch("utils.check_github_copilot")
+    @patch("ui.console_manager.show_banner")
     def test_check_python_missing(
         self, mock_banner, mock_check_copilot, mock_check_tool, mock_getenv, runner: CliRunner
     ):
@@ -467,10 +469,10 @@ class TestCheckCommand:
         assert "python" in result.output.lower()
 
     @patch("os.getenv")
-    @patch("src.commands.check.offer_user_choice")
-    @patch("src.commands.check.check_tool")
-    @patch("src.commands.check.check_github_copilot")
-    @patch("src.ui.console_manager.show_banner")
+    @patch("utils.offer_user_choice")
+    @patch("utils.check_tool")
+    @patch("utils.check_github_copilot")
+    @patch("ui.console_manager.show_banner")
     def test_check_optional_tools_missing_user_declines(
         self, mock_banner, mock_check_copilot, mock_check_tool, mock_offer_choice, mock_getenv, runner: CliRunner
     ):
