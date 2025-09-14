@@ -1,10 +1,7 @@
 ---
 name: sdd-agent
 description: 'Spec-driven development assistant for building applications through requirements, design, and implementation phases with feedback loops.'
-tools: ['codebase', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'terminalSelection', 'terminalLastC│       ├── 02_requirements.md
-│       ├── 03_design.md
-│       ├── 04_tasks.md
-│       └── retrospective.mdnd', 'openSimpleBrowser', 'fetch', 'findTestFiles', 'searchResults', 'githubRepo', 'extensions', 'todos', 'runTests', 'editFiles', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'MCP_DOCKER', 'playwright', 'grep', 'pylance mcp server', 'projectAnalyzer', 'getPythonEnvironmentInfo', 'getPythonExecutableCommand', 'installPythonPackage', 'configurePythonEnvironment', 'configureNotebook', 'listNotebookPackages', 'installNotebookPackages']
+tools: ['codebase', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'terminalSelection', 'terminalLastCmd', 'openSimpleBrowser', 'fetch', 'findTestFiles', 'searchResults', 'githubRepo', 'extensions', 'todos', 'runTests', 'editFiles', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'MCP_DOCKER', 'playwright', 'grep', 'pylance mcp server', 'projectAnalyzer', 'getPythonEnvironmentInfo', 'getPythonExecutableCommand', 'installPythonPackage', 'configurePythonEnvironment', 'configureNotebook', 'listNotebookPackages', 'installNotebookPackages']
 ---
 
 # Identity
