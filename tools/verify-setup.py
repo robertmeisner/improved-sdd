@@ -85,9 +85,12 @@ class SetupVerifier:
             if remote_url.startswith("git@"):
                 # SSH format: git@github.com:owner/repo.git
                 split_at = remote_url.split(":", 1)
-                if len(split_at) == 2 and split_at[0].endswith("github.com"):
-                    is_github = True
-                    parts = split_at[1].replace(".git", "").split("/")
+                if len(split_at) == 2:
+                    # Properly validate hostname - exact match only
+                    hostname = split_at[0].replace("git@", "")
+                    if hostname == "github.com":
+                        is_github = True
+                        parts = split_at[1].replace(".git", "").split("/")
             elif remote_url.startswith("https://") or remote_url.startswith("http://"):
                 # HTTPS format: https://github.com/owner/repo.git
                 parsed = urllib.parse.urlparse(remote_url)
