@@ -3,12 +3,12 @@
 ## Pattern Categories
 
 ### 1. File Path References (Pattern A)
-**Target**: `.specs/{feature_name}/[filename].md`
+**Target**: `specs/{feature_name}/[filename].md`
 **Count**: 8 occurrences
 
 ```regex
 # Search Pattern
-\.specs/\{feature_name\}/(feasibility|requirements|design|tasks)\.md
+specs/\{feature_name\}/(feasibility|requirements|design|tasks)\.md
 
 # Replacement Mapping
 feasibility\.md -> 01_feasibility.md
@@ -19,10 +19,10 @@ tasks\.md -> 04_tasks.md
 
 **Specific Replacements**:
 ```regex
-\.specs/\{feature_name\}/feasibility\.md → .specs/{feature_name}/01_feasibility.md
-\.specs/\{feature_name\}/requirements\.md → .specs/{feature_name}/02_requirements.md
-\.specs/\{feature_name\}/design\.md → .specs/{feature_name}/03_design.md
-\.specs/\{feature_name\}/tasks\.md → .specs/{feature_name}/04_tasks.md
+specs/\{feature_name\}/feasibility\.md → specs/{feature_name}/01_feasibility.md
+specs/\{feature_name\}/requirements\.md → specs/{feature_name}/02_requirements.md
+specs/\{feature_name\}/design\.md → specs/{feature_name}/03_design.md
+specs/\{feature_name\}/tasks\.md → specs/{feature_name}/04_tasks.md
 ```
 
 ### 2. Direct File References (Pattern B)
@@ -73,8 +73,8 @@ $fileMapping = @{
 
 # Pattern A: File paths
 foreach ($file in $fileMapping.Keys) {
-    $oldPattern = "\.specs/\{feature_name\}/$file\.md"
-    $newReplacement = ".specs/{feature_name}/$($fileMapping[$file]).md"
+    $oldPattern = "specs/\{feature_name\}/$file\.md"
+    $newReplacement = "specs/{feature_name}/$($fileMapping[$file]).md"
     # Apply replacement
 }
 
@@ -107,16 +107,16 @@ $complexPatterns = @(
 ### Test Cases
 ```markdown
 # Test Input
-Create `.specs/{feature_name}/feasibility.md`:
-The model MUST create a '.specs/{feature_name}/requirements.md' file
+Create `specs/{feature_name}/feasibility.md`:
+The model MUST create a 'specs/{feature_name}/requirements.md' file
 Read requirements.md, design.md, tasks.md
 ALL tasks in tasks.md marked complete
 requirements.md and design.md files
 Load all existing spec files (requirements.md, design.md, tasks.md, feasibility.md if present)
 
 # Expected Output  
-Create `.specs/{feature_name}/01_feasibility.md`:
-The model MUST create a '.specs/{feature_name}/02_requirements.md' file
+Create `specs/{feature_name}/01_feasibility.md`:
+The model MUST create a 'specs/{feature_name}/02_requirements.md' file
 Read 02_requirements.md, 03_design.md, 04_tasks.md
 ALL tasks in 04_tasks.md marked complete
 02_requirements.md and 03_design.md files
