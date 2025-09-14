@@ -163,10 +163,10 @@ class TestCLICommands:
         assert result.exit_code == 0
         assert len(result.output) > 0
 
-    @patch("utils.offer_user_choice")
-    @patch("utils.check_github_copilot")
-    @patch("utils.check_tool")
-    def test_check_command(self, mock_check_tool, mock_check_copilot, mock_offer_choice):
+    @patch("src.commands.check.check_tool")
+    @patch("src.commands.check.check_github_copilot")
+    @patch("src.commands.check.offer_user_choice")
+    def test_check_command(self, mock_offer_choice, mock_check_copilot, mock_check_tool):
         """Test check command."""
 
         # Setup mocks with proper return values
@@ -417,8 +417,8 @@ class TestCheckCommand:
         assert result.exit_code == 0
         assert "Check that all required tools are installed" in result.stdout
 
-    @patch("src.utils.check_tool")
-    @patch("src.utils.check_github_copilot")
+    @patch("src.commands.check.check_tool")
+    @patch("src.commands.check.check_github_copilot")
     @patch("src.ui.console_manager.show_banner")
     def test_check_all_tools_available(self, mock_banner, mock_check_copilot, mock_check_tool, runner: CliRunner):
         """Test check when all tools are available."""
@@ -440,9 +440,9 @@ class TestCheckCommand:
         assert any(msg in result.stdout for msg in success_messages)
 
     @patch("os.getenv")
-    @patch("utils.check_tool")
-    @patch("utils.check_github_copilot")
-    @patch("ui.console_manager.show_banner")
+    @patch("src.commands.check.check_tool")
+    @patch("src.commands.check.check_github_copilot")
+    @patch("src.ui.console_manager.show_banner")
     def test_check_python_missing(
         self, mock_banner, mock_check_copilot, mock_check_tool, mock_getenv, runner: CliRunner
     ):
@@ -469,10 +469,10 @@ class TestCheckCommand:
         assert "python" in result.output.lower()
 
     @patch("os.getenv")
-    @patch("utils.offer_user_choice")
-    @patch("utils.check_tool")
-    @patch("utils.check_github_copilot")
-    @patch("ui.console_manager.show_banner")
+    @patch("src.commands.check.offer_user_choice")
+    @patch("src.commands.check.check_tool")
+    @patch("src.commands.check.check_github_copilot")
+    @patch("src.ui.console_manager.show_banner")
     def test_check_optional_tools_missing_user_declines(
         self, mock_banner, mock_check_copilot, mock_check_tool, mock_offer_choice, mock_getenv, runner: CliRunner
     ):
