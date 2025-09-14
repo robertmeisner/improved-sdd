@@ -72,9 +72,9 @@ class TestCLICommands:
         assert "Templates installed" in result.output
         # Since we can't get the mock to work with lazy loading, check that the CLI works
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_command_here_mode(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with --here flag."""
         # Setup mocks
@@ -88,9 +88,9 @@ class TestCLICommands:
         # Verify command completed successfully (mocks don't work with lazy loading)
         assert len(result.output) > 0
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_command_with_force_flag(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with --force flag."""
         # Setup mocks
@@ -111,9 +111,9 @@ class TestCLICommands:
         assert result.exit_code != 0
         assert "cannot use" in result.output.lower() or "error" in result.output.lower()
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_command_template_options(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with template-related options."""
         # Setup mocks
@@ -144,9 +144,9 @@ class TestCLICommands:
             # Verify create_project_structure was not called due to template failure
             mock_create_project.assert_not_called()
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_command_template_creation_error(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command when template creation fails."""
         # Setup mocks
@@ -180,9 +180,9 @@ class TestCLICommands:
         assert result.exit_code == 0
         assert "tool" in result.output.lower()
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_command_file_tracking(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test that file creation and modification tracking works."""
         # Setup mocks
@@ -216,9 +216,9 @@ class TestCLICommands:
         result = self.runner.invoke(app, ["init", "test-project", "--ai-tools", "invalid-tool"])
         assert result.exit_code != 0
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_command_user_interaction_simulation(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with simulated user interaction."""
         # Setup mocks
@@ -239,9 +239,9 @@ class TestCLICommands:
         assert result.exit_code == 1
         assert "Must specify either a project name" in result.stdout
 
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.create_project_structure")
     @patch("src.ui.console_manager.show_banner")
     def test_init_with_explicit_options(
         self,
@@ -275,7 +275,7 @@ class TestCLICommands:
         assert result.exit_code == 1
         assert "Invalid AI tool(s)" in result.stdout
 
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.create_project_structure")
     @patch("src.ui.console_manager.show_banner")
     def test_init_new_directory_exists(self, mock_banner, mock_create_structure, runner: CliRunner, temp_dir: Path):
         """Test init fails when new directory already exists."""
@@ -302,7 +302,7 @@ class TestCLICommands:
         assert "already" in stdout_lower and "exists" in stdout_lower
 
     @patch("pathlib.Path.cwd")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.create_project_structure")
     @patch("src.ui.console_manager.show_banner")
     def test_init_interactive_selections(
         self, mock_banner, mock_create_structure, mock_cwd, runner: CliRunner, temp_dir: Path
@@ -318,7 +318,7 @@ class TestCLICommands:
         # Verify command completed successfully (mocks don't work with lazy loading)
         assert len(result.output) > 0
 
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.create_project_structure")
     @patch("src.ui.console_manager.show_banner")
     def test_init_force_option(self, mock_banner, mock_create_structure, runner: CliRunner, temp_dir: Path):
         """Test init with --force option."""
@@ -528,9 +528,9 @@ class TestGitLabFlowCLI:
         """Set up test environment for each test."""
         self.runner = CliRunner()
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     @patch("platform.system")
     def test_init_with_gitlab_flow_enabled(self, mock_system, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with --gitlab-flow flag enabled."""
@@ -550,9 +550,9 @@ class TestGitLabFlowCLI:
             # Verify command completed successfully (mocks don't work with lazy loading)
             assert len(result.output) > 0
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_with_gitlab_flow_disabled(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with --no-gitlab-flow flag."""
         # Setup mocks
@@ -570,9 +570,9 @@ class TestGitLabFlowCLI:
             # Verify command completed successfully (mocks don't work with lazy loading)
             assert len(result.output) > 0
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_default_gitlab_flow_enabled(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command defaults to GitLab Flow enabled."""
         # Setup mocks
@@ -604,9 +604,9 @@ class TestGitLabFlowCLI:
         assert "--no-gitlab-flow" in clean_output
         assert "GitLab Flow" in clean_output
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     @patch("platform.system")
     def test_init_platform_detection_windows(self, mock_system, mock_create_project, mock_select_app, mock_select_ai):
         """Test platform detection sets Windows correctly."""
@@ -625,9 +625,9 @@ class TestGitLabFlowCLI:
             # Verify command completed successfully (mocks don't work with lazy loading)
             assert len(result.output) > 0
 
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
-    @patch("src.utils.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
+    @patch("src.commands.init.create_project_structure")
     def test_init_platform_detection_current_system(self, mock_create_project, mock_select_app, mock_select_ai):
         """Test platform detection works on current system."""
         mock_select_ai.return_value = ["claude"]
@@ -643,9 +643,9 @@ class TestGitLabFlowCLI:
             # Verify command completed successfully (mocks don't work with lazy loading)
             assert len(result.output) > 0
 
-    @patch("src.utils.create_project_structure")
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
+    @patch("src.commands.init.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
     def test_init_gitlab_flow_template_processing_integration(
         self, mock_select_app, mock_select_ai, mock_create_project
     ):
@@ -663,9 +663,9 @@ class TestGitLabFlowCLI:
             # Verify command completed successfully (mocks don't work with lazy loading)
             assert len(result.output) > 0
 
-    @patch("src.utils.create_project_structure")
-    @patch("src.utils.select_ai_tools")
-    @patch("src.utils.select_app_type")
+    @patch("src.commands.init.create_project_structure")
+    @patch("src.commands.init.select_ai_tools")
+    @patch("src.commands.init.select_app_type")
     def test_init_gitlab_flow_disabled_template_processing(self, mock_select_app, mock_select_ai, mock_create_project):
         """Test template processing when GitLab Flow is disabled."""
         mock_select_ai.return_value = ["claude"]
