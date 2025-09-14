@@ -41,7 +41,7 @@ tools: ['todos', 'codebase', 'usages', 'vscodeAPI', 'think', 'problems', 'change
 ## Spec escalation process (major changes)
 When fixing tests reveals the need for substantial design or behavioral changes, escalate to Spec Mode to ensure requirements ↔ design ↔ code stay synchronized.
 
-**For complete spec-driven development workflow, switch to specMode.chatmode.md**
+**For complete spec-driven development workflow, switch to sddSpecDriven.chatmode.md**
 
 ### When to escalate to Spec Mode:
 - Breaking changes to public APIs, data contracts, or cross-module interfaces
@@ -52,7 +52,7 @@ When fixing tests reveals the need for substantial design or behavioral changes,
 
 ### Quick escalation steps:
 1. Pause test-mode edits; summarize root cause and why a spec is needed
-2. Switch to **specMode.chatmode.md** for full spec development workflow
+2. Switch to **sddSpecDriven.chatmode.md** for full spec development workflow
 3. Return to testMode after spec approval to implement tasks and verify tests/coverage
 
 **Note**: Keep changes minimal during test triage; use Spec Mode for broader improvements.

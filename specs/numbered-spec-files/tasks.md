@@ -53,12 +53,12 @@
   - _Requirements: 2.1, 2.2_
   - **Implementation Status**: COMPLETED - All 8 references updated successfully
 
-- [ ] 2.3 Update sddTesting.chatmode.md with numbered file references [~2h] [Depends on: Task 1.2]
+- [x] 2.3 Update sddTesting.chatmode.md with numbered file references [~2h] [Depends on: Task 1.2]
   - Replace spec file references in testing workflow
   - Update any test-specific file naming conventions
   - Maintain alignment with other chatmode files
   - _Requirements: 2.1, 2.2_
-  - **Implementation Status**: NOT IMPLEMENTED
+  - **Implementation Status**: COMPLETED - Fixed specMode.chatmode.md references to sddSpecDriven.chatmode.md
 
 - [ ] 3. Update prompt template files [~4h] [Low Risk]
 - [ ] 3.1 Update sddSpecSync.prompt.md and related prompt files [~2h] [Depends on: Task 2.1]
