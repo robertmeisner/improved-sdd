@@ -538,9 +538,13 @@ class TestCoreLayerIntegration:
             assert isinstance(e, NetworkError)
             # Properly validate URL in error message using URL parsing
             from urllib.parse import urlparse
+            import re
             error_str = str(e)
-            assert "example.com" in error_str or "https://example.com" in error_str
-
+            # Extract the first URL found and check its host
+            url_match = re.search(r'https?://[^\s)]+', error_str)
+            assert url_match is not None, "No URL found in error message"
+            parsed = urlparse(url_match.group(0))
+            assert parsed.hostname == "example.com"
         # Model creation (as CLI would use it)
         progress = ProgressInfo("download", 100, 200, 50.0, speed_bps=1024)
         assert progress.speed_mbps is not None
