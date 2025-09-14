@@ -62,7 +62,7 @@ test = [
 ]
 
 [project.scripts]
-improved-sdd = "improved_sdd_cli:main"
+improved-sdd = "src.improved_sdd_cli:main"
 
 [tool.black]
 line-length = 120
