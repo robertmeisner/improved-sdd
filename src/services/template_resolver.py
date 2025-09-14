@@ -154,7 +154,7 @@ class TemplateResolver:
         Returns:
             Path to bundled templates if they exist, None otherwise
         """
-        bundled_path = self.script_dir.parent / DOWNLOAD_TEMPLATES_DIR
+        bundled_path = self.project_path / DOWNLOAD_TEMPLATES_DIR
         if bundled_path.exists() and bundled_path.is_dir():
             return bundled_path
         return None
