@@ -374,7 +374,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Help Command Test" >> $GITHUB_STEP_SUMMARY
         python src/improved_sdd_cli.py --help > cli_help_output.txt 2>&1
-        if [ $? -eq 0 ]; then
+        if [ $? -eq 0 ] && [ -f cli_help_output.txt ]; then
           echo "✅ CLI help command works" >> $GITHUB_STEP_SUMMARY
           # Show first few lines of help in summary
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -383,6 +383,12 @@ jobs:
           echo "```" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ CLI help command failed" >> $GITHUB_STEP_SUMMARY
+          if [ -f cli_help_output.txt ]; then
+            echo "Error output:" >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
+            cat cli_help_output.txt >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
+          fi
           exit 1
         fi
         
