@@ -1,5 +1,6 @@
 name: Publish to PyPI
 
+# Automated PyPI publishing with comprehensive safety checks
 permissions:
   contents: read
 
