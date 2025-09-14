@@ -5,7 +5,18 @@
 # ///
 
 """
-Version Management Utility for improved-sdd
+Version Management Utility    repo_url = get_repository_url()
+    console.print()
+    console.print(Panel(
+        f"[green]Tag v{version} will trigger:[/green]\n"
+        f"• Automated PyPI publishing\n"
+        f"• GitHub release creation\n"
+        f"• Installation verification\n\n"
+        f"[yellow]Monitor progress at:[/yellow]\n"
+        f"{repo_url}/actions",
+        title="Publishing Automation",
+        border_style="green"
+    ))ed-sdd
 
 This tool provides semantic version management capabilities including:
 - Current version display
@@ -16,6 +27,7 @@ This tool provides semantic version management capabilities including:
 """
 
 import re
+import subprocess
 import sys
 from enum import Enum
 from pathlib import Path
@@ -39,10 +51,36 @@ class VersionPart(str, Enum):
     minor = "minor"
     patch = "patch"
 
+def get_repository_url() -> str:
+    """Get GitHub repository URL from git remote."""
+    try:
+        result = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        remote_url = result.stdout.strip()
+        
+        # Convert to GitHub web URL format
+        if remote_url.startswith("git@github.com:"):
+            # SSH format: git@github.com:owner/repo.git
+            repo_path = remote_url.replace("git@github.com:", "").replace(".git", "")
+            return f"https://github.com/{repo_path}"
+        elif remote_url.startswith("https://github.com/"):
+            # HTTPS format: https://github.com/owner/repo.git
+            return remote_url.replace(".git", "")
+        else:
+            # Fallback to default
+            return "https://github.com/robertmeisner/improved-sdd"
+    except Exception:
+        # Fallback to default if git command fails
+        return "https://github.com/robertmeisner/improved-sdd"
+
 def show_banner():
     """Display tool banner."""
     banner = """
-[bold cyan]📦 Version Management Utility[/bold cyan]
+[bold cyan]Version Management Utility[/bold cyan]
 [dim]Semantic version management for improved-sdd[/dim]
 """
     console.print(Panel(banner, border_style="cyan"))
@@ -51,15 +89,15 @@ def get_current_version() -> str:
     """Get current version from pyproject.toml."""
     pyproject_path = Path("pyproject.toml")
     if not pyproject_path.exists():
-        console.print("[red]❌ Error: pyproject.toml not found in current directory[/red]")
-        console.print("[yellow]💡 Tip: Run this command from the project root directory[/yellow]")
+        console.print("[red]ERROR: pyproject.toml not found in current directory[/red]")
+        console.print("[yellow]TIP: Run this command from the project root directory[/yellow]")
         raise typer.Exit(1)
     
     content = pyproject_path.read_text(encoding='utf-8')
     match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', content)
     if not match:
-        console.print("[red]❌ Error: Could not find version in pyproject.toml[/red]")
-        console.print("[yellow]💡 Tip: Ensure version is set as: version = \"1.0.0\"[/yellow]")
+        console.print("[red]ERROR: Could not find version in pyproject.toml[/red]")
+        console.print("[yellow]TIP: Ensure version is set as: version = \"1.0.0\"[/yellow]")
         raise typer.Exit(1)
     return match.group(1)
 
@@ -71,8 +109,8 @@ def validate_version(version: str) -> bool:
 def parse_version(version: str) -> Tuple[int, int, int, Optional[str], Optional[str]]:
     """Parse semantic version into components."""
     if not validate_version(version):
-        console.print(f"[red]❌ Invalid version format: {version}[/red]")
-        console.print("[yellow]💡 Expected format: major.minor.patch[-prerelease][+build][/yellow]")
+        console.print(f"[red]ERROR: Invalid version format: {version}[/red]")
+        console.print("[yellow]TIP: Expected format: major.minor.patch[-prerelease][+build][/yellow]")
         raise typer.Exit(1)
     
     # Split on '+' for build metadata
@@ -86,7 +124,7 @@ def parse_version(version: str) -> Tuple[int, int, int, Optional[str], Optional[
         major, minor, patch = map(int, version_nums.split('.'))
         return major, minor, patch, prerelease, build
     except ValueError:
-        console.print(f"[red]❌ Invalid version format: {version}[/red]")
+        console.print(f"[red]ERROR: Invalid version format: {version}[/red]")
         raise typer.Exit(1)
 
 def bump_version_part(version: str, part: VersionPart) -> str:
@@ -120,15 +158,15 @@ def update_version_file(new_version: str) -> None:
     )
     
     if updated_content == content:
-        console.print("[red]❌ Error: Could not update version in pyproject.toml[/red]")
+        console.print("[red]ERROR: Could not update version in pyproject.toml[/red]")
         raise typer.Exit(1)
     
     pyproject_path.write_text(updated_content, encoding='utf-8')
-    console.print(f"[green]✅ Updated version to {new_version}[/green]")
+    console.print(f"[green]SUCCESS: Updated version to {new_version}[/green]")
 
 def show_next_steps(version: str) -> None:
     """Show next steps for release workflow."""
-    steps_table = Table(title="🚀 Next Steps for Release", show_header=False, box=None)
+    steps_table = Table(title="Next Steps for Release", show_header=False, box=None)
     steps_table.add_column("Step", style="bold cyan", no_wrap=True)
     steps_table.add_column("Command", style="bright_blue")
     
@@ -172,7 +210,7 @@ def current():
         version = get_current_version()
         major, minor, patch, prerelease, build = parse_version(version)
         
-        version_table = Table(title="📦 Current Version Information", show_header=False)
+        version_table = Table(title="Current Version Information", show_header=False)
         version_table.add_column("Field", style="bold cyan")
         version_table.add_column("Value", style="bright_green")
         
@@ -190,7 +228,7 @@ def current():
         
         # Show what next versions would be
         console.print()
-        next_table = Table(title="🔄 Available Version Bumps", show_header=True)
+        next_table = Table(title="Available Version Bumps", show_header=True)
         next_table.add_column("Type", style="bold cyan")
         next_table.add_column("Next Version", style="bright_blue")
         next_table.add_column("Use Case", style="dim")
@@ -206,7 +244,7 @@ def current():
         console.print(next_table)
         
     except Exception as e:
-        console.print(f"[red]❌ Error: {e}[/red]")
+        console.print(f"[red]ERROR: {e}[/red]")
         raise typer.Exit(1)
 
 @app.command()
@@ -240,7 +278,7 @@ def bump(
             )
             
             if not confirm:
-                console.print("[yellow]❌ Version bump cancelled[/yellow]")
+                console.print("[yellow]Version bump cancelled[/yellow]")
                 raise typer.Exit()
             
             # Update the version
@@ -250,7 +288,7 @@ def bump(
             show_next_steps(new_version)
             
     except Exception as e:
-        console.print(f"[red]❌ Error: {e}[/red]")
+        console.print(f"[red]ERROR: {e}[/red]")
         raise typer.Exit(1)
 
 @app.command()
@@ -266,7 +304,7 @@ def validate(
     if validate_version(version_string):
         major, minor, patch, prerelease, build = parse_version(version_string)
         
-        console.print("[green]✅ Valid semantic version![/green]")
+        console.print("[green]SUCCESS: Valid semantic version![/green]")
         console.print()
         
         components_table = Table(title="Version Components", show_header=False)
@@ -284,7 +322,7 @@ def validate(
         
         console.print(components_table)
     else:
-        console.print("[red]❌ Invalid version format![/red]")
+        console.print("[red]ERROR: Invalid version format![/red]")
         console.print()
         console.print("[yellow]📋 Valid semantic version examples:[/yellow]")
         console.print("• 1.0.0")
@@ -300,7 +338,7 @@ def info():
     show_banner()
     
     info_content = """
-[bold cyan]🎯 Version Management Guide[/bold cyan]
+[bold cyan]Version Management Guide[/bold cyan]
 
 [bold]Semantic Versioning (SemVer):[/bold]
 • [green]MAJOR[/green]: Breaking changes (incompatible API changes)

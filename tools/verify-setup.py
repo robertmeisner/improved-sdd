@@ -14,6 +14,7 @@ It checks GitHub repository settings, secrets, environments, and workflow config
 import json
 import os
 import sys
+import urllib.parse
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -32,6 +33,25 @@ REQUIRED_SECRETS = ["TEST_PYPI_API_TOKEN", "PYPI_API_TOKEN"]
 REQUIRED_ENVIRONMENTS = ["testpypi", "pypi"]
 WORKFLOW_FILE = ".github/workflows/publish.yml"
 
+# Consolidated TOML loading
+def load_toml_file(file_path: Path) -> dict:
+    """Load TOML file with proper fallback handling."""
+    try:
+        # Try tomllib first (Python 3.11+)
+        import tomllib
+        with open(file_path, "rb") as f:
+            return tomllib.load(f)
+    except ImportError:
+        # Fallback for older Python versions
+        try:
+            import tomli as tomllib
+            with open(file_path, "rb") as f:
+                return tomllib.load(f)
+        except ImportError:
+            # Final fallback - return empty dict
+            console.print("[yellow]Warning: TOML parsing not available. Install tomli package.[/yellow]")
+            return {}
+
 class SetupVerifier:
     def __init__(self, github_token: Optional[str] = None):
         self.github_token = github_token or os.getenv("GITHUB_TOKEN")
@@ -41,7 +61,7 @@ class SetupVerifier:
         
         if self.github_token:
             self.headers = {
-                "Authorization": f"token {self.github_token}",
+                "Authorization": f"Bearer {self.github_token}",
                 "Accept": "application/vnd.github.v3+json"
             }
 
@@ -58,22 +78,32 @@ class SetupVerifier:
             
             remote_url = result.stdout.strip()
             
-            # Parse GitHub URL
-            if "github.com" in remote_url:
-                if remote_url.startswith("git@"):
-                    # SSH format: git@github.com:owner/repo.git
-                    parts = remote_url.split(":")[-1].replace(".git", "").split("/")
-                elif remote_url.startswith("https://"):
-                    # HTTPS format: https://github.com/owner/repo.git
-                    parts = remote_url.split("/")[-2:]
-                    parts[-1] = parts[-1].replace(".git", "")
-                else:
-                    return False
-                
-                if len(parts) >= 2:
-                    self.repo_owner = parts[-2]
-                    self.repo_name = parts[-1]
-                    return True
+            # Parse GitHub URL safely
+            is_github = False
+            parts = []
+            
+            if remote_url.startswith("git@"):
+                # SSH format: git@github.com:owner/repo.git
+                split_at = remote_url.split(":", 1)
+                if len(split_at) == 2 and split_at[0].endswith("github.com"):
+                    is_github = True
+                    parts = split_at[1].replace(".git", "").split("/")
+            elif remote_url.startswith("https://") or remote_url.startswith("http://"):
+                # HTTPS format: https://github.com/owner/repo.git
+                parsed = urllib.parse.urlparse(remote_url)
+                if parsed.hostname == "github.com":
+                    is_github = True
+                    # Path is /owner/repo.git
+                    segments = parsed.path.strip("/").split("/")
+                    if len(segments) >= 2:
+                        parts = segments
+                        parts[-1] = parts[-1].replace(".git", "")
+            
+            # Only proceed if recognized as github
+            if is_github and len(parts) >= 2:
+                self.repo_owner = parts[-2]
+                self.repo_name = parts[-1]
+                return True
             
             return False
         except Exception:
@@ -189,20 +219,7 @@ class SetupVerifier:
             results["pyproject_toml"] = True
             
             try:
-                # Try tomllib first (Python 3.11+), then fallback to tomli
-                try:
-                    import tomllib
-                    with open(pyproject_path, "rb") as f:
-                        data = tomllib.load(f)
-                except ImportError:
-                    # Fallback for older Python versions
-                    try:
-                        import tomli as tomllib
-                        with open(pyproject_path, "rb") as f:
-                            data = tomllib.load(f)
-                    except ImportError:
-                        # Final fallback - skip TOML parsing
-                        return results
+                data = load_toml_file(pyproject_path)
                 
                 project = data.get("project", {})
                 if "name" in project:

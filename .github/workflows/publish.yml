@@ -139,6 +139,24 @@ jobs:
             print(f'version={data[\"project\"][\"version\"]}')
         " >> $GITHUB_OUTPUT
 
+    - name: Validate version tag
+      id: version-tag
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+      run: |
+        # Extract version from tag
+        TAG_REF="${{ github.ref }}"
+        VERSION_TAG="${TAG_REF#refs/tags/v}"
+        
+        # Validate semantic version format (major.minor.patch with optional prerelease/build)
+        if [[ "$VERSION_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "version=$VERSION_TAG" >> $GITHUB_OUTPUT
+          echo "✅ **Version Tag:** Valid semantic version (v$VERSION_TAG)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "❌ **Version Tag:** Invalid format (v$VERSION_TAG)" >> $GITHUB_STEP_SUMMARY
+        fi
+
     - name: Determine publishing conditions
       id: conditions
       run: |
@@ -160,14 +178,11 @@ jobs:
           echo "❌ **TestPyPI Publishing:** Disabled (conditions not met)" >> $GITHUB_STEP_SUMMARY
         fi
         
-        # PyPI: publish only on version tags or manual dispatch to pypi
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-          # Extract and validate version tag
-          TAG_VERSION="${{ github.ref }}"
-          TAG_VERSION="${TAG_VERSION#refs/tags/v}"
+        # PyPI: publish only on valid version tags or manual dispatch to pypi
+        if [[ "${{ github.event_name }}" == "push" && "${{ steps.version-tag.outputs.valid }}" == "true" ]]; then
           echo "pypi=true" >> $GITHUB_OUTPUT
-          echo "✅ **PyPI Publishing:** Enabled (valid version tag: v$TAG_VERSION)" >> $GITHUB_STEP_SUMMARY
-          echo "tag-version=$TAG_VERSION" >> $GITHUB_OUTPUT
+          echo "✅ **PyPI Publishing:** Enabled (valid version tag: v${{ steps.version-tag.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "tag-version=${{ steps.version-tag.outputs.version }}" >> $GITHUB_OUTPUT
         elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.target_env }}" == "pypi" && "${{ github.event.inputs.dry_run }}" != "true" ]]; then
           echo "pypi=true" >> $GITHUB_OUTPUT
           echo "✅ **PyPI Publishing:** Enabled (manual dispatch to PyPI)" >> $GITHUB_STEP_SUMMARY
@@ -502,8 +517,16 @@ jobs:
           echo "Attempt $attempt of $MAX_ATTEMPTS..." >> $GITHUB_STEP_SUMMARY
           echo "Attempting to install ${PACKAGE_NAME}==${PACKAGE_VERSION} from TestPyPI..."
           
-          # Try installation
-          if pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ "${PACKAGE_NAME}==${PACKAGE_VERSION}" --force-reinstall --no-deps 2>&1 | tee install_output.txt; then
+          # Try installation with readable command structure
+          TESTPYPI_URL="https://test.pypi.org/simple/"
+          PYPI_URL="https://pypi.org/simple/"
+          
+          if pip install \
+               --index-url "$TESTPYPI_URL" \
+               --extra-index-url "$PYPI_URL" \
+               "${PACKAGE_NAME}==${PACKAGE_VERSION}" \
+               --force-reinstall \
+               --no-deps 2>&1 | tee install_output.txt; then
             echo "✅ Installation successful on attempt $attempt" >> $GITHUB_STEP_SUMMARY
             INSTALL_SUCCESS=true
             break
