@@ -373,7 +373,7 @@ jobs:
         # Test CLI help command
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Help Command Test" >> $GITHUB_STEP_SUMMARY
-        python src/improved_sdd_cli.py --help > cli_help_output.txt 2>&1
+        improved-sdd --help > cli_help_output.txt 2>&1
         if [ $? -eq 0 ] && [ -f cli_help_output.txt ]; then
           echo "✅ CLI help command works" >> $GITHUB_STEP_SUMMARY
           # Show first few lines of help in summary
@@ -395,21 +395,27 @@ jobs:
         # Test CLI version command
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Version Command Test" >> $GITHUB_STEP_SUMMARY
-        python src/improved_sdd_cli.py --version > cli_version_output.txt 2>&1
-        if [ $? -eq 0 ]; then
+        improved-sdd --version > cli_version_output.txt 2>&1
+        if [ $? -eq 0 ] && [ -f cli_version_output.txt ]; then
           CLI_VERSION=$(cat cli_version_output.txt)
           echo "✅ CLI version command works: $CLI_VERSION" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ CLI version command failed" >> $GITHUB_STEP_SUMMARY
+          if [ -f cli_version_output.txt ]; then
+            echo "Error output:" >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
+            cat cli_version_output.txt >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
+          fi
           exit 1
         fi
         
         # Test CLI subcommand help
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Subcommand Help Test" >> $GITHUB_STEP_SUMMARY
-        python src/improved_sdd_cli.py init --help > cli_init_help.txt 2>&1
-        python src/improved_sdd_cli.py check --help > cli_check_help.txt 2>&1
-        python src/improved_sdd_cli.py delete --help > cli_delete_help.txt 2>&1
+        improved-sdd init --help > cli_init_help.txt 2>&1
+        improved-sdd check --help > cli_check_help.txt 2>&1
+        improved-sdd delete --help > cli_delete_help.txt 2>&1
         
         if [ $? -eq 0 ]; then
           echo "✅ All subcommand help functions work" >> $GITHUB_STEP_SUMMARY
@@ -422,7 +428,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Basic Functionality Test" >> $GITHUB_STEP_SUMMARY
         export CI=true  # Set CI flag to avoid interactive prompts
-        python src/improved_sdd_cli.py check > cli_check_output.txt 2>&1
+        improved-sdd check > cli_check_output.txt 2>&1
         CHECK_EXIT_CODE=$?
         
         if [ $CHECK_EXIT_CODE -eq 0 ]; then
