@@ -9,13 +9,13 @@ Found **28 references** to spec files across **6 template files** that need upda
 | Line | Context | Current Reference | New Reference |
 |------|---------|-------------------|---------------|
 | 286 | Documentation sync | requirements.md and design.md | 02_requirements.md and 03_design.md |
-| 294 | File creation | .specs/{feature_name}/feasibility.md | .specs/{feature_name}/01_feasibility.md |
-| 314 | File creation | .specs/{feature_name}/requirements.md | .specs/{feature_name}/02_requirements.md |
+| 294 | File creation | specs/{feature_name}/feasibility.md | specs/{feature_name}/01_feasibility.md |
+| 314 | File creation | specs/{feature_name}/requirements.md | specs/{feature_name}/02_requirements.md |
 | 316 | Document format | requirements.md document | 02_requirements.md document |
-| 395 | File creation | .specs/{feature_name}/design.md | .specs/{feature_name}/03_design.md |
-| 401 | Document creation | .specs/{feature_name}/design.md | .specs/{feature_name}/03_design.md |
-| 442 | File creation | .specs/{feature_name}/tasks.md | .specs/{feature_name}/04_tasks.md |
-| 445 | Implementation plan | .specs/{feature_name}/tasks.md | .specs/{feature_name}/04_tasks.md |
+| 395 | File creation | specs/{feature_name}/design.md | specs/{feature_name}/03_design.md |
+| 401 | Document creation | specs/{feature_name}/design.md | specs/{feature_name}/03_design.md |
+| 442 | File creation | specs/{feature_name}/tasks.md | specs/{feature_name}/04_tasks.md |
+| 445 | Implementation plan | specs/{feature_name}/tasks.md | specs/{feature_name}/04_tasks.md |
 | 476 | Section reference | tasks.md | 04_tasks.md |
 | 538 | User instruction | tasks.md file | 04_tasks.md file |
 | 686 | Execution prereq | requirements.md, design.md and tasks.md | 02_requirements.md, 03_design.md and 04_tasks.md |
@@ -27,10 +27,10 @@ Found **28 references** to spec files across **6 template files** that need upda
 ### 2. sddSpecDrivenSimple.chatmode.md (8 references)
 | Line | Context | Current Reference | New Reference |
 |------|---------|-------------------|---------------|
-| 172 | File creation | .specs/{feature_name}/feasibility.md | .specs/{feature_name}/01_feasibility.md |
-| 181 | File creation | .specs/{feature_name}/requirements.md | .specs/{feature_name}/02_requirements.md |
-| 211 | File creation | .specs/{feature_name}/design.md | .specs/{feature_name}/03_design.md |
-| 223 | File creation | .specs/{feature_name}/tasks.md | .specs/{feature_name}/04_tasks.md |
+| 172 | File creation | specs/{feature_name}/feasibility.md | specs/{feature_name}/01_feasibility.md |
+| 181 | File creation | specs/{feature_name}/requirements.md | specs/{feature_name}/02_requirements.md |
+| 211 | File creation | specs/{feature_name}/design.md | specs/{feature_name}/03_design.md |
+| 223 | File creation | specs/{feature_name}/tasks.md | specs/{feature_name}/04_tasks.md |
 | 257 | File reading | requirements.md, design.md, tasks.md | 02_requirements.md, 03_design.md, 04_tasks.md |
 | 300 | Directory structure | feasibility.md | 01_feasibility.md |
 | 301 | Directory structure | requirements.md | 02_requirements.md |
@@ -83,9 +83,9 @@ Found **28 references** to spec files across **6 template files** that need upda
 ## Reference Patterns Identified
 
 ### Pattern 1: File Path References
-- `.specs/{feature_name}/[filename].md`
+- `specs/{feature_name}/[filename].md`
 - **Count**: 8 occurrences
-- **Regex**: `\.specs/\{feature_name\}/(feasibility|requirements|design|tasks)\.md`
+- **Regex**: `specs/\{feature_name\}/(feasibility|requirements|design|tasks)\.md`
 
 ### Pattern 2: Direct File References
 - `[filename].md` (without path)
