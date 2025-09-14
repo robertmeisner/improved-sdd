@@ -266,8 +266,8 @@ def customize_template_content(
     return customized_content
 
 
-def load_gitlab_flow_file(filename: str, template_dir: str, platform_commands: Dict[str, str]) -> str:
-    """Load GitLab Flow markdown file and replace platform-specific command placeholders.
+def load_gitlab_flow_file(filename: str, template_dir: str, platform_keywords: Dict[str, str]) -> str:
+    """Load GitLab Flow markdown file and replace platform-specific keyword placeholders.
 
     Loads a GitLab Flow markdown file from the templates/gitlab-flow/ directory and
     replaces platform-specific placeholders with appropriate git commands based on
@@ -276,14 +276,14 @@ def load_gitlab_flow_file(filename: str, template_dir: str, platform_commands: D
     Args:
         filename: Name of the GitLab Flow markdown file to load
         template_dir: Base template directory path
-        platform_commands: Dictionary mapping command placeholders to platform-specific commands
+        platform_keywords: Dictionary mapping keyword placeholders to platform-specific commands
 
     Returns:
         str: Processed markdown content with platform commands, or fallback message if file not found
 
     Examples:
-        >>> commands = {"GIT_STATUS": "git status", "COMMIT": "git add . && git commit -m \"{message}\""}
-        >>> content = load_gitlab_flow_file("gitlab-flow-setup.md", "/templates", commands)
+        >>> keywords = {"GIT_STATUS": "git status", "COMMIT": "git add . && git commit -m \"{message}\""}
+        >>> content = load_gitlab_flow_file("gitlab-flow-setup.md", "/templates", keywords)
         >>> print(content)
         # GitLab Flow Setup...
     """
@@ -296,11 +296,10 @@ def load_gitlab_flow_file(filename: str, template_dir: str, platform_commands: D
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Replace platform-specific command placeholders
+        # Replace platform-specific keyword placeholders
         processed_content = content
-        for cmd_key, cmd_value in platform_commands.items():
-            placeholder = f"{{{cmd_key.upper()}}}"
-            processed_content = processed_content.replace(placeholder, cmd_value)
+        for cmd_key, cmd_value in platform_keywords.items():
+            processed_content = processed_content.replace(cmd_key, cmd_value)
 
         return processed_content
 

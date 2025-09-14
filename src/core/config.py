@@ -147,28 +147,23 @@ class ConfigCompatibilityLayer:
             },
             "template_file_mapping": {
                 "{GITLAB_FLOW_SETUP}": "gitlab-flow-setup.md",
-                "{GITLAB_FLOW_COMMIT}": "gitlab-flow-commit.md",
+                "{GITLAB_FLOW_WORKFLOW}": "gitlab-flow-workflow.md",
                 "{GITLAB_FLOW_PR}": "gitlab-flow-pr.md",
             },
-            "keywords": {
-                "{GITLAB_FLOW_SETUP}": "",  # Will be loaded from markdown files
-                "{GITLAB_FLOW_COMMIT}": "",  # Will be loaded from markdown files
-                "{GITLAB_FLOW_PR}": "",  # Will be loaded from markdown files
-            },
-            "platform_commands": {
+            "platform_keywords": {
                 "windows": {
-                    "GIT_STATUS": "git status",
-                    "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
-                    "COMMIT": 'git add . ; git commit -m "{message}"',
-                    "PUSH_PR": 'git push -u origin feature/spec-{spec-name} ; gh pr create --title "Spec: {spec-name}" --body "Implementation of {spec-name} specification"',
-                    "AUTO_COMMIT": 'git add . ; git commit -m "{commit-message}"',
+                    "{GIT_STATUS}": "git status",
+                    "{BRANCH_CREATE}": "git checkout -b feature/spec-{spec-name}",
+                    "{COMMIT}": 'git add . ; git commit -m "{message}"',
+                    "{PUSH_PR}": 'git push -u origin feature/spec-{spec-name} ; gh pr create --title "Spec: {spec-name}" --body "Implementation of {spec-name} specification"',
+                    "{AUTO_COMMIT}": 'git add . ; git commit -m "{commit-message}"',
                 },
                 "unix": {
-                    "GIT_STATUS": "git status",
-                    "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
-                    "COMMIT": 'git add . && git commit -m "{message}"',
-                    "PUSH_PR": 'git push -u origin feature/spec-{spec-name} && gh pr create --title "Spec: {spec-name}" --body "Implementation of {spec-name} specification"',
-                    "AUTO_COMMIT": 'git add . && git commit -m "{commit-message}"',
+                    "{GIT_STATUS}": "git status",
+                    "{BRANCH_CREATE}": "git checkout -b feature/spec-{spec-name}",
+                    "{COMMIT}": 'git add . && git commit -m "{message}"',
+                    "{PUSH_PR}": 'git push -u origin feature/spec-{spec-name} && gh pr create --title "Spec: {spec-name}" --body "Implementation of {spec-name} specification"',
+                    "{AUTO_COMMIT}": 'git add . ; git commit -m "{commit-message}"',
                 },
             },
             "commit_types": {
@@ -406,28 +401,28 @@ class ConfigCompatibilityLayer:
         
         return validation_result
 
-    def _detect_platform_commands(self, platform: str = "windows") -> Dict[str, str]:
-        """Helper method to detect platform-specific git commands.
+    def _detect_platform_keywords(self, platform: str = "windows") -> Dict[str, str]:
+        """Helper method to detect platform-specific git keywords.
         
         Args:
             platform: Target platform ("windows" or "unix")
             
         Returns:
-            Dictionary of platform-specific git commands
+            Dictionary of platform-specific git keywords
         """
         if platform.lower() == "windows":
             return {
-                "GIT_STATUS": "git status",
-                "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
-                "COMMIT": "git add . ; git commit -m \"feat: Add {phase} for {feature-name}\"",
-                "PUSH_PR": "git push -u origin feature/spec-{feature-name} ; gh pr create --title \"Spec: {feature-name}\" --body \"Implementation of {feature-name} specification\""
+                "{GIT_STATUS}": "git status",
+                "{BRANCH_CREATE}": "git checkout -b feature/spec-{spec-name}",
+                "{COMMIT}": "git add . ; git commit -m \"feat: Add {phase} for {feature-name}\"",
+                "{PUSH_PR}": "git push -u origin feature/spec-{feature-name} ; gh pr create --title \"Spec: {feature-name}\" --body \"Implementation of {feature-name} specification\""
             }
         else:  # Unix/Linux/macOS
             return {
-                "GIT_STATUS": "git status",
-                "BRANCH_CREATE": "git checkout -b feature/spec-{spec-name}",
-                "COMMIT": "git add . && git commit -m \"feat: Add {phase} for {feature-name}\"",
-                "PUSH_PR": "git push -u origin feature/spec-{feature-name} && gh pr create --title \"Spec: {feature-name}\" --body \"Implementation of {feature-name} specification\""
+                "{GIT_STATUS}": "git status",
+                "{BRANCH_CREATE}": "git checkout -b feature/spec-{spec-name}",
+                "{COMMIT}": "git add . && git commit -m \"feat: Add {phase} for {feature-name}\"",
+                "{PUSH_PR}": "git push -u origin feature/spec-{feature-name} && gh pr create --title \"Spec: {feature-name}\" --body \"Implementation of {feature-name} specification\""
             }
 
     def get_gitlab_flow_keywords(
@@ -445,7 +440,7 @@ class ConfigCompatibilityLayer:
         """
         if not enabled:
             # Return empty content when GitLab Flow is disabled
-            return {keyword: "" for keyword in self._gitlab_flow_config["keywords"].keys()}
+            return {keyword: "" for keyword in self._gitlab_flow_config["template_file_mapping"].keys()}
         
         # Check cache validity
         cache_key = f"{template_dir}_{platform}"
@@ -454,8 +449,8 @@ class ConfigCompatibilityLayer:
             cache_key in self._gitlab_flow_cache["cached_content"]):
             return self._gitlab_flow_cache["cached_content"][cache_key].copy()
         
-        # Get platform-specific commands using helper method
-        platform_commands = self._detect_platform_commands(platform)
+        # Get platform-specific keywords using helper method
+        platform_keywords = self._detect_platform_keywords(platform)
         
         # Load and populate keywords with markdown file content
         keywords = {}
@@ -469,9 +464,9 @@ class ConfigCompatibilityLayer:
                     with open(template_path, "r", encoding="utf-8") as f:
                         content = f.read()
                     
-                    # Replace platform-specific command placeholders
-                    for cmd_key, cmd_value in platform_commands.items():
-                        content = content.replace(f"{{{cmd_key}}}", cmd_value)
+                    # Replace platform-specific keyword placeholders
+                    for cmd_key, cmd_value in platform_keywords.items():
+                        content = content.replace(cmd_key, cmd_value)
                     
                     keywords[keyword] = content
                 else:
