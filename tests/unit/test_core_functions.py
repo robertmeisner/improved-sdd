@@ -318,7 +318,7 @@ class TestGitLabFlowConfig:
         """Test get_gitlab_flow_keywords returns empty strings when disabled."""
         keywords = config.get_gitlab_flow_keywords(enabled=False)
 
-        expected_keywords = ["{GITLAB_FLOW_SETUP}", "{GITLAB_FLOW_COMMIT}", "{GITLAB_FLOW_PR}"]
+        expected_keywords = ["{GITLAB_FLOW_SETUP}", "{GITLAB_FLOW_WORKFLOW}", "{GITLAB_FLOW_PR}"]
 
         # All keywords should be present but empty when disabled
         for keyword in expected_keywords:
@@ -335,8 +335,8 @@ class TestGitLabFlowConfig:
             setup_file = gitlab_flow_dir / "gitlab-flow-setup.md"
             setup_file.write_text("Setup: {GIT_STATUS} and {BRANCH_CREATE}")
 
-            commit_file = gitlab_flow_dir / "gitlab-flow-commit.md"
-            commit_file.write_text("Commit: {COMMIT}")
+            workflow_file = gitlab_flow_dir / "gitlab-flow-workflow.md"
+            workflow_file.write_text("Workflow: {COMMIT}")
 
             pr_file = gitlab_flow_dir / "gitlab-flow-pr.md"
             pr_file.write_text("PR: {PUSH_PR}")
@@ -344,7 +344,7 @@ class TestGitLabFlowConfig:
             keywords = config.get_gitlab_flow_keywords(enabled=True, platform="windows", template_dir=temp_dir)
 
             # Check Windows-specific command syntax (semicolon)
-            assert ";" in keywords["{GITLAB_FLOW_COMMIT}"]  # Windows uses semicolon
+            assert ";" in keywords["{GITLAB_FLOW_WORKFLOW}"]  # Windows uses semicolon
             assert "git status" in keywords["{GITLAB_FLOW_SETUP}"]
 
     def test_get_gitlab_flow_keywords_unix_platform(self):
@@ -354,13 +354,13 @@ class TestGitLabFlowConfig:
             gitlab_flow_dir = Path(temp_dir) / "gitlab-flow"
             gitlab_flow_dir.mkdir()
 
-            commit_file = gitlab_flow_dir / "gitlab-flow-commit.md"
-            commit_file.write_text("Commit: {COMMIT}")
+            workflow_file = gitlab_flow_dir / "gitlab-flow-workflow.md"
+            workflow_file.write_text("Workflow: {COMMIT}")
 
             keywords = config.get_gitlab_flow_keywords(enabled=True, platform="unix", template_dir=temp_dir)
 
             # Check Unix-specific command syntax (double ampersand)
-            assert "&&" in keywords["{GITLAB_FLOW_COMMIT}"]  # Unix uses &&
+            assert "&&" in keywords["{GITLAB_FLOW_WORKFLOW}"]  # Unix uses &&
 
     def test_get_gitlab_flow_keywords_missing_files(self):
         """Test graceful handling of missing GitLab Flow files."""
@@ -553,11 +553,11 @@ class TestGitLabFlowConfig:
         assert "template_dir" in gitlab_config
         assert "template_files" in gitlab_config
         assert "keywords" in gitlab_config
-        assert "platform_commands" in gitlab_config
+        assert "platform_keywords" in gitlab_config
 
         # Check platform commands exist for both platforms
-        assert "windows" in gitlab_config["platform_commands"]
-        assert "unix" in gitlab_config["platform_commands"]
+        assert "windows" in gitlab_config["platform_keywords"]
+        assert "unix" in gitlab_config["platform_keywords"]
 
     def test_gitlab_flow_default_config(self):
         """Test GitLab Flow default configuration."""
@@ -568,19 +568,19 @@ class TestGitLabFlowConfig:
 
     def test_platform_detection_helper_windows(self):
         """Test platform detection helper for Windows commands."""
-        commands = config._detect_platform_commands("windows")
+        commands = config._detect_platform_keywords("windows")
         
         # Verify Windows-specific command syntax
-        assert "git add . ;" in commands["COMMIT"]
-        assert "git push -u origin feature/spec-{feature-name} ;" in commands["PUSH_PR"]
+        assert "git add . ;" in commands["{COMMIT}"]
+        assert "git push -u origin feature/spec-{feature-name} ;" in commands["{PUSH_PR}"]
         
     def test_platform_detection_helper_unix(self):
         """Test platform detection helper for Unix/Linux commands."""
-        commands = config._detect_platform_commands("unix")
+        commands = config._detect_platform_keywords("unix")
         
         # Verify Unix-specific command syntax (&&)
-        assert "git add . &&" in commands["COMMIT"]
-        assert "git push -u origin feature/spec-{feature-name} &&" in commands["PUSH_PR"]
+        assert "git add . &&" in commands["{COMMIT}"]
+        assert "git push -u origin feature/spec-{feature-name} &&" in commands["{PUSH_PR}"]
         
     def test_gitlab_flow_config_export(self):
         """Test GitLab Flow config is properly exported."""
@@ -608,11 +608,9 @@ class TestGitLabFlowMarkdownLoading:
             test_content = "Test content with {GIT_STATUS} and {COMMIT} placeholders"
             test_file.write_text(test_content)
 
-            platform_commands = {"GIT_STATUS": "git status", "COMMIT": 'git add . ; git commit -m "{message}"'}
-
-            result = load_gitlab_flow_file("test-file.md", temp_dir, platform_commands)
-
-            # Check placeholders were replaced
+            platform_keywords = {"{GIT_STATUS}": "git status", "{COMMIT}": 'git add . ; git commit -m "{message}"'}
+            
+            result = load_gitlab_flow_file("test-file.md", temp_dir, platform_keywords)            # Check placeholders were replaced
             assert "git status" in result
             assert "git add . ; git commit" in result
             assert "{GIT_STATUS}" not in result
@@ -621,11 +619,9 @@ class TestGitLabFlowMarkdownLoading:
     def test_load_gitlab_flow_file_not_found(self):
         """Test graceful handling of missing GitLab Flow file."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            platform_commands = {"GIT_STATUS": "git status"}
-
-            result = load_gitlab_flow_file("missing-file.md", temp_dir, platform_commands)
-
-            # Should return graceful fallback message
+            platform_keywords = {"GIT_STATUS": "git status"}
+            
+            result = load_gitlab_flow_file("missing-file.md", temp_dir, platform_keywords)            # Should return graceful fallback message
             assert "GitLab Flow file not found" in result
             assert "missing-file.md" in result
 
@@ -639,11 +635,11 @@ class TestGitLabFlowMarkdownLoading:
             test_file = gitlab_flow_dir / "test-file.md"
             test_file.write_text("test content")
 
-            platform_commands = {}
+            platform_keywords = {}
 
             # Mock permission error
             with patch("builtins.open", side_effect=PermissionError("Access denied")):
-                result = load_gitlab_flow_file("test-file.md", temp_dir, platform_commands)
+                result = load_gitlab_flow_file("test-file.md", temp_dir, platform_keywords)
 
                 assert "Permission denied reading GitLab Flow file" in result
                 assert "test-file.md" in result
