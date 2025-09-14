@@ -61,12 +61,12 @@
   - **Implementation Status**: COMPLETED - Fixed specMode.chatmode.md references to sddSpecDriven.chatmode.md
 
 - [ ] 3. Update prompt template files [~4h] [Low Risk]
-- [ ] 3.1 Update sddSpecSync.prompt.md and related prompt files [~2h] [Depends on: Task 2.1]
+- [x] 3.1 Update sddSpecSync.prompt.md and related prompt files [~2h] [Depends on: Task 2.1]
   - Replace spec file references in sync prompts
   - Update file path references to use numbered format
   - Test prompt functionality with new file names
   - _Requirements: 3.1, 3.2_
-  - **Implementation Status**: NOT IMPLEMENTED
+  - **Implementation Status**: COMPLETED - Updated sddSpecSync.prompt.md (6 references) and sddTaskExecution.prompt.md (1 reference)
 
 - [ ] 3.2 Update remaining prompt templates (TaskExecution, TaskVerification, etc.) [~2h] [Depends on: Task 2.1]
   - Apply numbered format to all prompt template files
