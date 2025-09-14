@@ -5,7 +5,7 @@ on:
     # Run weekly security scans
     - cron: '0 8 * * 1'
   push:
-    branches: [ main, master ]
+    branches: [ main, master, 'feature/**' ]
   workflow_dispatch:
 
 jobs:
