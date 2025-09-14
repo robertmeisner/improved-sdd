@@ -465,7 +465,7 @@ class TestGitLabFlowConfig:
             # Check file sizes - empty files should have 0 bytes
             file_sizes = {f["filename"]: f["size_bytes"] for f in result["existing_files"]}
             assert file_sizes["gitlab-flow-setup.md"] == 0
-            assert file_sizes["gitlab-flow-commit.md"] == 0
+            assert file_sizes["gitlab-flow-workflow.md"] == 0
             assert file_sizes["gitlab-flow-pr.md"] > 0  # Has content
 
     def test_validate_gitlab_flow_templates_permission_error(self):

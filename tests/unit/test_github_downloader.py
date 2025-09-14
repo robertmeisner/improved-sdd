@@ -142,9 +142,9 @@ class TestGitHubDownloader:
         # Test with different branches
         test_cases = [
             ("master", "improved-sdd-master/templates/"),
-            ("main", "improved-sdd-main/sdd_templates/"),
-            ("develop", "improved-sdd-develop/sdd_templates/"),
-            ("feature-branch", "improved-sdd-feature-branch/sdd_templates/"),
+            ("main", "improved-sdd-main/templates/"),
+            ("develop", "improved-sdd-develop/templates/"),
+            ("feature-branch", "improved-sdd-feature-branch/templates/"),
         ]
 
         for branch, expected_prefix in test_cases:
@@ -641,7 +641,7 @@ class TestGitHubDownloader:
         assert len(extracted_files) > 0
 
         # Verify specific files were extracted
-        template_files = [f for f in extracted_files if "sdd_templates" in str(f)]
+        template_files = [f for f in extracted_files if "templates" in str(f)]
         assert len(template_files) > 0
 
     def test_extract_with_protection_traversal_attempt(self, downloader, temp_dir):

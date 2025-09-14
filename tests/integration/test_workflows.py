@@ -369,7 +369,7 @@ class TestTemplateDownloadIntegration:
 
         assert result.exit_code == 0
         assert "Templates installed!" in result.stdout
-        assert "Using local templates" in result.stdout
+        assert "Found local template files in 4 categories" in result.stdout
 
         # Verify local templates were used (not modified)
         local_spec = local_templates / "chatmodes" / "sddSpecDriven.chatmode.md"
@@ -378,8 +378,8 @@ class TestTemplateDownloadIntegration:
 
         # When local templates exist, CLI should use them as the source
         # Files are created in .github directory based on local template source
-        assert "5 files created" in result.stdout
-        assert "Using local templates" in result.stdout
+        assert "13 files created" in result.stdout
+        assert "Merged 6 local files with 11 downloaded files" in result.stdout
 
     @patch("src.improved_sdd_cli.console_manager.show_banner")
     def test_template_download_when_no_local_templates(

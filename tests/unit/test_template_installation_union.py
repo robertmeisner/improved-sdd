@@ -58,7 +58,7 @@ class TestTemplateInstallationUnion:
         merged_source = MergedTemplateSource(
             local_path=local_dir,
             downloaded_path=downloaded_dir,
-            local_files={"chatmodes": {"test.chatmode.md"}, "instructions": {"test.instruction.md"}},
+            local_files={"chatmodes": {"local.chatmode.md"}, "instructions": {"sddPythonCliDev.instructions.md"}},
             downloaded_files={"prompts": {"downloaded.prompt.md"}, "commands": {"downloaded.command.md"}},
         )
 

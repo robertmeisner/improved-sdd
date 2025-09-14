@@ -543,9 +543,9 @@ class TestGitLabFlowCLI:
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
 
-            # GitLab Flow parameter is the 9th positional argument (index 8)
-            assert call_args.args[8] is True  # gitlab_flow_enabled
-            assert call_args.args[9] == "windows"  # platform
+            # GitLab Flow parameter is the 10th positional argument (index 9)
+            assert call_args.args[9] is True  # gitlab_flow_enabled
+            assert call_args.args[10] == "windows"  # platform
 
     @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
@@ -569,8 +569,8 @@ class TestGitLabFlowCLI:
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
 
-            # GitLab Flow parameter is the 9th positional argument (index 8)
-            assert call_args.args[8] is False  # gitlab_flow_enabled
+            # GitLab Flow parameter is the 10th positional argument (index 9)
+            assert call_args.args[9] is False  # gitlab_flow_enabled
 
     @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
@@ -593,7 +593,7 @@ class TestGitLabFlowCLI:
             # Verify GitLab Flow is enabled by default
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
-            assert call_args.args[8] is True  # gitlab_flow_enabled
+            assert call_args.args[9] is True  # gitlab_flow_enabled
 
     def test_init_help_includes_gitlab_flow(self):
         """Test that init help includes GitLab Flow option documentation."""
@@ -622,7 +622,7 @@ class TestGitLabFlowCLI:
             assert result.exit_code == 0
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
-            assert call_args.args[9] == "windows"  # platform parameter
+            assert call_args.args[10] == "windows"  # platform parameter
 
     @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
@@ -643,7 +643,7 @@ class TestGitLabFlowCLI:
             call_args = mock_create_project.call_args
             # On Windows, platform should be "windows", on Unix-like systems it should be "unix"
             expected_platform = "windows" if os.name == "nt" else "unix"
-            assert call_args.args[9] == expected_platform  # platform parameter
+            assert call_args.args[10] == expected_platform  # platform parameter
 
     @patch("src.utils.create_project_structure")
     @patch("src.utils.select_ai_tools")
@@ -664,7 +664,7 @@ class TestGitLabFlowCLI:
             assert result.exit_code == 0
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
-            assert call_args.args[8] == True  # gitlab_flow_enabled parameter
+            assert call_args.args[9] == True  # gitlab_flow_enabled parameter
 
     @patch("src.utils.create_project_structure")
     @patch("src.utils.select_ai_tools")
@@ -683,4 +683,4 @@ class TestGitLabFlowCLI:
             assert result.exit_code == 0
             mock_create_project.assert_called_once()
             call_args = mock_create_project.call_args
-            assert call_args.args[8] == False  # gitlab_flow_enabled parameter
+            assert call_args.args[9] == False  # gitlab_flow_enabled parameter
