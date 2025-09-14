@@ -1,10 +1,23 @@
-## Commit Phase Progress
+## GitLab Flow Workflow Integration
 
-After completing and approving this phase of the specification workflow, commit your progress to maintain version control and enable collaboration.
+This section provides comprehensive GitLab Flow guidance that integrates seamlessly with the specification workflow. Follow these practices to maintain proper version control and collaboration throughout the spec development process.
 
-### Commit Changes
+### Phase-Based Progress Tracking
 
-Run the following command to commit your current phase:
+After completing and approving each phase of the specification workflow, commit your progress to maintain version control and enable collaboration.
+
+#### When to Commit
+
+**Commit after each phase approval:**
+- ✅ Feasibility assessment approved
+- ✅ Requirements document approved  
+- ✅ Design document approved
+- ✅ Task list approved
+- ✅ Individual implementation tasks completed
+
+#### Commit Command
+
+Use the following command to commit your current phase:
 
 ```bash
 # Stage and commit phase completion
@@ -65,18 +78,27 @@ feat: Implement {specific-task-name} for {feature-name}
 - Validate against requirements
 ```
 
-### Commit Best Practices
+### Best Practices
 
-**✅ Good Commit Practices**:
+**✅ Good Commit Practices:**
 - [ ] Descriptive commit message following conventional format
 - [ ] Single logical change per commit
 - [ ] All related files included
 - [ ] Phase completely finished before committing
 
-**📋 Incremental Progress Tracking**:
+**📋 Incremental Progress Tracking:**
 - Each spec phase gets its own commit
 - Implementation tasks committed individually
 - Progress visible through commit history
 - Enables easy rollback if needed
+
+### Workflow Integration Benefits
+
+This GitLab Flow integration enables:
+- **Isolated Development**: Work on feature branch without affecting main
+- **Incremental Progress**: Commit each spec phase for safety
+- **Collaborative Review**: Share progress with team members
+- **Version Control**: Track spec evolution and implementation progress
+- **Risk Mitigation**: Easy rollback if issues arise
 
 **Next Phase**: Continue to next workflow phase or proceed with implementation tasks.

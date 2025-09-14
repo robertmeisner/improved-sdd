@@ -265,6 +265,10 @@ Before you get started, think of a short feature name based on the user's rough 
 
 {GITLAB_FLOW_SETUP}
 
+## GitLab Flow Workflow Integration
+
+{GITLAB_FLOW_WORKFLOW}
+
 **Pre-Spec Analysis (MANDATORY):** Before starting the spec creation process, ALWAYS perform a comprehensive analysis of the existing codebase:
 - Analyze the project structure, existing patterns, and conventions.
 - Identify relevant modules, classes, and functions that could be extended.
@@ -297,7 +301,6 @@ Before diving into requirements, conduct a brief feasibility check to save time 
 - If user decides not to proceed, document the decision and archive the spec
 
 **After feasibility assessment approval:**
-{GITLAB_FLOW_COMMIT}
 
 ### 1. Requirement Gathering
 
@@ -380,7 +383,6 @@ This section should have EARS requirements
 - The model MUST proceed to the design phase after the user accepts the requirements
 
 **After requirements approval:**
-{GITLAB_FLOW_COMMIT}
 
 ### 2. Create Feature Design Document
 
@@ -428,7 +430,6 @@ The design document should be based on the requirements document, so ensure it e
 - The model MUST offer to return to feature requirements clarification if gaps are identified during design
 
 **After design approval:**
-{GITLAB_FLOW_COMMIT}
 
 ### 3. Create Task List
 
@@ -514,7 +515,6 @@ CRITICAL: Each task must emphasize code minimalism:
 - The model MUST stop once the task document has been approved
 
 **After task list approval:**
-{GITLAB_FLOW_COMMIT}
 
 ### 4. Implementation Review & Retrospective
 
