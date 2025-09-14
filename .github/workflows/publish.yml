@@ -137,6 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [pre-publish-validation]
     if: needs.pre-publish-validation.outputs.should-publish-testpypi == 'true'
+    environment: testpypi
     
     steps:
     - name: Download build artifacts
@@ -168,6 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [pre-publish-validation]
     if: needs.pre-publish-validation.outputs.should-publish-pypi == 'true'
+    environment: pypi
     
     steps:
     - name: Download build artifacts
