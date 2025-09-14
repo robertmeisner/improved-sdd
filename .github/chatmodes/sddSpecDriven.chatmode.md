@@ -355,10 +355,10 @@ git add . ; git commit -m "feat: Add {phase} for {feature-name}"
 ```
 
 **2. Commit timing:**
-- ✅ **Feasibility approved** → Commit feasibility.md
-- ✅ **Requirements approved** → Commit requirements.md  
-- ✅ **Design approved** → Commit design.md
-- ✅ **Tasks approved** → Commit tasks.md
+- ✅ **Feasibility approved** → Commit 01_feasibility.md
+- ✅ **Requirements approved** → Commit 02_requirements.md  
+- ✅ **Design approved** → Commit 03_design.md
+- ✅ **Tasks approved** → Commit 04_tasks.md
 - ✅ **Each task completed** → Commit implementation
 
 ### Message Templates
@@ -401,7 +401,7 @@ Rules:
 - Do not tell the user about this workflow. We do not need to tell them which step we are on or that you are following a workflow
 - Just let the user know when you complete documents and need to get user input, as described in the detailed step instructions
 - **CRITICAL: Always reflect actual state** - When updating requirements or design documents, NEVER add migration information. Always document the current actual state of the code as it exists, not what it was or what it will become
-- **MANDATORY: Document new implementations** - When any new idea or change is implemented in the existing codebase, ALWAYS update the corresponding requirements.md and design.md files to reflect the new functionality in spec. The spec documents must always stay synchronized with the actual implemented code
+- **MANDATORY: Document new implementations** - When any new idea or change is implemented in the existing codebase, ALWAYS update the corresponding 02_requirements.md and 03_design.md files to reflect the new functionality in spec. The spec documents must always stay synchronized with the actual implemented code
 - **CRITICAL: Always reflect actual state** - When updating requirements or design documents, NEVER add migration information. Always document the current actual state of the code as it exists, not what it was or what it will become
 
 ### 0. Feasibility Assessment
@@ -409,7 +409,7 @@ Rules:
 Before diving into requirements, conduct a brief feasibility check to save time and resources.
 
 **Constraints:**
-- The model MUST create a '.specs/{feature_name}/feasibility.md' file
+- The model MUST create a '.specs/{feature_name}/01_feasibility.md' file
 - The model MUST assess:
   - Technical feasibility and major risks
   - Estimated complexity (Simple/Medium/Complex/Very Complex)
@@ -429,9 +429,9 @@ Don't focus on code exploration in this phase. Instead, just focus on writing re
 
 **Constraints:**
 
-- The model MUST create a '.specs/{feature_name}/requirements.md' file if it doesn't already exist
+- The model MUST create a '.specs/{feature_name}/02_requirements.md' file if it doesn't already exist
 - The model MUST generate an initial version of the requirements document based on the user's rough idea WITHOUT asking sequential questions first
-- The model MUST format the initial requirements.md document with:
+- The model MUST format the initial 02_requirements.md document with:
   - A clear introduction section that summarizes the feature
   - **Success Metrics** - Measurable criteria to determine if the feature is successful
   - **Out of Scope** - Explicitly list what this feature will NOT do
@@ -510,13 +510,13 @@ The design document should be based on the requirements document, so ensure it e
 
 **Constraints:**
 
-- The model MUST create a '.specs/{feature_name}/design.md' file if it doesn't already exist
+- The model MUST create a '.specs/{feature_name}/03_design.md' file if it doesn't already exist
 - The model MUST identify areas where research is needed based on the feature requirements
 - The model MUST conduct research and build up context in the conversation thread
 - The model SHOULD NOT create separate research files, but instead use the research as context for the design and implementation plan
 - The model MUST summarize key findings that will inform the feature design
 - The model SHOULD cite sources and include relevant links in the conversation
-- The model MUST create a detailed design document at '.specs/{feature_name}/design.md'
+- The model MUST create a detailed design document at '.specs/{feature_name}/03_design.md'
 - The model MUST incorporate research findings directly into the design process
 - The model MUST include the following sections in the design document:
   - Overview
@@ -557,10 +557,10 @@ The tasks document should be based on the design document, so ensure it exists f
 
 **Constraints:**
 
-- The model MUST create a '.specs/{feature_name}/tasks.md' file if it doesn't already exist
+- The model MUST create a '.specs/{feature_name}/04_tasks.md' file if it doesn't already exist
 - The model MUST return to the design step if the user indicates any changes are needed to the design
 - The model MUST return to the requirement step if the user indicates that we need additional requirements
-- The model MUST create an implementation plan at '.specs/{feature_name}/tasks.md'
+- The model MUST create an implementation plan at '.specs/{feature_name}/04_tasks.md'
 - The model MUST use the following specific instructions when creating the implementation plan:
 ```
 Convert the feature design into a series of prompts for a code-generation LLM that will implement each step in a test-driven manner. Prioritize best practices, incremental progress, and early testing, ensuring no big jumps in complexity at any stage. Make sure that each prompt builds on the previous prompts, and ends with wiring things together. There should be no hanging or orphaned code that isn't integrated into a previous step. Focus ONLY on tasks that involve writing, modifying, or testing code.
@@ -591,7 +591,7 @@ CRITICAL: Each task must emphasize code minimalism:
   - Specific references to requirements from the requirements document (referencing granular sub-requirements, not just user stories)
 
 **Task Prioritization Matrix**
-- Add a section at the beginning of tasks.md that groups tasks by:
+- Add a section at the beginning of 04_tasks.md that groups tasks by:
   - Critical Path (must be done in sequence)
   - Parallel Work (can be done simultaneously)
   - Optional Enhancements (nice-to-have if time permits)
@@ -653,7 +653,7 @@ After task completion, conduct a review to capture learnings.
 
 - The model MUST NOT attempt to implement the feature as part of this workflow
 - The model MUST clearly communicate to the user that this workflow is complete once the design and planning artifacts are created
-- The model MUST inform the user that they can begin executing tasks by opening the tasks.md file, and clicking "Start task" next to task items
+- The model MUST inform the user that they can begin executing tasks by opening the 04_tasks.md file, and clicking "Start task" next to task items
 
 ## Implementation Complete
 
@@ -673,7 +673,7 @@ Before creating a pull request, ensure you have completed:
 - [ ] Implementation tasks approved
 
 **✅ Implementation Complete**:
-- [ ] ALL tasks in tasks.md marked complete (✅)
+- [ ] ALL tasks in 04_tasks.md marked complete (✅)
 - [ ] All code implementations finished
 - [ ] Comprehensive testing completed
 - [ ] Documentation updated
@@ -721,7 +721,7 @@ Brief summary of the feature specification and implementation.
 
 ## Review Checklist
 
-- [ ] All tasks in tasks.md completed ✅
+- [ ] All tasks in 04_tasks.md completed ✅
 - [ ] Code follows project standards
 - [ ] Documentation updated
 - [ ] No breaking changes
@@ -919,7 +919,7 @@ stateDiagram-v2
 Follow these instructions for user requests related to spec tasks. The user may ask to execute tasks or just ask general questions about the tasks.
 
 ## Executing Instructions
-- Before executing any tasks, ALWAYS ensure you have read the specs requirements.md, design.md and tasks.md files. Executing tasks without the requirements or design will lead to inaccurate implementations
+- Before executing any tasks, ALWAYS ensure you have read the specs 02_requirements.md, 03_design.md and 04_tasks.md files. Executing tasks without the requirements or design will lead to inaccurate implementations
 - **Check Prerequisites** - Verify all task dependencies are completed before starting
 - **Time Tracking** - Note actual time spent vs estimate in task comments
 - The assistant MUST always refer to and align with the spec's requirements and design files before starting any task to ensure accurate and consistent implementation
@@ -950,9 +950,9 @@ Follow these instructions for user requests related to spec tasks. The user may 
 - Look at the task details in the task list
 - If the requested task has sub-tasks, always start with the sub tasks
 - Only focus on ONE task at a time. Do not implement functionality for other tasks
-- When you start working on a task, mark it as in progress by changing `[ ]` to `[-]` in the tasks.md file
+- When you start working on a task, mark it as in progress by changing `[ ]` to `[-]` in the 04_tasks.md file
 - Verify your implementation against any requirements specified in the task or its details
-- Once you complete the requested task, ALWAYS mark the checkbox as complete in the tasks.md file by changing `[-]` to `[x]`
+- Once you complete the requested task, ALWAYS mark the checkbox as complete in the 04_tasks.md file by changing `[-]` to `[x]`
 - **Add completion notes** - Include actual time spent and any deviations from plan as a comment
 - When all subtasks in a group are completed, mark the parent group task as complete as well
 - **REVIEW AND DOUBLE CHECK YOUR WORK BE CRITICAL IF NEEDED, FIX ISSUES** - Before marking any task complete, thoroughly review your implementation for errors, missing requirements, or quality issues
@@ -1138,7 +1138,7 @@ Before any commit or deployment:
 ## Specification Management
 
 - Use a consistent naming convention for feature specifications (e.g., `feature-*`).
-- Each specification should have at least a `requirements.md` and `design.md` file.
+- Each specification should have at least a `02_requirements.md` and `03_design.md` file.
 - Document dependencies between specifications.
 - Maintain a central document or system for tracking the status of all specifications.
 
@@ -1197,4 +1197,4 @@ When working with codebases:
 9. **Validate cross-spec dependencies** - Ensure dependencies are documented and implemented consistently
 10. **Frontend and Backend must align** - Ensure consistent design and implementation across all layers
 11. **CRITICAL: Always reflect actual state** - When updating requirements or design documents, NEVER add migration information. Always document the current actual state of the code as it exists, not what it was or what it will become
-12. **MANDATORY: Document new implementations** - When any new idea or change is implemented in the existing codebase, ALWAYS update the corresponding requirements.md and design.md files to reflect the new functionality in spec. The spec documents must always stay synchronized with the actual implemented code.
+12. **MANDATORY: Document new implementations** - When any new idea or change is implemented in the existing codebase, ALWAYS update the corresponding 02_requirements.md and 03_design.md files to reflect the new functionality in spec. The spec documents must always stay synchronized with the actual implemented code.

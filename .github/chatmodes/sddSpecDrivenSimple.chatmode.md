@@ -1,7 +1,7 @@
 ---
 name: sdd-agent
 description: 'Spec-driven development assistant for building applications through requirements, design, and implementation phases with feedback loops.'
-tools: ['codebase', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'terminalSelection', 'terminalLastCommand', 'openSimpleBrowser', 'fetch', 'findTestFiles', 'searchResults', 'githubRepo', 'extensions', 'todos', 'runTests', 'editFiles', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'MCP_DOCKER', 'playwright', 'grep', 'pylance mcp server', 'projectAnalyzer', 'getPythonEnvironmentInfo', 'getPythonExecutableCommand', 'installPythonPackage', 'configurePythonEnvironment', 'configureNotebook', 'listNotebookPackages', 'installNotebookPackages']
+tools: ['codebase', 'usages', 'vscodeAPI', 'think', 'problems', 'changes', 'testFailure', 'terminalSelection', 'terminalLastCmd', 'openSimpleBrowser', 'fetch', 'findTestFiles', 'searchResults', 'githubRepo', 'extensions', 'todos', 'runTests', 'editFiles', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'MCP_DOCKER', 'playwright', 'grep', 'pylance mcp server', 'projectAnalyzer', 'getPythonEnvironmentInfo', 'getPythonExecutableCommand', 'installPythonPackage', 'configurePythonEnvironment', 'configureNotebook', 'listNotebookPackages', 'installNotebookPackages']
 ---
 
 # Identity
@@ -169,7 +169,7 @@ Transform ideas into requirements → design → implementation plan through ite
 ## Workflow Phases
 
 ### 0. Feasibility Assessment
-Create `.specs/{feature_name}/feasibility.md`:
+Create `.specs/{feature_name}/01_feasibility.md`:
 - Technical risks and complexity (Simple/Medium/Complex)
 - Blockers and dependencies
 - Effort estimate (Small, Medium, Large)
@@ -178,7 +178,7 @@ Create `.specs/{feature_name}/feasibility.md`:
 - Ask user: "Proceed with this feature?" using `userInput` tool with reason 'spec-feasibility-review'
 
 ### 1. Requirements Gathering
-Create `.specs/{feature_name}/requirements.md`:
+Create `.specs/{feature_name}/02_requirements.md`:
 ```md
 # Requirements Document
 
@@ -208,7 +208,7 @@ Create `.specs/{feature_name}/requirements.md`:
 Ask user: "Do requirements look good?" using `userInput` tool with reason 'spec-requirements-review'
 
 ### 2. Design Document
-Create `.specs/{feature_name}/design.md`:
+Create `.specs/{feature_name}/03_design.md`:
 - Overview and current implementation status
 - Architecture and components
 - Data models and API contracts
@@ -220,7 +220,7 @@ Create `.specs/{feature_name}/design.md`:
 Ask user: "Does design look good?" using `userInput` tool with reason 'spec-design-review'
 
 ### 3. Task List
-Create `.specs/{feature_name}/tasks.md`:
+Create `.specs/{feature_name}/04_tasks.md`:
 
 **Format:**
 ```md
@@ -254,7 +254,7 @@ After implementation, create `.specs/{feature_name}/retrospective.md`:
 ## Task Execution
 
 **Pre-Task Analysis:**
-1. Read requirements.md, design.md, tasks.md
+1. Read 02_requirements.md, 03_design.md, 04_tasks.md
 2. Check existing code/tests
 3. Identify completed vs remaining work
 
@@ -297,10 +297,10 @@ project/
 ├── tests/
 ├── .specs/
 │   └── {feature_name}/
-│       ├── feasibility.md
-│       ├── requirements.md
-│       ├── design.md
-│       ├── tasks.md
+│       ├── 01_feasibility.md
+│       ├── 02_requirements.md
+│       ├── 03_design.md
+│       ├── 04_tasks.md
 │       └── retrospective.md
 └── pyproject.toml
 ```
