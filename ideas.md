@@ -540,3 +540,7 @@ Files:
 
 
  - create a mcp for sddSpecDriven chatmode that includes gitlab flow commands and workflow steps dynamically when the --gitlab-flow flag is used during init command.
+
+ --add question cli about gitlab flow integration when running init command.
+
+-Publishing to PyPI from github to tet with every version to TestPyPI and then to PyPI on git tag.
