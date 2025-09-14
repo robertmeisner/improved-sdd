@@ -532,3 +532,11 @@ Files:
 
 
  - add statement that agent must remember to always use thinking, todo, memory and/or project analyzes tools (MCP) available.
+
+ 
+
+
+ - update readme.md
+
+
+ - create a mcp for sddSpecDriven chatmode that includes gitlab flow commands and workflow steps dynamically when the --gitlab-flow flag is used during init command.
