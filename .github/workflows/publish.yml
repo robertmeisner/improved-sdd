@@ -70,14 +70,18 @@ jobs:
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install build twine
+        pip install build twine tomli
         pip install -e .
 
     - name: Extract package information
       id: package-info
       run: |
         python -c "
-        import tomllib
+        try:
+            import tomllib
+        except ImportError:
+            import tomli as tomllib
+        
         with open('pyproject.toml', 'rb') as f:
             data = tomllib.load(f)
             print(f'name={data[\"project\"][\"name\"]}')
