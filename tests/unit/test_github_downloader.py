@@ -191,7 +191,7 @@ class TestGitHubDownloader:
 
         assert actual_relative == expected_relative
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_download_templates_with_custom_branch(self, temp_dir, mock_zip_file_custom_branch):
         """Test that custom branch parameter is used throughout download process."""
         custom_branch = "feature-test"
@@ -342,7 +342,7 @@ class TestGitHubDownloader:
 
         # This test validates that branch configuration matters for path parsing
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_download_templates_success(self, downloader, temp_dir, mock_zip_file):
         """Test successful template download."""
 
@@ -418,7 +418,7 @@ class TestGitHubDownloader:
         if progress_calls:
             assert all(isinstance(p, ProgressInfo) for p in progress_calls)
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_download_templates_http_error(self, downloader, temp_dir):
         """Test download with HTTP error response."""
 
@@ -454,7 +454,7 @@ class TestGitHubDownloader:
         assert "HTTP 404" in str(exc_info.value)
         assert exc_info.value.status_code == 404
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_download_templates_timeout_error(self, downloader, temp_dir):
         """Test download with timeout error."""
 
@@ -482,7 +482,7 @@ class TestGitHubDownloader:
 
         assert "Download timed out" in str(exc_info.value)
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_download_templates_network_error(self, downloader, temp_dir):
         """Test download with network error."""
 
@@ -510,7 +510,7 @@ class TestGitHubDownloader:
 
         assert "Network error during download" in str(exc_info.value)
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_download_templates_progress_tracking(self, downloader, temp_dir, mock_zip_file):
         """Test progress tracking during download."""
 
@@ -700,7 +700,7 @@ class TestGitHubDownloader:
 
         assert "Invalid template structure" in str(exc_info.value)
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_download_templates_no_content_length(self, downloader, temp_dir, mock_zip_file):
         """Test download without content-length header."""
 
@@ -753,7 +753,7 @@ class TestGitHubDownloader:
         assert isinstance(result, TemplateSource)
         assert result.source_type == TemplateSourceType.GITHUB
 
-    @pytest.mark.anyio
+    @pytest.mark.asyncio
     async def test_download_templates_cleanup_on_failure(self, downloader, temp_dir):
         """Test cleanup occurs when download fails."""
 
