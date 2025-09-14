@@ -325,8 +325,8 @@ class TestCLICommands:
         # Verify force=True was passed as the 5th positional argument
         args, kwargs = mock_create_structure.call_args
         assert (
-            len(args) == 8
-        )  # project_path, app_type, ai_tools, file_tracker, force, offline, force_download, template_repo
+            len(args) == 11
+        )  # Updated: project_path, app_type, ai_tools, file_tracker, force, offline, force_download, template_repo, template_branch, gitlab_flow_enabled, platform
         assert args[4] is True  # force parameter is the 5th positional argument
 
 

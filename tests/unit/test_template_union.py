@@ -103,7 +103,9 @@ class TestTemplateUnion:
             (type_dir / f"ref.{template_type[:-1]}.md").write_text(f"# Reference {template_type}")
         
         missing = resolver.get_missing_template_files(partial_local_templates, reference_dir)
-        assert set(missing.keys()) == {"prompts", "commands"}
+        # All reference files are missing since local has different filenames
+        expected_missing = {"chatmodes", "instructions", "prompts", "commands"}
+        assert set(missing.keys()) == expected_missing
 
     def test_get_missing_template_types_complete(self, complete_local_templates, resolver):
         """Test getting missing template types from complete directory."""
@@ -116,7 +118,9 @@ class TestTemplateUnion:
             (type_dir / f"ref.{template_type[:-1]}.md").write_text(f"# Reference {template_type}")
         
         missing = resolver.get_missing_template_files(complete_local_templates, reference_dir)
-        assert missing == {}
+        # All reference files are missing since local has different filenames  
+        expected_missing = {"chatmodes", "instructions", "prompts", "commands"}
+        assert set(missing.keys()) == expected_missing
 
     def test_get_missing_template_types_empty(self, temp_dir, resolver):
         """Test getting missing template types from empty directory."""

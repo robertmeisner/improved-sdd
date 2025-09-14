@@ -416,7 +416,7 @@ class TestCommandIntegration:
 
             assert result.exit_code == 0
             # Verify offline mode was passed to resolver
-            mock_resolver_class.assert_called_with(Path.cwd(), offline=True, force_download=False, template_repo=None)
+            mock_resolver_class.assert_called_with(Path.cwd(), offline=True, force_download=False, template_repo=None, template_branch=None)
 
     def test_force_download_integration(self, runner, temp_project_dir, mock_template_source):
         """Test init command force download integration."""
@@ -450,4 +450,4 @@ class TestCommandIntegration:
 
             assert result.exit_code == 0
             # Verify force download was passed to resolver
-            mock_resolver_class.assert_called_with(Path.cwd(), offline=False, force_download=True, template_repo=None)
+            mock_resolver_class.assert_called_with(Path.cwd(), offline=False, force_download=True, template_repo=None, template_branch=None)

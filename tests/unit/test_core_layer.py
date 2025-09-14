@@ -371,7 +371,7 @@ class TestModels:
         assert TemplateSourceType.GITHUB.value == "github"
 
         # Test all expected values exist
-        expected_values = {"local", "bundled", "github"}
+        expected_values = {"local", "bundled", "github", "merged"}  # Added "merged" 
         actual_values = {item.value for item in TemplateSourceType}
         assert actual_values == expected_values
 

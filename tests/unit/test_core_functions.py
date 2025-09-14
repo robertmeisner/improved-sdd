@@ -401,7 +401,7 @@ class TestGitLabFlowConfig:
             
             # Create all expected template files (based on actual mapping)
             (gitlab_flow_dir / "gitlab-flow-setup.md").write_text("Setup content")
-            (gitlab_flow_dir / "gitlab-flow-commit.md").write_text("Commit content")
+            (gitlab_flow_dir / "gitlab-flow-workflow.md").write_text("Workflow content")  # Updated filename
             (gitlab_flow_dir / "gitlab-flow-pr.md").write_text("PR content")
             
             # Should pass validation
@@ -439,7 +439,7 @@ class TestGitLabFlowConfig:
             
             # Check that missing files include the expected ones
             missing_filenames = [f["filename"] for f in result["missing_files"]]
-            assert "gitlab-flow-commit.md" in missing_filenames
+            assert "gitlab-flow-workflow.md" in missing_filenames  # Updated to current file structure
             assert "gitlab-flow-pr.md" in missing_filenames
 
     def test_validate_gitlab_flow_templates_empty_files(self):
@@ -451,7 +451,7 @@ class TestGitLabFlowConfig:
             
             # Create all files but make some empty
             (gitlab_flow_dir / "gitlab-flow-setup.md").write_text("")
-            (gitlab_flow_dir / "gitlab-flow-commit.md").write_text("")
+            (gitlab_flow_dir / "gitlab-flow-workflow.md").write_text("")  # Updated filename
             (gitlab_flow_dir / "gitlab-flow-pr.md").write_text("PR content")  # One valid
             
             result = config.validate_gitlab_flow_templates(temp_dir)
@@ -552,7 +552,7 @@ class TestGitLabFlowConfig:
         assert "description" in gitlab_config
         assert "template_dir" in gitlab_config
         assert "template_files" in gitlab_config
-        assert "keywords" in gitlab_config
+        assert "template_file_mapping" in gitlab_config  # Updated to use actual config structure
         assert "platform_keywords" in gitlab_config
 
         # Check platform commands exist for both platforms

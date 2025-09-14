@@ -58,8 +58,8 @@ class TestTemplateInstallationUnion:
         merged_source = MergedTemplateSource(
             local_path=local_dir,
             downloaded_path=downloaded_dir,
-            local_types={"chatmodes", "instructions"},
-            downloaded_types={"prompts", "commands"},
+            local_files={"chatmodes": {"test.chatmode.md"}, "instructions": {"test.instruction.md"}},
+            downloaded_files={"prompts": {"downloaded.prompt.md"}, "commands": {"downloaded.command.md"}},
         )
 
         return {"local_dir": local_dir, "downloaded_dir": downloaded_dir, "merged_source": merged_source}

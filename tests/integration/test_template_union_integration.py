@@ -47,7 +47,8 @@ These are project-specific instructions that the user created.
         resolver = TemplateResolver(project_path, offline=True)  # Use offline to test partial behavior
 
         # Test detection of available and missing types
-        available_types = resolver.get_available_template_types(local_templates)
+        available_files = resolver.get_available_template_files(local_templates)
+        available_types = set(available_files.keys()) if available_files else set()
         missing_types = resolver.get_missing_template_types(local_templates)
 
         print(f"Available locally: {sorted(available_types)}")
