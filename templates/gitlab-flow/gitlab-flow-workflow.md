@@ -1,104 +1,68 @@
 ## GitLab Flow Workflow Integration
 
-This section provides comprehensive GitLab Flow guidance that integrates seamlessly with the specification workflow. Follow these practices to maintain proper version control and collaboration throughout the spec development process.
+Systematic version control for specification-driven development with phase-based commits and collaborative review.
 
-### Phase-Based Progress Tracking
+### Workflow Diagram
 
-After completing and approving each phase of the specification workflow, commit your progress to maintain version control and enable collaboration.
+```mermaid
+gitGraph
+    commit id: "main"
+    branch feature/spec-user-auth
+    checkout feature/spec-user-auth
+    commit id: "feasibility"
+    commit id: "requirements"
+    commit id: "design"
+    commit id: "tasks"
+    commit id: "task-1.1"
+    commit id: "task-1.2"
+    commit id: "task-2.1"
+    checkout main
+    merge feature/spec-user-auth id: "PR merged"
+```
 
-#### When to Commit
+### Branch Naming
+```
+feature/spec-{kebab-case-name}
+```
+**Examples:** `feature/spec-user-authentication`, `feature/spec-payment-system`
 
-**Commit after each phase approval:**
-- ✅ Feasibility assessment approved
-- ✅ Requirements document approved  
-- ✅ Design document approved
-- ✅ Task list approved
-- ✅ Individual implementation tasks completed
+### Commit Workflow
 
-#### Commit Command
-
-Use the following command to commit your current phase:
-
+**1. After each phase approval:**
 ```bash
-# Stage and commit phase completion
 {COMMIT}
 ```
 
-### Commit Message Templates
+**2. Commit timing:**
+- ✅ **Feasibility approved** → Commit feasibility.md
+- ✅ **Requirements approved** → Commit requirements.md  
+- ✅ **Design approved** → Commit design.md
+- ✅ **Tasks approved** → Commit tasks.md
+- ✅ **Each task completed** → Commit implementation
 
-Use these conventional commit message formats for consistency:
+### Message Templates
 
-#### Feasibility Phase
+**Spec Phase Example:**
 ```
-feat: Add feasibility assessment for {feature-name}
-
-- Assess technical requirements and complexity
-- Identify potential risks and mitigation strategies
-- Estimate effort and resources needed
-- Document recommendation and next steps
-```
-
-#### Requirements Phase
-```
-feat: Add requirements for {feature-name}
+feat: Add requirements for user-authentication
 
 - Define user stories and acceptance criteria
-- Specify success metrics and out-of-scope items
-- Document functional and non-functional requirements
-- Establish testing scenarios and edge cases
+- Specify success metrics and security requirements
 ```
 
-#### Design Phase
+**Task Implementation Example:**
 ```
-feat: Add design for {feature-name}
+feat: Complete Task 1.2 - Add login validation
 
-- Define system architecture and components
-- Specify data models and API contracts
-- Document security and performance considerations
-- Plan testing strategy and rollback procedures
-```
-
-#### Tasks Phase
-```
-feat: Add implementation tasks for {feature-name}
-
-- Break down design into actionable coding tasks
-- Prioritize critical path and parallel work
-- Estimate effort and identify dependencies
-- Plan incremental development approach
-```
-
-#### Implementation Progress
-```
-feat: Implement {specific-task-name} for {feature-name}
-
-- Complete task {task-number}: {task-description}
-- Add comprehensive test coverage
-- Update documentation and comments
-- Validate against requirements
+- Implement email/password validation logic
+- Add comprehensive unit tests for edge cases
 ```
 
 ### Best Practices
 
-**✅ Good Commit Practices:**
-- [ ] Descriptive commit message following conventional format
-- [ ] Single logical change per commit
-- [ ] All related files included
-- [ ] Phase completely finished before committing
+- **One logical change** per commit (single phase or single task)
+- **Complete work** before committing (no partial phases)
+- **Descriptive messages** following conventional format
+- **Track dependencies** through commit history
 
-**📋 Incremental Progress Tracking:**
-- Each spec phase gets its own commit
-- Implementation tasks committed individually
-- Progress visible through commit history
-- Enables easy rollback if needed
-
-### Workflow Integration Benefits
-
-This GitLab Flow integration enables:
-- **Isolated Development**: Work on feature branch without affecting main
-- **Incremental Progress**: Commit each spec phase for safety
-- **Collaborative Review**: Share progress with team members
-- **Version Control**: Track spec evolution and implementation progress
-- **Risk Mitigation**: Easy rollback if issues arise
-
-**Next Phase**: Continue to next workflow phase or proceed with implementation tasks.
+**Workflow Benefits:** Feature isolation, incremental safety, team collaboration, easy rollback.
