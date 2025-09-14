@@ -60,7 +60,7 @@
   - _Requirements: 2.1, 2.2_
   - **Implementation Status**: COMPLETED - Fixed specMode.chatmode.md references to sddSpecDriven.chatmode.md
 
-- [ ] 3. Update prompt template files [~4h] [Low Risk]
+- [x] 3. Update prompt template files [~4h] [Low Risk]
 - [x] 3.1 Update sddSpecSync.prompt.md and related prompt files [~2h] [Depends on: Task 2.1]
   - Replace spec file references in sync prompts
   - Update file path references to use numbered format
@@ -68,12 +68,12 @@
   - _Requirements: 3.1, 3.2_
   - **Implementation Status**: COMPLETED - Updated sddSpecSync.prompt.md (6 references) and sddTaskExecution.prompt.md (1 reference)
 
-- [ ] 3.2 Update remaining prompt templates (TaskExecution, TaskVerification, etc.) [~2h] [Depends on: Task 2.1]
+- [x] 3.2 Update remaining prompt templates (TaskExecution, TaskVerification, etc.) [~2h] [Depends on: Task 2.1]
   - Apply numbered format to all prompt template files
   - Ensure cross-reference consistency between prompts
   - Validate prompt templates work with numbered files
   - _Requirements: 3.1, 3.2_
-  - **Implementation Status**: NOT IMPLEMENTED
+  - **Implementation Status**: COMPLETED - Analysis confirmed no remaining prompt files have spec file references to update
 
 - [ ] 4. Update GitLab Flow template files [~2h] [Low Risk]
 - [ ] 4.1 Update GitLab Flow workflow and PR templates [~2h] [Depends on: Task 2.1]
