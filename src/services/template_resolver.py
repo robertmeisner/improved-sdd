@@ -252,8 +252,18 @@ class TemplateResolver:
                     )
                     return self._attempt_file_level_merge(local_path, local_files)
 
-        # No local templates - fall back to existing logic
-        # Fallback to bundled templates
+        # Offline mode with custom repo - don't fall back to bundled templates
+        if self.offline and self.template_repo:
+            _get_console().print("[yellow]⚠ Offline mode with custom repository - no local templates available[/yellow]")
+            _get_console().print(f"[dim]Looked for templates for: {self.template_repo}[/dim]")
+            return TemplateResolutionResult(
+                source=None,
+                success=False,
+                message="No templates available for custom repository in offline mode",
+                fallback_attempted=True,
+            )
+
+        # No local templates - fall back to bundled templates (only for default repo)
         bundled_path = self.get_bundled_templates_path()
         if bundled_path:
             source = TemplateSource(
