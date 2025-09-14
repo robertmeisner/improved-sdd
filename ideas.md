@@ -531,4 +531,4 @@ Files:
 
 
 
-  always use thinking, todo, memory and project analyzes tools (MCP) available.
+ - add statement that agent must remember to always use thinking, todo, memory and/or project analyzes tools (MCP) available.
