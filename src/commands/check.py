@@ -7,10 +7,10 @@ and available AI assistant tools.
 import typer
 
 # Import UI components
-from ..ui import console_manager
+from ui import console_manager
 
 # Import shared utilities
-from ..utils import check_github_copilot, check_tool, offer_user_choice
+from utils import check_github_copilot, check_tool, offer_user_choice
 
 
 def check_command():

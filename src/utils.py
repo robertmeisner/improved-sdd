@@ -12,10 +12,10 @@ from typing import Dict, List, Optional
 import typer
 
 # Import configuration and UI components
-from .core import AI_TOOLS, APP_TYPES
-from .core.models import MergedTemplateSource
-from .services import FileTracker, TemplateResolver
-from .ui import console_manager
+from core import AI_TOOLS, APP_TYPES
+from core.models import MergedTemplateSource
+from services import FileTracker, TemplateResolver
+from ui import console_manager
 
 
 def check_tool(tool: str, install_hint: str, optional: bool = False) -> bool:
@@ -254,7 +254,7 @@ def customize_template_content(
 
     # Replace GitLab Flow keywords if enabled (new functionality)
     # Import here to avoid circular imports
-    from .core.config import config
+    from core.config import config
 
     gitlab_flow_keywords = config.get_gitlab_flow_keywords(
         enabled=gitlab_flow_enabled, platform=platform, template_dir=template_dir

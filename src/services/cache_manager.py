@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 from typing import List
 
-from src.core.interfaces import CacheManagerProtocol
+from core.interfaces import CacheManagerProtocol
 
 
 class CacheManager(CacheManagerProtocol):

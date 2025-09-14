@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 # Import banner and tagline from core configuration
-from ..core import BANNER, TAGLINE
+from core import BANNER, TAGLINE
 
 
 class ConsoleManager:

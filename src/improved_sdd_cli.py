@@ -49,17 +49,24 @@ def _import_commands():
         return check_command, delete_command, init_command, console_manager
 
     try:
-        # When installed as a package, use relative imports
-        from .commands.check import check_command as check_fn
-        from .commands.delete import delete_command as delete_fn
-        from .commands.init import init_command as init_fn
-        from .ui.console import console_manager as cm
+        # When running in development/CI (editable install), use direct imports from src
+        from commands.check import check_command as check_fn
+        from commands.delete import delete_command as delete_fn
+        from commands.init import init_command as init_fn
+        from ui.console import console_manager as cm
     except (ImportError, ModuleNotFoundError):
-        # When running as a script, use src-prefixed imports
-        from src.commands.check import check_command as check_fn
-        from src.commands.delete import delete_command as delete_fn
-        from src.commands.init import init_command as init_fn
-        from src.ui.console import console_manager as cm
+        try:
+            # When installed as a package, use absolute imports with package name
+            from improved_sdd.commands.check import check_command as check_fn
+            from improved_sdd.commands.delete import delete_command as delete_fn
+            from improved_sdd.commands.init import init_command as init_fn
+            from improved_sdd.ui.console import console_manager as cm
+        except (ImportError, ModuleNotFoundError):
+            # Fallback: try relative imports (for running as module)
+            from .commands.check import check_command as check_fn
+            from .commands.delete import delete_command as delete_fn
+            from .commands.init import init_command as init_fn
+            from .ui.console import console_manager as cm
 
     # Assign to global variables so they can be patched in tests
     check_command = check_fn
@@ -77,6 +84,7 @@ class BannerGroup(TyperGroup):
 
     def format_help(self, ctx, formatter):
         # Ensure commands are imported before showing help
+        _setup_app()
         _, _, _, local_console_manager = _import_commands()
         
         # Show banner before help
@@ -104,6 +112,8 @@ app = typer.Typer(
 def callback(ctx: typer.Context):
     """Show banner when no subcommand is provided."""
     if ctx.invoked_subcommand is None and "--help" not in sys.argv and "-h" not in sys.argv:
+        # Ensure app is set up before showing banner
+        _setup_app()
         _, _, _, local_console_manager = _import_commands()
         if local_console_manager:
             local_console_manager.show_banner()
@@ -113,7 +123,8 @@ def callback(ctx: typer.Context):
 
 def main():
     """Entry point for the CLI application."""
-    # The app is already configured by the _setup_app call at the module level
+    # Ensure app is set up before running
+    _setup_app()
     app()
 
 
@@ -129,8 +140,8 @@ def _setup_app():
         app.command(name="delete")(delete_fn)
     if check_fn:
         app.command(name="check")(check_fn)
-# Configure the app immediately upon import
-_setup_app()
+# Configure the app on first use, not at import time
+# _setup_app()  # Removed to avoid circular imports
 
 
 

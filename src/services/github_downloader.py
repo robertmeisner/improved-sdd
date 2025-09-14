@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Callable, Optional
 
-from src.core.config import DEFAULT_GITHUB_BRANCH, DEFAULT_GITHUB_REPO, DOWNLOAD_TEMPLATES_DIR
+from core.config import DEFAULT_GITHUB_BRANCH, DEFAULT_GITHUB_REPO, DOWNLOAD_TEMPLATES_DIR
 
 # Lazy imports for heavy dependencies
 try:
@@ -46,9 +46,9 @@ except ImportError:
     TimeRemainingColumn = None
     RICH_AVAILABLE = False
 
-from src.core.exceptions import GitHubAPIError, NetworkError, TemplateError, TimeoutError
-from src.core.interfaces import GitHubDownloaderProtocol
-from src.core.models import ProgressInfo, TemplateSource, TemplateSourceType
+from core.exceptions import GitHubAPIError, NetworkError, TemplateError, TimeoutError
+from core.interfaces import GitHubDownloaderProtocol
+from core.models import ProgressInfo, TemplateSource, TemplateSourceType
 
 
 class GitHubDownloader(GitHubDownloaderProtocol):

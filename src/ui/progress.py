@@ -17,7 +17,7 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
-from ..core.models import ProgressInfo
+from core.models import ProgressInfo
 
 
 class ProgressTracker:

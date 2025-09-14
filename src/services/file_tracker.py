@@ -7,7 +7,7 @@ rich formatted summaries.
 
 from pathlib import Path
 
-from src.core.interfaces import FileTrackerProtocol
+from core.interfaces import FileTrackerProtocol
 
 
 class FileTracker(FileTrackerProtocol):

@@ -9,13 +9,13 @@ from pathlib import Path
 import typer
 
 # Import configuration and exceptions
-from ..core import APP_TYPES
+from core import APP_TYPES
 
 # Import UI components
-from ..ui import console_manager
+from ui import console_manager
 
 # Import shared utilities
-from ..utils import select_app_type
+from utils import select_app_type
 
 
 def delete_command(

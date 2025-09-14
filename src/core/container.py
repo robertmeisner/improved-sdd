@@ -136,7 +136,7 @@ class ServiceContainer:
             Configured TemplateResolver instance
         """
         # Import here to avoid circular imports
-        from ..services.template_resolver import TemplateResolver
+        from services.template_resolver import TemplateResolver
 
         return TemplateResolver(
             project_path=project_path,
@@ -154,19 +154,19 @@ class ServiceContainer:
 
     def _create_file_tracker(self) -> FileTrackerProtocol:
         """Create FileTracker instance."""
-        from ..services.file_tracker import FileTracker
+        from services.file_tracker import FileTracker
 
         return FileTracker()
 
     def _create_cache_manager(self) -> CacheManagerProtocol:
         """Create CacheManager instance."""
-        from ..services.cache_manager import CacheManager
+        from services.cache_manager import CacheManager
 
         return CacheManager()
 
     def _create_github_downloader(self) -> GitHubDownloaderProtocol:
         """Create GitHubDownloader instance with default configuration."""
-        from ..services.github_downloader import GitHubDownloader
+        from services.github_downloader import GitHubDownloader
 
         return GitHubDownloader()
 
