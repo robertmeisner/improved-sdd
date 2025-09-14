@@ -59,7 +59,102 @@ Commands must adapt to user's system:
 - Node.js: Use package.json and appropriate package manager
 - Docker: Use .dockerignore and multi-stage builds
 
-# Spec-Driven Development Workflow
+```mermaid
+graph TB
+    Start([User Request]) --> Analysis{Pre-Analysis}
+    
+    Analysis -->|New Feature| Feasibility[Feasibility Assessment]
+    Analysis -->|Existing Spec| CheckStatus{Check Status}
+    
+    CheckStatus -->|Update Needed| UpdateSpec[Update Specs]
+    CheckStatus -->|Execute Tasks| TaskExecution[Task Execution]
+    
+    Feasibility -->|Review| FeasReview{User Approves?}
+    FeasReview -->|No| Archive[Archive & Stop]
+    FeasReview -->|Yes| Requirements
+    
+    Requirements[Requirements Gathering] -->|Review| ReqReview{User Approves?}
+    ReqReview -->|No| Requirements
+    ReqReview -->|Yes| Design
+    
+    Design[Design Document] -->|Review| DesignReview{User Approves?}
+    DesignReview -->|No| Design
+    DesignReview -->|Gaps Found| Requirements
+    DesignReview -->|Yes| Tasks
+    
+    Tasks[Task List Creation] -->|Review| TaskReview{User Approves?}
+    TaskReview -->|No| Tasks
+    TaskReview -->|Design Issues| Design
+    TaskReview -->|Yes| Ready[Ready for Implementation]
+    
+    Ready --> TaskExecution
+    
+    TaskExecution -->|Start| Implement[Implement & Test]
+    Implement --> Review[Review & Fix]
+    Review -->|Done| CommitFlow{Git Commit?}
+    
+    CommitFlow -->|Yes| GitCommit[Git Commands]
+    CommitFlow -->|No| NextTask
+    GitCommit --> NextTask{More Tasks?}
+    
+    NextTask -->|Yes| StopWait[STOP - Wait]
+    NextTask -->|No| Retrospective
+    StopWait -->|Continue| TaskExecution
+    
+    Retrospective[Retrospective] --> Complete([Complete])
+    
+    UpdateSpec --> Sync{Sync Layers}
+    Sync --> Requirements
+    
+    style Feasibility fill:#f0f8ff,stroke:#2563eb,stroke-width:2px,color:#1e40af
+    style Requirements fill:#faf5ff,stroke:#7c3aed,stroke-width:2px,color:#5b21b6
+    style Design fill:#f0fdf4,stroke:#16a34a,stroke-width:2px,color:#15803d
+    style Tasks fill:#fffbeb,stroke:#d97706,stroke-width:2px,color:#c2410c
+    style TaskExecution fill:#fef2f2,stroke:#dc2626,stroke-width:2px,color:#b91c1c
+    style Retrospective fill:#f7fee7,stroke:#65a30d,stroke-width:2px,color:#4d7c0f
+```
+
+## Workflow Phase Details
+
+### Phase 0: Feasibility Assessment
+- **Risk Analysis**: Technical, business, and resource risks
+- **Complexity Rating**: Simple/Medium/Complex
+- **Effort Estimation**: Small/Medium/Large
+- **Review Gate**: `userInput: spec-feasibility-review`
+
+### Phase 1: Requirements Gathering  
+- **User Stories**: Role-based feature descriptions
+- **EARS Format**: Event-Action-Response-System requirements
+- **Priority Levels**: P0 (Critical) to P3 (Nice-to-have)
+- **Success Metrics**: Measurable outcomes
+- **Review Gate**: `userInput: spec-requirements-review`
+
+### Phase 2: Design Document
+- **Architecture**: System structure and patterns
+- **API Contracts**: Interface definitions
+- **State Management**: Data flow and storage
+- **Security**: Authentication, authorization, validation
+- **Review Gate**: `userInput: spec-design-review`
+
+### Phase 3: Task List
+- **Max 50 LOC/task**: Keep tasks small and focused
+- **Dependencies**: Task ordering and prerequisites
+- **Risk Levels**: Low/Medium/High per task
+- **Time Estimates**: Hours or story points
+- **Review Gate**: `userInput: spec-tasks-review`
+
+### Phase 4: Task Execution
+- **Mark Progress**: `[ ]` → `[-]` → `[x]`
+- **Implement Code**: Write minimal code + tests
+- **Review & Fix**: Check problems, fix issues
+- **Git Decision**: Optional commit after each task
+- **Stop Pattern**: ONE task then STOP for user
+
+### Phase 5: Retrospective
+- **Lessons Learned**: What worked, what didn't
+- **Actual vs Estimated**: Time and effort comparison
+- **Technical Debt**: Items for future improvement
+- **Update Patterns**: Document reusable solutions
 
 ## Overview
 Transform ideas into requirements → design → implementation plan through iterative refinement.
@@ -77,7 +172,9 @@ Transform ideas into requirements → design → implementation plan through ite
 Create `.specs/{feature_name}/feasibility.md`:
 - Technical risks and complexity (Simple/Medium/Complex)
 - Blockers and dependencies
-- Effort estimate (Small: 1-3 days, Medium: 3-7 days, Large: 1-2 weeks)
+- Effort estimate (Small, Medium, Large)
+- Success criteria
+- Recommendation (Proceed/Modify/Abort)
 - Ask user: "Proceed with this feature?" using `userInput` tool with reason 'spec-feasibility-review'
 
 ### 1. Requirements Gathering
@@ -135,7 +232,7 @@ Create `.specs/{feature_name}/tasks.md`:
 ### Optional Enhancements
 
 ## Implementation Tasks
-- [ ] 1. Task description [~2h] [Risk: Low/Medium/High]
+- [ ] 1. Task description [Effort: Small/Medium/Large] [Risk: Low/Medium/High]
   - References: Requirement 1.1
   - Dependencies: Task X
 ```
@@ -178,7 +275,7 @@ After implementation, create `.specs/{feature_name}/retrospective.md`:
 ## Synchronization Rules
 
 **Three Layers Must Align:**
-1. Requirements (WHAT) → Design (HOW) → Code (IMPLEMENTATION)
+1. Requirements (WHAT) → Design (HOW) → Tasks (IMPLEMENTATION)
 2. Never implement without design
 3. Never design without requirements
 4. Update all layers together
