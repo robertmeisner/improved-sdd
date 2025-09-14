@@ -527,12 +527,14 @@ class TestGitLabFlowCLI:
     @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
     @patch("src.utils.create_project_structure")
-    def test_init_with_gitlab_flow_enabled(self, mock_create_project, mock_select_app, mock_select_ai):
+    @patch("platform.system")
+    def test_init_with_gitlab_flow_enabled(self, mock_system, mock_create_project, mock_select_app, mock_select_ai):
         """Test init command with --gitlab-flow flag enabled."""
         # Setup mocks
         mock_select_ai.return_value = ["github-copilot"]
         mock_select_app.return_value = "python-cli"
         mock_create_project.return_value = None
+        mock_system.return_value = "Linux"  # Mock Linux platform
 
         with tempfile.TemporaryDirectory() as temp_dir:
             project_dir = Path(temp_dir) / "test-project"
@@ -548,7 +550,7 @@ class TestGitLabFlowCLI:
 
             # GitLab Flow parameter is the 10th positional argument (index 9)
             assert call_args.args[9] is True  # gitlab_flow_enabled
-            assert call_args.args[10] == "windows"  # platform
+            assert call_args.args[10] == "unix"  # platform
 
     @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
@@ -610,17 +612,19 @@ class TestGitLabFlowCLI:
     @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
     @patch("src.utils.create_project_structure")
-    @patch("os.name", "nt")  # Mock Windows
-    def test_init_platform_detection_windows(self, mock_create_project, mock_select_app, mock_select_ai):
+    @patch("platform.system")
+    def test_init_platform_detection_windows(self, mock_system, mock_create_project, mock_select_app, mock_select_ai):
         """Test platform detection sets Windows correctly."""
         mock_select_ai.return_value = ["github-copilot"]
         mock_select_app.return_value = "python-cli"
         mock_create_project.return_value = None
+        mock_system.return_value = "Windows"  # Mock Windows platform
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            project_dir = Path(temp_dir) / "test-project"
+            # Use string path to avoid platform-specific Path issues in tests
+            project_dir_str = str(Path(temp_dir) / "test-project")
 
-            result = self.runner.invoke(app, ["init", str(project_dir), "--gitlab-flow"])
+            result = self.runner.invoke(app, ["init", project_dir_str, "--gitlab-flow"])
 
             assert result.exit_code == 0
             mock_create_project.assert_called_once()
