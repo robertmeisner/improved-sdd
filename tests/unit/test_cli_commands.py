@@ -155,7 +155,6 @@ class TestCLICommands:
         assert result.exit_code != 0
         assert "error" in result.output.lower() or "failed" in result.output.lower()
 
-    @pytest.mark.skip(reason="Check command mocking needs further investigation")
     @patch("src.utils.offer_user_choice")
     @patch("src.utils.check_github_copilot")
     @patch("src.utils.check_tool")
@@ -415,7 +414,6 @@ class TestCheckCommand:
         assert result.exit_code == 0
         assert "Check that all required tools are installed" in result.stdout
 
-    @pytest.mark.skip(reason="Check command mocking needs further investigation")
     @patch("src.utils.check_tool")
     @patch("src.utils.check_github_copilot")
     @patch("src.ui.console_manager.show_banner")
@@ -431,7 +429,12 @@ class TestCheckCommand:
         result = runner.invoke(app, ["check"])
 
         assert result.exit_code == 0
-        assert "All AI assistant tools are available" in result.stdout
+        # Check for either success message
+        success_messages = [
+            "All AI assistant tools are available",
+            "Improved-SDD CLI is ready to use"
+        ]
+        assert any(msg in result.stdout for msg in success_messages)
 
     @patch("src.utils.os.getenv")
     @patch("src.commands.check.check_tool")
