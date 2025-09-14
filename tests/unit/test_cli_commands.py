@@ -605,9 +605,14 @@ class TestGitLabFlowCLI:
         result = self.runner.invoke(app, ["init", "--help"])
 
         assert result.exit_code == 0
-        assert "--gitlab-flow" in result.output
-        assert "--no-gitlab-flow" in result.output
-        assert "GitLab Flow" in result.output
+        
+        # Strip ANSI codes for consistent testing across environments
+        import re
+        clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+        
+        assert "--gitlab-flow" in clean_output
+        assert "--no-gitlab-flow" in clean_output
+        assert "GitLab Flow" in clean_output
 
     @patch("src.utils.select_ai_tools")
     @patch("src.utils.select_app_type")
