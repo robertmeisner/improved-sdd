@@ -13,7 +13,7 @@ Before creating a pull request, ensure you have completed:
 - [ ] Implementation tasks approved
 
 **✅ Implementation Complete**:
-- [ ] ALL tasks in tasks.md marked complete (✅)
+- [ ] ALL tasks in 04_tasks.md marked complete (✅)
 - [ ] All code implementations finished
 - [ ] Comprehensive testing completed
 - [ ] Documentation updated
@@ -61,7 +61,7 @@ Brief summary of the feature specification and implementation.
 
 ## Review Checklist
 
-- [ ] All tasks in tasks.md completed ✅
+- [ ] All tasks in 04_tasks.md completed ✅
 - [ ] Code follows project standards
 - [ ] Documentation updated
 - [ ] No breaking changes
