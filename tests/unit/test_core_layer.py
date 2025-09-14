@@ -536,8 +536,15 @@ class TestCoreLayerIntegration:
             raise NetworkError("Test network error", url="https://example.com")
         except TemplateError as e:
             assert isinstance(e, NetworkError)
-            assert "https://example.com" in str(e)
-
+            # Properly validate URL in error message using URL parsing
+            from urllib.parse import urlparse
+            import re
+            error_str = str(e)
+            # Extract the first URL found and check its host
+            url_match = re.search(r'https?://[^\s)]+', error_str)
+            assert url_match is not None, "No URL found in error message"
+            parsed = urlparse(url_match.group(0))
+            assert parsed.hostname == "example.com"
         # Model creation (as CLI would use it)
         progress = ProgressInfo("download", 100, 200, 50.0, speed_bps=1024)
         assert progress.speed_mbps is not None

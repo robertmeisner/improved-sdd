@@ -164,7 +164,11 @@ class TestGitHubRepositoryValidation:
             assert owner in expected_archive_pattern
             assert repo in expected_archive_pattern
             assert branch in expected_archive_pattern
-            assert "github.com" in expected_archive_pattern
+            
+            # Properly validate URL components using URL parsing
+            from urllib.parse import urlparse
+            parsed_url = urlparse(expected_archive_pattern)
+            assert parsed_url.hostname == "github.com"
             assert "archive/refs/heads/" in expected_archive_pattern
 
     def test_repository_assumption_documentation(self):
