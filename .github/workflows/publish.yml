@@ -304,7 +304,7 @@ jobs:
         
         # Try running a single simple test first to diagnose
         echo "Running simple test check..."
-        python -m pytest tests/unit/test_core_functions.py::test_validate_git_repository_url_with_valid_url -v
+        python -m pytest tests/unit/test_core_functions.py::TestFileTracker::test_init -v
         SIMPLE_TEST_EXIT=$?
         echo "Simple test exit code: $SIMPLE_TEST_EXIT"
         
