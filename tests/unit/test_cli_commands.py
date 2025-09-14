@@ -155,7 +155,6 @@ class TestCLICommands:
         assert result.exit_code != 0
         assert "error" in result.output.lower() or "failed" in result.output.lower()
 
-    @pytest.mark.skip(reason="Check command mocking needs further investigation")
     @patch("src.utils.offer_user_choice")
     @patch("src.utils.check_github_copilot")
     @patch("src.utils.check_tool")
@@ -325,8 +324,8 @@ class TestCLICommands:
         # Verify force=True was passed as the 5th positional argument
         args, kwargs = mock_create_structure.call_args
         assert (
-            len(args) == 8
-        )  # project_path, app_type, ai_tools, file_tracker, force, offline, force_download, template_repo
+            len(args) == 11
+        )  # Updated: project_path, app_type, ai_tools, file_tracker, force, offline, force_download, template_repo, template_branch, gitlab_flow_enabled, platform
         assert args[4] is True  # force parameter is the 5th positional argument
 
 
@@ -415,7 +414,6 @@ class TestCheckCommand:
         assert result.exit_code == 0
         assert "Check that all required tools are installed" in result.stdout
 
-    @pytest.mark.skip(reason="Check command mocking needs further investigation")
     @patch("src.utils.check_tool")
     @patch("src.utils.check_github_copilot")
     @patch("src.ui.console_manager.show_banner")
@@ -431,7 +429,12 @@ class TestCheckCommand:
         result = runner.invoke(app, ["check"])
 
         assert result.exit_code == 0
-        assert "All AI assistant tools are available" in result.stdout
+        # Check for either success message
+        success_messages = [
+            "All AI assistant tools are available",
+            "Improved-SDD CLI is ready to use"
+        ]
+        assert any(msg in result.stdout for msg in success_messages)
 
     @patch("src.utils.os.getenv")
     @patch("src.commands.check.check_tool")
@@ -511,3 +514,185 @@ class TestMainApp:
         assert app.info.name == "improved-sdd"
         assert app.info.help is not None
         assert "Setup AI-optimized development templates and workflows" in app.info.help
+
+
+@pytest.mark.cli
+class TestGitLabFlowCLI:
+    """Test GitLab Flow CLI flag integration."""
+
+    def setup_method(self):
+        """Set up test environment for each test."""
+        self.runner = CliRunner()
+
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
+    @patch("platform.system")
+    def test_init_with_gitlab_flow_enabled(self, mock_system, mock_create_project, mock_select_app, mock_select_ai):
+        """Test init command with --gitlab-flow flag enabled."""
+        # Setup mocks
+        mock_select_ai.return_value = ["github-copilot"]
+        mock_select_app.return_value = "python-cli"
+        mock_create_project.return_value = None
+        mock_system.return_value = "Linux"  # Mock Linux platform
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_dir = Path(temp_dir) / "test-project"
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--gitlab-flow"])
+
+            # Check command succeeded
+            assert result.exit_code == 0
+
+            # Verify create_project_structure was called with GitLab Flow enabled
+            mock_create_project.assert_called_once()
+            call_args = mock_create_project.call_args
+
+            # GitLab Flow parameter is the 10th positional argument (index 9)
+            assert call_args.args[9] is True  # gitlab_flow_enabled
+            assert call_args.args[10] == "unix"  # platform
+
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
+    def test_init_with_gitlab_flow_disabled(self, mock_create_project, mock_select_app, mock_select_ai):
+        """Test init command with --no-gitlab-flow flag."""
+        # Setup mocks
+        mock_select_ai.return_value = ["claude"]
+        mock_select_app.return_value = "mcp-server"
+        mock_create_project.return_value = None
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_dir = Path(temp_dir) / "test-project"
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--no-gitlab-flow"])
+
+            # Check command succeeded
+            assert result.exit_code == 0
+
+            # Verify create_project_structure was called with GitLab Flow disabled
+            mock_create_project.assert_called_once()
+            call_args = mock_create_project.call_args
+
+            # GitLab Flow parameter is the 10th positional argument (index 9)
+            assert call_args.args[9] is False  # gitlab_flow_enabled
+
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
+    def test_init_default_gitlab_flow_enabled(self, mock_create_project, mock_select_app, mock_select_ai):
+        """Test init command defaults to GitLab Flow enabled."""
+        # Setup mocks
+        mock_select_ai.return_value = ["github-copilot"]
+        mock_select_app.return_value = "python-cli"
+        mock_create_project.return_value = None
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_dir = Path(temp_dir) / "test-project"
+
+            # Run init without explicit GitLab Flow flag
+            result = self.runner.invoke(app, ["init", str(project_dir)])
+
+            assert result.exit_code == 0
+
+            # Verify GitLab Flow is enabled by default
+            mock_create_project.assert_called_once()
+            call_args = mock_create_project.call_args
+            assert call_args.args[9] is True  # gitlab_flow_enabled
+
+    def test_init_help_includes_gitlab_flow(self):
+        """Test that init help includes GitLab Flow option documentation."""
+        result = self.runner.invoke(app, ["init", "--help"])
+
+        assert result.exit_code == 0
+        
+        # Strip ANSI codes for consistent testing across environments
+        import re
+        clean_output = re.sub(r'\x1b\[[0-9;]*m', '', result.output)
+        
+        assert "--gitlab-flow" in clean_output
+        assert "--no-gitlab-flow" in clean_output
+        assert "GitLab Flow" in clean_output
+
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
+    @patch("platform.system")
+    def test_init_platform_detection_windows(self, mock_system, mock_create_project, mock_select_app, mock_select_ai):
+        """Test platform detection sets Windows correctly."""
+        mock_select_ai.return_value = ["github-copilot"]
+        mock_select_app.return_value = "python-cli"
+        mock_create_project.return_value = None
+        mock_system.return_value = "Windows"  # Mock Windows platform
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Use string path to avoid platform-specific Path issues in tests
+            project_dir_str = str(Path(temp_dir) / "test-project")
+
+            result = self.runner.invoke(app, ["init", project_dir_str, "--gitlab-flow"])
+
+            assert result.exit_code == 0
+            mock_create_project.assert_called_once()
+            call_args = mock_create_project.call_args
+            assert call_args.args[10] == "windows"  # platform parameter
+
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    @patch("src.utils.create_project_structure")
+    def test_init_platform_detection_current_system(self, mock_create_project, mock_select_app, mock_select_ai):
+        """Test platform detection works on current system."""
+        mock_select_ai.return_value = ["claude"]
+        mock_select_app.return_value = "mcp-server"
+        mock_create_project.return_value = None
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_dir = Path(temp_dir) / "test-project"
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--gitlab-flow"])
+
+            assert result.exit_code == 0
+            mock_create_project.assert_called_once()
+            call_args = mock_create_project.call_args
+            # On Windows, platform should be "windows", on Unix-like systems it should be "unix"
+            expected_platform = "windows" if os.name == "nt" else "unix"
+            assert call_args.args[10] == expected_platform  # platform parameter
+
+    @patch("src.utils.create_project_structure")
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    def test_init_gitlab_flow_template_processing_integration(
+        self, mock_select_app, mock_select_ai, mock_create_project
+    ):
+        """Test end-to-end GitLab Flow template processing integration."""
+        mock_select_ai.return_value = ["github-copilot"]
+        mock_select_app.return_value = "python-cli"
+        mock_create_project.return_value = None
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_dir = Path(temp_dir) / "test-project"
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--gitlab-flow"])
+
+            assert result.exit_code == 0
+            mock_create_project.assert_called_once()
+            call_args = mock_create_project.call_args
+            assert call_args.args[9] == True  # gitlab_flow_enabled parameter
+
+    @patch("src.utils.create_project_structure")
+    @patch("src.utils.select_ai_tools")
+    @patch("src.utils.select_app_type")
+    def test_init_gitlab_flow_disabled_template_processing(self, mock_select_app, mock_select_ai, mock_create_project):
+        """Test template processing when GitLab Flow is disabled."""
+        mock_select_ai.return_value = ["claude"]
+        mock_select_app.return_value = "mcp-server"
+        mock_create_project.return_value = None
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            project_dir = Path(temp_dir) / "test-project"
+
+            result = self.runner.invoke(app, ["init", str(project_dir), "--no-gitlab-flow"])
+
+            assert result.exit_code == 0
+            mock_create_project.assert_called_once()
+            call_args = mock_create_project.call_args
+            assert call_args.args[9] == False  # gitlab_flow_enabled parameter

@@ -8,6 +8,7 @@ A GitHub Copilot Studio project with Improved Spec-Driven Development templates 
 ## Features
 
 - **Spec-Driven Development**: Structured approach to software development with comprehensive specifications
+- **GitLab Flow Integration**: Built-in workflow guidance with automatic commit prompts and PR creation
 - **Python CLI Framework**: Built with Typer and Rich for modern, beautiful command-line interfaces
 - **Automated Code Quality**: Pre-commit hooks with Flake8, Black, isort, and mypy
 - **GitHub Copilot Integration**: Custom templates and instructions for AI-assisted development
@@ -42,11 +43,17 @@ A GitHub Copilot Studio project with Improved Spec-Driven Development templates 
 The project includes a CLI tool for managing spec-driven development projects:
 
 ```bash
-# Initialize a new project
+# Initialize a new project with GitLab Flow (default)
 python src/improved_sdd_cli.py init <project-name>
+
+# Initialize without GitLab Flow integration
+python src/improved_sdd_cli.py init <project-name> --no-gitlab-flow
 
 # Delete a project (with confirmation)
 python src/improved_sdd_cli.py delete <project-name>
+
+# Check project configuration
+python src/improved_sdd_cli.py check <project-name>
 
 # Get help
 python src/improved_sdd_cli.py --help
@@ -58,6 +65,60 @@ python src/improved_sdd_cli.py --help
 2. Use the CLI to initialize your project structure
 3. Develop following the spec-driven approach
 4. Commit changes (linting runs automatically)
+
+### GitLab Flow Integration
+
+The improved-sdd CLI includes built-in GitLab Flow support that provides workflow guidance during spec development:
+
+#### **Automatic Workflow Integration**
+- **Setup Guidance**: Branch creation and repository validation before starting specs
+- **Phase Commit Prompts**: Commit guidance after completing each spec phase (feasibility, requirements, design, tasks)
+- **PR Creation**: Step-by-step PR creation guidance after implementation completion
+- **Platform-Specific Commands**: Windows PowerShell vs Unix/macOS bash command syntax
+
+#### **How It Works**
+
+GitLab Flow uses a **dynamic keyword integration** approach:
+
+1. **Markdown Files as Variables**: GitLab Flow content stored in `templates/gitlab-flow/*.md` files
+2. **Keyword Replacement**: Keywords like `{GITLAB_FLOW_SETUP}`, `{GITLAB_FLOW_COMMIT}`, `{GITLAB_FLOW_PR}` in chatmode files
+3. **Conditional Loading**: Keywords replaced with GitLab Flow content when enabled, empty when disabled
+4. **Platform Detection**: Commands automatically adjusted for Windows vs Unix systems
+
+#### **CLI Flag Control**
+
+```bash
+# Enable GitLab Flow (default behavior)
+python src/improved_sdd_cli.py init my-project --gitlab-flow
+
+# Disable GitLab Flow
+python src/improved_sdd_cli.py init my-project --no-gitlab-flow
+```
+
+#### **Example Workflow**
+
+1. **Project Initialization**: `improved-sdd init my-feature --gitlab-flow`
+2. **Branch Setup**: Follow GitLab Flow setup guidance in chatmode
+3. **Spec Development**: Complete feasibility → requirements → design → tasks
+4. **Automatic Commits**: Commit after each phase using provided guidance
+5. **Implementation**: Execute tasks with commit prompts between tasks
+6. **PR Creation**: Create pull request when all implementation complete
+
+#### **GitLab Flow Templates**
+
+The system includes three core templates:
+
+- **`gitlab-flow-setup.md`**: Repository validation and branch creation
+- **`gitlab-flow-commit.md`**: Phase completion commit guidance with conventional commit format
+- **`gitlab-flow-pr.md`**: PR creation with timing safeguards and templates
+
+#### **Benefits**
+
+- ✅ **Integrated Workflow**: Git operations embedded naturally in spec development
+- ✅ **Zero Breaking Changes**: Existing workflows unchanged when disabled
+- ✅ **Platform Agnostic**: Works on Windows, macOS, and Linux
+- ✅ **Flexible Control**: Easy to enable/disable via CLI flag
+- ✅ **Best Practices**: Conventional commits and proper PR timing
 
 ## Development Setup
 
@@ -135,6 +196,10 @@ improved-sdd/
 ├── src/                    # Source code
 ├── specs/                  # Project specifications
 ├── templates/              # Development templates
+│   ├── chatmodes/         # AI behavior patterns
+│   ├── instructions/      # Development guidance
+│   ├── prompts/           # Structured AI prompts
+│   └── gitlab-flow/       # GitLab Flow workflow templates
 ├── memory/                 # Project memory and constitution
 ├── .github/                # GitHub templates and workflows
 ├── requirements.txt        # Python dependencies
@@ -148,6 +213,7 @@ improved-sdd/
 - **Chatmodes**: AI behavior patterns for different development scenarios
 - **Instructions**: Context-specific development guidance
 - **Prompts**: Structured prompts for AI interactions
+- **GitLab Flow**: Workflow templates for git operations and branch management
 
 ## Contributing
 

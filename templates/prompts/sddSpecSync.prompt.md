@@ -1,7 +1,3 @@
----
-mode: sddTesting
----
-
 # Spec Re-evaluation and Synchronization Request
 
 Re-evaluate and synchronize the provided spec with the current project state using available analysis tools. Ensure all spec documents accurately reflect the actual implemented code and project structure.

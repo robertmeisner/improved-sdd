@@ -7,7 +7,7 @@ command modules to avoid circular imports.
 import os
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import typer
 
@@ -224,15 +224,20 @@ def select_ai_tools() -> List[str]:
             raise typer.Exit(1)
 
 
-def customize_template_content(content: str, ai_tool: str) -> str:
-    """Customize template content for specific AI tool by replacing keywords.
+def customize_template_content(
+    content: str, ai_tool: str, gitlab_flow_enabled: bool = False, platform: str = "windows", template_dir: str = ""
+) -> str:
+    """Customize template content for specific AI tool and optionally GitLab Flow.
 
-    Replaces AI-tool-specific keywords in template content with appropriate
-    replacements defined in the AI_TOOLS configuration.
+    Replaces AI-tool-specific keywords and GitLab Flow keywords in template content.
+    GitLab Flow keywords are conditionally replaced based on enablement flag.
 
     Args:
         content: Template content to customize
         ai_tool: AI tool key for which to customize content
+        gitlab_flow_enabled: Whether GitLab Flow keywords should be processed
+        platform: Target platform (windows/unix) for GitLab Flow commands
+        template_dir: Base template directory path for GitLab Flow files
 
     Returns:
         str: Customized template content with replaced keywords
@@ -243,11 +248,76 @@ def customize_template_content(content: str, ai_tool: str) -> str:
     tool_config = AI_TOOLS[ai_tool]
     customized_content = content
 
-    # Replace AI-specific keywords
+    # Replace AI-specific keywords (existing functionality)
     for keyword, replacement in tool_config["keywords"].items():
         customized_content = customized_content.replace(keyword, replacement)
 
+    # Replace GitLab Flow keywords if enabled (new functionality)
+    # Import here to avoid circular imports
+    from .core.config import config
+
+    gitlab_flow_keywords = config.get_gitlab_flow_keywords(
+        enabled=gitlab_flow_enabled, platform=platform, template_dir=template_dir
+    )
+
+    for keyword, replacement in gitlab_flow_keywords.items():
+        customized_content = customized_content.replace(keyword, replacement)
+
     return customized_content
+
+
+def load_gitlab_flow_file(filename: str, template_dir: str, platform_keywords: Dict[str, str]) -> str:
+    """Load GitLab Flow markdown file and replace platform-specific keyword placeholders.
+
+    Loads a GitLab Flow markdown file from the templates/gitlab-flow/ directory and
+    replaces platform-specific placeholders with appropriate git commands based on
+    the user's operating system.
+
+    Args:
+        filename: Name of the GitLab Flow markdown file to load
+        template_dir: Base template directory path
+        platform_keywords: Dictionary mapping keyword placeholders to platform-specific commands
+
+    Returns:
+        str: Processed markdown content with platform commands, or fallback message if file not found
+
+    Examples:
+        >>> keywords = {"GIT_STATUS": "git status", "COMMIT": "git add . && git commit -m \"{message}\""}
+        >>> content = load_gitlab_flow_file("gitlab-flow-setup.md", "/templates", keywords)
+        >>> print(content)
+        # GitLab Flow Setup...
+    """
+    # Construct the full file path
+    gitlab_flow_dir = Path(template_dir) / "gitlab-flow"
+    file_path = gitlab_flow_dir / filename
+
+    try:
+        # Read the markdown file
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Replace platform-specific keyword placeholders
+        processed_content = content
+        for cmd_key, cmd_value in platform_keywords.items():
+            processed_content = processed_content.replace(cmd_key, cmd_value)
+
+        return processed_content
+
+    except FileNotFoundError:
+        # Graceful fallback when file is missing
+        return f"<!-- GitLab Flow file not found: {filename} -->\n\n**Note**: GitLab Flow guidance not available. File `{filename}` not found in `{gitlab_flow_dir}`. You can create this file manually or proceed without GitLab Flow integration."
+
+    except PermissionError:
+        # Handle permission errors
+        return f"<!-- Permission denied reading GitLab Flow file: {filename} -->\n\n**Error**: Cannot read GitLab Flow guidance file `{filename}`. Please check file permissions."
+
+    except UnicodeDecodeError:
+        # Handle encoding errors
+        return f"<!-- Encoding error reading GitLab Flow file: {filename} -->\n\n**Error**: Cannot decode GitLab Flow guidance file `{filename}`. Please ensure file is UTF-8 encoded."
+
+    except Exception as e:
+        # Handle any other unexpected errors
+        return f"<!-- Error loading GitLab Flow file {filename}: {str(e)} -->\n\n**Error**: Unexpected error loading GitLab Flow guidance. Please check the file and try again."
 
 
 def get_template_filename(original_name: str, ai_tool: str, template_type: str) -> str:
@@ -290,6 +360,9 @@ def _process_template_file(
     file_tracker: FileTracker,
     force: bool,
     source_label: str,
+    gitlab_flow_enabled: bool = False,
+    platform: str = "windows",
+    template_dir: str = "",
 ) -> bool:
     """Process a single template file for installation.
 
@@ -302,9 +375,9 @@ def _process_template_file(
         file_tracker: FileTracker instance for tracking changes
         force: Whether to overwrite existing files
         source_label: Label indicating source (e.g., 'local', 'downloaded')
-
-    Returns:
-        True if file was processed successfully, False if skipped
+        gitlab_flow_enabled: Whether GitLab Flow integration is enabled
+        platform: Target platform (windows/unix) for GitLab Flow commands
+        template_dir: Base template directory path for GitLab Flow files
     """
     # For 'instructions', only install if it matches the app_type
     if template_type == "instructions":
@@ -319,8 +392,8 @@ def _process_template_file(
         console_manager.print_error(f"    Failed to read {template_file_path.name}: {e}")
         return False
 
-    # Customize content for this AI tool
-    customized_content = customize_template_content(content, ai_tool)
+    # Customize content for this AI tool and GitLab Flow
+    customized_content = customize_template_content(content, ai_tool, gitlab_flow_enabled, platform, template_dir)
 
     # Generate AI-specific filename
     output_filename = get_template_filename(template_file_path.name, ai_tool, template_type)
@@ -360,6 +433,9 @@ def create_project_structure(
     offline: bool = False,
     force_download: bool = False,
     template_repo: Optional[str] = None,
+    template_branch: Optional[str] = None,
+    gitlab_flow_enabled: bool = False,
+    platform: str = "windows",
 ) -> None:
     """Install Improved-SDD templates into the project directory for selected AI tools.
 
@@ -374,11 +450,17 @@ def create_project_structure(
         ai_tools: List of AI tools to install templates for
         file_tracker: FileTracker instance for tracking created files
         force: Whether to overwrite existing files
+        offline: Force offline mode (disable GitHub downloads)
+        force_download: Force GitHub download even if local templates exist
+        template_repo: Custom GitHub repository for templates
+        template_branch: Git branch to download templates from
+        gitlab_flow_enabled: Whether GitLab Flow integration is enabled
+        platform: Target platform (windows/unix) for GitLab Flow commands
     """
 
     # Use TemplateResolver for priority-based template resolution with transparency
     resolver = TemplateResolver(
-        project_path, offline=offline, force_download=force_download, template_repo=template_repo
+        project_path, offline=offline, force_download=force_download, template_repo=template_repo, template_branch=template_branch
     )
     resolution_result = resolver.resolve_templates_with_transparency()
 
@@ -396,9 +478,12 @@ def create_project_structure(
         # Merged source - need to handle multiple paths
         merged_source = resolution_result.source
         console_manager.print_info(f"Templates found: {merged_source}")
+        # For GitLab Flow, use a simple fallback path
+        template_source_path = "templates"
     else:
         # Single source (local, bundled, or github)
         templates_source = resolution_result.source.path
+        template_source_path = str(templates_source)
 
         # Verify template source is accessible
         if not templates_source.exists():
@@ -420,9 +505,16 @@ def create_project_structure(
             target_base_dir = project_path / ".github" / ai_tool
 
         # Install each template type for this AI tool
-        template_types = ["chatmodes", "instructions", "prompts", "commands"]
+        template_types = ["chatmodes", "instructions", "prompts", "commands", "gitlab-flow"]
 
         for template_type in template_types:
+            # Special handling for gitlab-flow templates - install at project root
+            if template_type == "gitlab-flow":
+                if not gitlab_flow_enabled:
+                    continue  # Skip gitlab-flow templates if not enabled
+                target_base_for_type = project_path / ".github" 
+            else:
+                target_base_for_type = target_base_dir
             # Determine template source for this type - now with file-level granularity
             if resolution_result.is_merged:
                 merged_source = resolution_result.source
@@ -433,7 +525,7 @@ def create_project_structure(
                 # We'll collect files from both sources as needed
                 if template_type in merged_source.local_files or template_type in merged_source.downloaded_files:
                     # This template type has files available - we'll handle them individually
-                    target_dir = target_base_dir / template_type
+                    target_dir = target_base_for_type / template_type
                     target_dir.mkdir(parents=True, exist_ok=True)
 
                     # Get all available files for this template type
@@ -473,6 +565,9 @@ def create_project_structure(
                             file_tracker=file_tracker,
                             force=force,
                             source_label=file_source_label,
+                            gitlab_flow_enabled=gitlab_flow_enabled,
+                            platform=platform,
+                            template_dir=template_source_path,
                         ):
                             continue  # Skip this file if processing failed
 
@@ -491,7 +586,7 @@ def create_project_structure(
                     console_manager.print_warning(f"  No {template_type} templates found")
                     continue
 
-                target_dir = target_base_dir / template_type
+                target_dir = target_base_for_type / template_type
                 target_dir.mkdir(parents=True, exist_ok=True)
 
                 # Process all .md files in the template directory
@@ -514,6 +609,9 @@ def create_project_structure(
                         file_tracker=file_tracker,
                         force=force,
                         source_label=source_label,
+                        gitlab_flow_enabled=gitlab_flow_enabled,
+                        platform=platform,
+                        template_dir=template_source_path,
                     )
 
     # Handle app-specific instructions

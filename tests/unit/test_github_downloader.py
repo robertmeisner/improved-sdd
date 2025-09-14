@@ -33,20 +33,20 @@ class TestGitHubDownloader:
         zip_path = temp_dir / "test.zip"
 
         with zipfile.ZipFile(zip_path, "w") as zip_file:
-            # Create repository structure with sdd_templates - use master branch by default
+            # Create repository structure with templates - use master branch by default
             zip_file.writestr(
-                "improved-sdd-master/sdd_templates/chatmodes/sample.chatmode.md",
+                "improved-sdd-master/templates/chatmodes/sample.chatmode.md",
                 "# Sample chatmode\nContent for testing",
             )
             zip_file.writestr(
-                "improved-sdd-master/sdd_templates/instructions/sample.instructions.md",
+                "improved-sdd-master/templates/instructions/sample.instructions.md",
                 "# Sample instructions\nContent for testing",
             )
             zip_file.writestr(
-                "improved-sdd-master/sdd_templates/prompts/sample.prompt.md", "# Sample prompt\nContent for testing"
+                "improved-sdd-master/templates/prompts/sample.prompt.md", "# Sample prompt\nContent for testing"
             )
             zip_file.writestr(
-                "improved-sdd-master/sdd_templates/commands/sample.command.md", "# Sample command\nContent for testing"
+                "improved-sdd-master/templates/commands/sample.command.md", "# Sample command\nContent for testing"
             )
 
         return zip_path
@@ -61,19 +61,19 @@ class TestGitHubDownloader:
             with zipfile.ZipFile(zip_path, "w") as zip_file:
                 # Create repository structure with custom branch
                 zip_file.writestr(
-                    f"improved-sdd-{branch_name}/sdd_templates/chatmodes/sample.chatmode.md",
+                    f"improved-sdd-{branch_name}/templates/chatmodes/sample.chatmode.md",
                     "# Sample chatmode\nContent for testing",
                 )
                 zip_file.writestr(
-                    f"improved-sdd-{branch_name}/sdd_templates/instructions/sample.instructions.md",
+                    f"improved-sdd-{branch_name}/templates/instructions/sample.instructions.md",
                     "# Sample instructions\nContent for testing",
                 )
                 zip_file.writestr(
-                    f"improved-sdd-{branch_name}/sdd_templates/prompts/sample.prompt.md",
+                    f"improved-sdd-{branch_name}/templates/prompts/sample.prompt.md",
                     "# Sample prompt\nContent for testing",
                 )
                 zip_file.writestr(
-                    f"improved-sdd-{branch_name}/sdd_templates/commands/sample.command.md",
+                    f"improved-sdd-{branch_name}/templates/commands/sample.command.md",
                     "# Sample command\nContent for testing",
                 )
 
@@ -141,10 +141,10 @@ class TestGitHubDownloader:
         """Test that template prefixes use the correct branch name."""
         # Test with different branches
         test_cases = [
-            ("master", "improved-sdd-master/sdd_templates/"),
-            ("main", "improved-sdd-main/sdd_templates/"),
-            ("develop", "improved-sdd-develop/sdd_templates/"),
-            ("feature-branch", "improved-sdd-feature-branch/sdd_templates/"),
+            ("master", "improved-sdd-master/templates/"),
+            ("main", "improved-sdd-main/templates/"),
+            ("develop", "improved-sdd-develop/templates/"),
+            ("feature-branch", "improved-sdd-feature-branch/templates/"),
         ]
 
         for branch, expected_prefix in test_cases:
@@ -162,7 +162,7 @@ class TestGitHubDownloader:
                 try:
                     downloader._validate_zip_integrity(Path("/tmp/fake.zip"))
                 except TemplateError as e:
-                    if "No sdd_templates folder found" in str(e):
+                    if "No templates folder found" in str(e):
                         # This means our prefix construction was wrong
                         pytest.fail(
                             f"Template prefix construction failed for branch {branch}. Expected: {expected_prefix}"
@@ -327,11 +327,11 @@ class TestGitHubDownloader:
 
         # Test ZIP path validation with wrong branch
         wrong_extracted_files = ["improved-sdd-main/sdd_templates/test.md"]  # What we'd get from main branch
-        correct_extracted_files = ["improved-sdd-master/sdd_templates/test.md"]  # What we should expect
+        correct_extracted_files = ["improved-sdd-master/templates/test.md"]  # What we should expect
 
         # The wrong branch downloader should fail to find templates in a master-branch ZIP
         wrong_prefix = f"improved-sdd-main/sdd_templates/"
-        correct_prefix = f"improved-sdd-master/sdd_templates/"
+        correct_prefix = f"improved-sdd-master/templates/"
 
         # Test that prefix mismatches are detected
         wrong_matches = [name for name in correct_extracted_files if name.startswith(wrong_prefix)]
@@ -613,7 +613,7 @@ class TestGitHubDownloader:
         with pytest.raises(TemplateError) as exc_info:
             downloader.extract_templates(mock_invalid_zip_file, temp_dir)
 
-        assert "No sdd_templates folder found" in str(exc_info.value)
+        assert "No templates folder found" in str(exc_info.value)
 
     def test_validate_zip_integrity_success(self, downloader, mock_zip_file):
         """Test ZIP integrity validation with valid file."""
@@ -641,7 +641,7 @@ class TestGitHubDownloader:
         assert len(extracted_files) > 0
 
         # Verify specific files were extracted
-        template_files = [f for f in extracted_files if "sdd_templates" in str(f)]
+        template_files = [f for f in extracted_files if "templates" in str(f)]
         assert len(template_files) > 0
 
     def test_extract_with_protection_traversal_attempt(self, downloader, temp_dir):
@@ -652,7 +652,7 @@ class TestGitHubDownloader:
         with zipfile.ZipFile(malicious_zip, "w") as zip_file:
             # Try to write outside target directory
             zip_file.writestr("../../../malicious_file_outside_target.txt", "malicious content")
-            zip_file.writestr("improved-sdd-master/sdd_templates/chatmodes/safe.md", "safe content")
+            zip_file.writestr("improved-sdd-master/templates/chatmodes/safe.md", "safe content")
 
         extracted_files = downloader._extract_with_protection(malicious_zip, temp_dir)
 

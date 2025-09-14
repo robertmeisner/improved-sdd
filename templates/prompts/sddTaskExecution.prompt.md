@@ -1,6 +1,3 @@
----
-mode: agent
----
 # Task Execution Framework
 
 ## Task Input

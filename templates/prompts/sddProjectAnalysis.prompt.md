@@ -1,6 +1,3 @@
----
-mode: agent
----
 
 # Project Analysis Request
 

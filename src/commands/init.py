@@ -69,6 +69,14 @@ def init_command(
     template_repo: str = typer.Option(
         None, "--template-repo", help="Custom GitHub repository for templates (format: owner/repo)"
     ),
+    template_branch: str = typer.Option(
+        None, "--template-branch", help="Git branch to download templates from (defaults to repository's default branch)"
+    ),
+    gitlab_flow: bool = typer.Option(
+        True,
+        "--gitlab-flow/--no-gitlab-flow",
+        help="Enable GitLab Flow integration with workflow guidance (enabled by default)",
+    ),
 ) -> None:
     """
     Install Improved-SDD templates for selected AI assistants in your project.
@@ -78,19 +86,26 @@ def init_command(
     2. Let you choose your app type and AI assistant(s)
     3. Install custom templates for selected AI assistants
     4. Set up AI-specific configurations
+    5. Enable GitLab Flow workflow integration by default
 
     Examples:
-        improved-sdd init                    # Install in current directory
+        improved-sdd init                    # Install in current directory with GitLab Flow
         improved-sdd init --app-type mcp-server --ai-tools github-copilot,claude
         improved-sdd init my-project --new-dir   # Create new directory
         improved-sdd init --force            # Overwrite existing files without asking
         improved-sdd init --offline          # Use only local/bundled templates (no GitHub download)
         improved-sdd init --force-download   # Force GitHub download even with local templates
         improved-sdd init --template-repo user/repo  # Use custom GitHub repository for templates
+        improved-sdd init --no-gitlab-flow   # Disable GitLab Flow integration
     """
+    import platform
+
     from rich.console import Console
 
     from ..utils import create_project_structure, select_ai_tools, select_app_type
+
+    # Detect platform for GitLab Flow commands
+    current_platform = "windows" if platform.system() == "Windows" else "unix"
 
     # Show banner first
     console_manager.show_banner()
@@ -182,8 +197,17 @@ def init_command(
         + f"\n[bold blue]App type: [/bold blue] [yellow]{selected_app_type}[/yellow]"
         + "\n[bold magenta]AI tools: [/bold magenta] "
         + f"[cyan]{ai_tools_display}[/cyan]"
+        + f"\n[bold green]GitLab Flow: [/bold green] [yellow]{'Enabled' if gitlab_flow else 'Disabled'}[/yellow]"
     )
     console_manager.show_panel(panel_content, "", "cyan")
+
+    # Provide GitLab Flow feedback
+    if gitlab_flow:
+        console_manager.print_info(f"GitLab Flow integration enabled for {current_platform} platform")
+        console_manager.print_dim("Git workflow guidance will be integrated into spec development process")
+    else:
+        console_manager.print_warning("GitLab Flow integration disabled")
+        console_manager.print_dim("Use --gitlab-flow to enable git workflow guidance")
 
     # Initialize file tracker
     file_tracker = FileTracker()
@@ -204,6 +228,9 @@ def init_command(
             offline,
             force_download,
             template_repo,
+            template_branch,
+            gitlab_flow,
+            current_platform,
         )
         console_manager.print_success("Templates installed")
 

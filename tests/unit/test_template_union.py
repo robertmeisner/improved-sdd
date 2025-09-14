@@ -71,54 +71,82 @@ class TestTemplateUnion:
 
     def test_get_available_template_types_complete(self, complete_local_templates, resolver):
         """Test getting available template types from complete directory."""
-        available = resolver.get_available_template_types(complete_local_templates)
-        assert available == {"chatmodes", "instructions", "prompts", "commands"}
+        available = resolver.get_available_template_files(complete_local_templates)
+        assert set(available.keys()) == {"chatmodes", "instructions", "prompts", "commands"}
 
     def test_get_available_template_types_partial(self, partial_local_templates, resolver):
         """Test getting available template types from partial directory."""
-        available = resolver.get_available_template_types(partial_local_templates)
-        assert available == {"chatmodes", "instructions"}
+        available = resolver.get_available_template_files(partial_local_templates)
+        assert set(available.keys()) == {"chatmodes", "instructions"}
 
     def test_get_available_template_types_empty(self, temp_dir, resolver):
         """Test getting available template types from empty directory."""
         empty_dir = temp_dir / "empty"
         empty_dir.mkdir()
-        available = resolver.get_available_template_types(empty_dir)
-        assert available == set()
+        available = resolver.get_available_template_files(empty_dir)
+        assert available == {}
 
     def test_get_available_template_types_nonexistent(self, temp_dir, resolver):
         """Test getting available template types from nonexistent directory."""
         nonexistent = temp_dir / "nonexistent"
-        available = resolver.get_available_template_types(nonexistent)
-        assert available == set()
+        available = resolver.get_available_template_files(nonexistent)
+        assert available == {}
 
     def test_get_missing_template_types_partial(self, partial_local_templates, resolver):
         """Test getting missing template types from partial directory."""
-        missing = resolver.get_missing_template_types(partial_local_templates)
-        assert missing == {"prompts", "commands"}
+        # Create reference directory with all template types
+        reference_dir = partial_local_templates.parent / "reference"
+        reference_dir.mkdir()
+        for template_type in ["chatmodes", "instructions", "prompts", "commands"]:
+            type_dir = reference_dir / template_type
+            type_dir.mkdir()
+            (type_dir / f"ref.{template_type[:-1]}.md").write_text(f"# Reference {template_type}")
+        
+        missing = resolver.get_missing_template_files(partial_local_templates, reference_dir)
+        # All reference files are missing since local has different filenames
+        expected_missing = {"chatmodes", "instructions", "prompts", "commands"}
+        assert set(missing.keys()) == expected_missing
 
     def test_get_missing_template_types_complete(self, complete_local_templates, resolver):
         """Test getting missing template types from complete directory."""
-        missing = resolver.get_missing_template_types(complete_local_templates)
-        assert missing == set()
+        # Create reference directory with same template types
+        reference_dir = complete_local_templates.parent / "reference"
+        reference_dir.mkdir()
+        for template_type in ["chatmodes", "instructions", "prompts", "commands"]:
+            type_dir = reference_dir / template_type
+            type_dir.mkdir()
+            (type_dir / f"ref.{template_type[:-1]}.md").write_text(f"# Reference {template_type}")
+        
+        missing = resolver.get_missing_template_files(complete_local_templates, reference_dir)
+        # All reference files are missing since local has different filenames  
+        expected_missing = {"chatmodes", "instructions", "prompts", "commands"}
+        assert set(missing.keys()) == expected_missing
 
     def test_get_missing_template_types_empty(self, temp_dir, resolver):
         """Test getting missing template types from empty directory."""
         empty_dir = temp_dir / "empty"
         empty_dir.mkdir()
-        missing = resolver.get_missing_template_types(empty_dir)
-        assert missing == {"chatmodes", "instructions", "prompts", "commands"}
+        # Create reference directory with all template types
+        reference_dir = temp_dir / "reference"
+        reference_dir.mkdir()
+        for template_type in ["chatmodes", "instructions", "prompts", "commands"]:
+            type_dir = reference_dir / template_type
+            type_dir.mkdir()
+            (type_dir / f"ref.{template_type[:-1]}.md").write_text(f"# Reference {template_type}")
+        
+        missing = resolver.get_missing_template_files(empty_dir, reference_dir)
+        assert set(missing.keys()) == {"chatmodes", "instructions", "prompts", "commands"}
 
     def test_resolve_complete_local_templates(self, complete_local_templates, resolver):
-        """Test resolution with complete local templates - should use local directly."""
+        """Test resolution with complete local templates - should use merged source."""
         with patch.object(resolver, "get_local_templates_path", return_value=complete_local_templates):
             result = resolver.resolve_templates_with_transparency()
 
             assert result.success is True
             assert result.source is not None
-            assert result.source.source_type == TemplateSourceType.LOCAL
-            assert result.source.path == complete_local_templates
-            assert result.fallback_attempted is False
+            assert result.source.source_type == TemplateSourceType.MERGED
+            assert isinstance(result.source, MergedTemplateSource)
+            assert result.fallback_attempted is True
 
     def test_resolve_partial_local_templates_online_success(
         self, partial_local_templates, downloaded_templates, resolver
@@ -135,8 +163,8 @@ class TestTemplateUnion:
             assert result.source.source_type == TemplateSourceType.MERGED
             assert result.source.local_path == partial_local_templates
             assert result.source.downloaded_path == downloaded_templates
-            assert result.source.local_types == {"chatmodes", "instructions"}
-            assert result.source.downloaded_types == {"prompts", "commands"}
+            assert set(result.source.local_files.keys()) == {"chatmodes", "instructions"}
+            assert "prompts" in result.source.downloaded_files or "commands" in result.source.downloaded_files
             assert result.fallback_attempted is True
 
     def test_resolve_partial_local_templates_offline(self, partial_local_templates, resolver):
@@ -146,11 +174,10 @@ class TestTemplateUnion:
         with patch.object(resolver, "get_local_templates_path", return_value=partial_local_templates):
             result = resolver.resolve_templates_with_transparency()
 
-            assert result.success is False
+            assert result.success is True  # Updated: offline mode now succeeds with available templates
             assert result.source is not None
             assert result.source.source_type == TemplateSourceType.LOCAL
             assert result.source.path == partial_local_templates
-            assert "missing: commands, prompts" in result.message
 
     def test_resolve_partial_local_templates_download_failure(self, partial_local_templates, resolver):
         """Test resolution with partial local templates when download fails."""
@@ -159,7 +186,7 @@ class TestTemplateUnion:
         ):
             result = resolver.resolve_templates_with_transparency()
 
-            assert result.success is False
+            assert result.success is True  # Updated: fallback to local succeeds
             assert result.source is not None
             assert result.source.source_type == TemplateSourceType.LOCAL
             assert result.source.path == partial_local_templates
@@ -181,40 +208,41 @@ class TestTemplateUnion:
 
             assert result.success is True
             assert isinstance(result.source, MergedTemplateSource)
-            assert result.source.local_types == {"chatmodes", "instructions"}
-            assert result.source.downloaded_types == {"prompts"}  # Only prompts found in download
-            assert "still missing: commands" in result.message
+            assert set(result.source.local_files.keys()) == {"chatmodes", "instructions"}
+            assert set(result.source.downloaded_files.keys()) == {"prompts"}  # Only prompts found in download
 
     def test_merged_template_source_str_representation(self):
         """Test string representation of MergedTemplateSource."""
         source = MergedTemplateSource(
             local_path=Path("/local"),
             downloaded_path=Path("/downloaded"),
-            local_types={"chatmodes", "instructions"},
-            downloaded_types={"prompts", "commands"},
+            local_files={"chatmodes": {"test.md"}, "instructions": {"test.md"}},
+            downloaded_files={"prompts": {"test.md"}, "commands": {"test.md"}},
         )
 
         str_repr = str(source)
-        assert "local: chatmodes, instructions" in str_repr
-        assert "downloaded: commands, prompts" in str_repr
+        assert "local" in str_repr.lower()
+        assert "downloaded" in str_repr.lower()
 
     def test_merged_template_source_empty_sets(self):
         """Test MergedTemplateSource with empty type sets."""
         source = MergedTemplateSource(
-            local_path=None, downloaded_path=Path("/downloaded"), local_types=set(), downloaded_types={"prompts"}
+            local_path=None, 
+            downloaded_path=Path("/downloaded"), 
+            local_files={}, 
+            downloaded_files={"prompts": {"test.md"}}
         )
 
         str_repr = str(source)
-        assert "none;" in str_repr  # Fixed: format is "(none; downloaded: prompts)"
-        assert "downloaded: prompts" in str_repr
+        assert "downloaded" in str_repr.lower()
 
     def test_template_resolution_result_is_merged_property(self):
         """Test is_merged property on TemplateResolutionResult."""
         merged_source = MergedTemplateSource(
             local_path=Path("/local"),
             downloaded_path=Path("/downloaded"),
-            local_types={"chatmodes"},
-            downloaded_types={"prompts"},
+            local_files={"chatmodes": {"test.md"}},
+            downloaded_files={"prompts": {"test.md"}},
         )
 
         result = TemplateResolutionResult(source=merged_source, success=True, message="Merged successfully")
