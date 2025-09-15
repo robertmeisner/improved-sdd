@@ -709,8 +709,7 @@ jobs:
                --index-url "$TESTPYPI_URL" \
                --extra-index-url "$PYPI_URL" \
                "${PACKAGE_NAME}==${PACKAGE_VERSION}" \
-               --force-reinstall \
-               --no-deps 2>&1 | tee install_output.txt; then
+               --force-reinstall 2>&1 | tee install_output.txt; then
             echo "✅ Installation successful on attempt $attempt" >> $GITHUB_STEP_SUMMARY
             INSTALL_SUCCESS=true
             break
