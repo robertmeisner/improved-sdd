@@ -25,6 +25,8 @@ class TestCLICommands:
 
     def setup_method(self):
         """Set up test environment for each test."""
+        # Force app setup before each test to ensure commands are registered
+        _ensure_app_setup(force=True)
         self.runner = CliRunner()
 
     def test_cli_help_command(self):
