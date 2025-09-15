@@ -588,42 +588,20 @@ jobs:
         if [ $TWINE_EXIT_CODE -eq 0 ]; then
           echo "✅ Package integrity check passed" >> $GITHUB_STEP_SUMMARY
           
-          # Additional package validation
+          # Show basic package information
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Package Details" >> $GITHUB_STEP_SUMMARY
+          echo "### Build Artifacts" >> $GITHUB_STEP_SUMMARY
+          ls -la dist/ >> $GITHUB_STEP_SUMMARY
           
-          # Extract and validate metadata
-          python -c "
-          import pkg_resources
-          import tarfile
-          import zipfile
-          from pathlib import Path
+          # Show package files count
+          WHEEL_COUNT=$(ls dist/*.whl 2>/dev/null | wc -l)
+          SDIST_COUNT=$(ls dist/*.tar.gz 2>/dev/null | wc -l)
           
-          # Check wheel metadata
-          for wheel_path in Path('dist').glob('*.whl'):
-              print(f'Wheel: {wheel_path.name}')
-              with zipfile.ZipFile(wheel_path) as z:
-                  files = z.namelist()
-                  metadata_files = [f for f in files if 'METADATA' in f or 'PKG-INFO' in f]
-                  print(f'  Metadata files: {len(metadata_files)}')
-                  if metadata_files:
-                      with z.open(metadata_files[0]) as meta:
-                          content = meta.read().decode('utf-8')
-                          # Extract key metadata
-                          for line in content.split('\n')[:10]:
-                              if line.startswith(('Name:', 'Version:', 'Summary:')):
-                                  print(f'  {line}')
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Package Summary:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Wheel files: $WHEEL_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- Source distributions: $SDIST_COUNT" >> $GITHUB_STEP_SUMMARY
           
-          # Check source distribution metadata
-          for sdist_path in Path('dist').glob('*.tar.gz'):
-              print(f'Source dist: {sdist_path.name}')
-              with tarfile.open(sdist_path) as t:
-                  files = t.getnames()
-                  pkg_info_files = [f for f in files if 'PKG-INFO' in f]
-                  print(f'  PKG-INFO files: {len(pkg_info_files)}')
-          " >> package_details.txt
-          
-          cat package_details.txt >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ Package integrity check failed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
