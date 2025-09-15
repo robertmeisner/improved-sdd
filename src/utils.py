@@ -401,13 +401,26 @@ def _process_template_file(
 
     # Check if file exists and handle force flag
     if output_path.exists() and not force:
-        if typer.confirm(
-            f"  Overwrite existing file '{output_path.relative_to(target_dir.parent.parent)}'?", default=False
-        ):
+        # In CI/automation mode, automatically overwrite existing files
+        is_ci_mode = os.getenv("CI") or os.getenv("GITHUB_ACTIONS")
+        
+        if is_ci_mode:
+            # Auto-approve in CI mode
+            console_manager.print_info(f"    Auto-overwriting existing file in CI mode: {output_filename}")
             file_tracker.track_file_modification(output_path)
         else:
-            console_manager.print_warning(f"    Skipped {output_filename} (from {source_label})")
-            return False
+            # Interactive mode - ask user
+            try:
+                if typer.confirm(
+                    f"  Overwrite existing file '{output_path.relative_to(target_dir.parent.parent)}'?", default=False
+                ):
+                    file_tracker.track_file_modification(output_path)
+                else:
+                    console_manager.print_warning(f"    Skipped {output_filename} (from {source_label})")
+                    return False
+            except (typer.Abort, KeyboardInterrupt):
+                console_manager.print_warning(f"    Skipped {output_filename} (from {source_label})")
+                return False
     else:
         file_tracker.track_file_creation(output_path)
 
