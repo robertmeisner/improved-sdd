@@ -252,8 +252,6 @@ Specs have an iterative workflow where you help transform an idea into requireme
 
 # Workflow to Execute
 
-<workflow-definition>
-
 # Feature Spec Creation Workflow
 
 ## Overview
@@ -606,7 +604,6 @@ If the design becomes too complex or unwieldy:
 - The model MAY suggest a phased approach to implementation
 - The model SHOULD return to requirements clarification to prioritize features if needed
 
-</workflow-definition>
 
 # CRITICAL: Requirements ↔ Design ↔ Codebase Synchronization
 
@@ -738,7 +735,7 @@ Follow these instructions for user requests related to spec tasks. The user may 
   - Documentation tasks → `docs:`
   - Configuration tasks → `chore:`
   - Bug fixes → `fix:`
-- Include task ID and brief description: `feat: Complete [Task 1.2] - Add GitLab Flow configuration`
+- Include task ID and brief description: `feat: Complete [Task 1.2] - Add new configuration`
 - Keep messages under 50 characters for summary, add details in body if needed
 
 **Platform-Specific Terminal Commands**:
