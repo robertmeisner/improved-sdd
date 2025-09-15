@@ -544,3 +544,5 @@ Files:
  --add question cli about gitlab flow integration when running init command.
 
 -Publishing to PyPI from github to tet with every version to TestPyPI and then to PyPI on git tag. only from master branch. is it good idea??
+
+- configure in yaml how ai tools and app types files are being created based on templates. you can rename files and move them to location, append to existing files if those file do not contain phrase (conditional), etc.

@@ -1,145 +1,134 @@
 # Manual File Preservation Feasibility Assessment
 
 ## Feature Summary
-Implement a mechanism to prevent deletion of manually created files (like `.github\chatmodes\xxx.chatmode.md`) when using the `delete` command. Currently, the CLI deletes ALL files in specific directories without distinguishing between CLI-created and manually-created files.
+Implement precise file deletion by defining exactly which files each AI tool creates, rather than deleting ALL files in directories. When users run `delete python-cli`, only delete files that were actually created by the CLI for the selected AI tools, preserving any manually created files like `xxx.chatmode.md`.
 
 ## Current Implementation Analysis
 
-### Delete Command Current Behavior
+### Delete Command Current Problem
 - **Location**: `src/commands/delete.py`
-- **Logic**: Uses simple directory globbing (`*.md`) to find all files in target directories
-- **Problem**: No distinction between CLI-created vs manually-created files
-- **Affected directories**: `.github/chatmodes/`, `.github/instructions/`, `.github/prompts/`, `.github/commands/`
+- **Current logic**: Uses directory globbing (`*.md`) - deletes ALL files
+- **Problem**: No distinction between AI tool files vs manual files
+- **Example issue**: Deletes manually created `xxx.chatmode.md` along with CLI-generated files
 
-### File Tracking System Status
-- **FileTracker Service**: Exists and tracks file creation/modification during CLI operations
-- **Tracking scope**: Only during CLI execution session (not persistent)
-- **Storage**: In-memory only, lost after CLI execution completes
-- **Current usage**: Generate summary reports for user feedback
-
-### Configuration System
-- **Template definitions**: Well-defined in `src/core/config.py`
-- **AI tool templates**: Each tool has specific file extensions and naming patterns
-- **App type templates**: Specific instruction files for each app type
+### AI Tool Configuration System
+- **Location**: `src/core/config.py` 
+- **Current structure**: Each AI tool defines file extensions and naming patterns
+- **Available data**: Template directories, file extensions, keywords per AI tool
+- **Missing piece**: Explicit file lists that each AI tool creates
 
 ## Technical Feasibility Assessment
 
-### ✅ HIGH FEASIBILITY
+### ✅ HIGH FEASIBILITY - Configuration-Based File Lists
 
-**1. File Metadata Approach**
-- **Concept**: Store CLI creation metadata in file headers/comments
-- **Implementation**: Add standardized metadata comments to CLI-generated files
-- **Detection**: Parse file headers to identify CLI-created files
-- **Effort**: LOW - Simple string operations
-- **Risk**: LOW - Non-intrusive, backward compatible
+**Recommended Approach: Explicit File Mapping Per AI Tool**
 
-**2. Manifest File Approach** 
-- **Concept**: Maintain `.sdd-manifest.json` file tracking CLI-created files
-- **Implementation**: Update manifest during `init`, read during `delete`
-- **Detection**: Check manifest for file presence before deletion
-- **Effort**: MEDIUM - JSON file management
-- **Risk**: LOW - Isolated to single tracking file
-
-**3. Enhanced Configuration Approach**
-- **Concept**: Extend existing config to define CLI-managed file patterns
-- **Implementation**: Add file pattern matching to config system
-- **Detection**: Compare files against known CLI template patterns
-- **Effort**: LOW - Leverage existing config infrastructure
-- **Risk**: LOW - Builds on proven configuration system
-
-### ⚠️ MEDIUM FEASIBILITY
-
-**4. Database/SQLite Approach**
-- **Concept**: Local SQLite database tracking file operations
-- **Implementation**: Store file creation records with timestamps
-- **Detection**: Query database before deletion
-- **Effort**: HIGH - Database setup, migration, maintenance
-- **Risk**: MEDIUM - Additional dependency, complexity
-
-### ❌ LOW FEASIBILITY
-
-**5. File System Attributes Approach**
-- **Concept**: Use OS-specific file attributes/extended attributes
-- **Implementation**: Set custom attributes on CLI-created files
-- **Detection**: Read file attributes during deletion
-- **Effort**: HIGH - Platform-specific implementations
-- **Risk**: HIGH - Windows/Linux compatibility issues
-
-## Recommended Solution: File Metadata + Manifest Hybrid
-
-### Primary: File Metadata Headers
-```markdown
-<!-- 
-SDD-CLI-GENERATED: true
-SDD-VERSION: 1.0.0
-SDD-CREATED: 2025-09-15T10:30:00Z
-SDD-APP-TYPE: python-cli
-SDD-AI-TOOL: github-copilot
-SDD-TEMPLATE: sddSpecDriven.chatmode.md
--->
-```
-
-### Fallback: Manifest File
-```json
-{
-  "version": "1.0.0",
-  "created": "2025-09-15T10:30:00Z",
-  "files": {
-    ".github/chatmodes/sddSpecDriven.chatmode.md": {
-      "created": "2025-09-15T10:30:00Z",
-      "app_type": "python-cli",
-      "ai_tool": "github-copilot",
-      "template": "sddSpecDriven.chatmode.md"
+```python
+# In config.py - extend existing AI_TOOLS configuration
+AI_TOOLS = {
+    "github-copilot": {
+        "name": "GitHub Copilot",
+        "template_dir": "github",
+        "managed_files": {  # NEW: Define exact files this tool creates
+            "chatmodes": [
+                "sddSpecDriven.chatmode.md",
+                "sddSpecDrivenSimple.chatmode.md", 
+                "sddTesting.chatmode.md"
+            ],
+            "instructions": [
+                "sddPythonCliDev.instructions.md",
+                "sddMcpServerDev.instructions.md"
+            ],
+            "prompts": [
+                "sddCommitWorkflow.prompt.md",
+                "sddFileVerification.prompt.md",
+                # ... etc
+            ]
+        }
+    },
+    "claude": {
+        "name": "Claude",
+        "managed_files": {
+            "chatmodes": [
+                "sddSpecDriven.claude.md",
+                "sddSpecDrivenSimple.claude.md"
+            ]
+            # Different files than GitHub Copilot
+        }
     }
-  }
 }
 ```
 
-## Implementation Complexity: SIMPLE
+**Delete Logic Update:**
+1. User selects AI tools during CLI setup
+2. Delete command only targets files from those specific AI tools
+3. Manual files (not in any AI tool's managed_files list) are preserved
 
-**Estimated Effort**: 1-2 days
-- File metadata parsing: 4 hours
-- Manifest file management: 4 hours
-- Delete command modification: 2 hours
-- Testing: 4 hours
+## Implementation Complexity: VERY SIMPLE
 
-## Risk Assessment: LOW
+**Estimated Effort**: 2-4 hours
+- Extend AI_TOOLS config with managed_files: 1 hour
+- Update delete command to use file lists: 1 hour  
+- Testing: 1-2 hours
 
-### Technical Risks
-- **Backward compatibility**: LOW - Optional metadata, graceful fallback
-- **Performance impact**: MINIMAL - Only affects delete operations
-- **File corruption**: NONE - Read-only operations for detection
+## Benefits of This Approach
 
-### User Experience Risks
-- **Workflow disruption**: NONE - Preserves current CLI behavior for existing files
-- **Migration complexity**: NONE - Automatic detection of CLI-generated files
+### ✅ **Precision**
+- Only deletes files the CLI actually created
+- Each AI tool manages its own file list
+- Different tools can have different files
+
+### ✅ **Simplicity** 
+- No metadata parsing or manifest files needed
+- Leverages existing configuration system
+- Easy to understand and maintain
+
+### ✅ **Flexibility**
+- Easy to add new AI tools with their own file lists
+- Per-tool customization of managed files
+- Clear separation between tools
+
+### ✅ **User Experience**
+- Predictable behavior - only CLI files deleted
+- Manual files always preserved
+- Tool-specific deletion granularity
+
+## Risk Assessment: MINIMAL
+
+- **Technical risk**: NONE - Simple configuration change
+- **Breaking changes**: NONE - Additive configuration
+- **Performance**: NO IMPACT - Same file operations, just more precise
+- **Maintenance**: REDUCED - Clear file ownership per tool
 
 ## Success Criteria
 
-1. **Preservation**: Manual files like `xxx.chatmode.md` are never deleted
-2. **Identification**: CLI can accurately identify its own created files
-3. **Backward Compatibility**: Existing installations work without changes
-4. **Performance**: No noticeable impact on CLI operations
-5. **Maintainability**: Solution integrates cleanly with existing codebase
+1. **Precision**: Only delete files that specific AI tools actually created
+2. **Preservation**: Manual files like `xxx.chatmode.md` never deleted
+3. **Tool-specific**: Different AI tools can have different file sets
+4. **Maintainability**: Easy to add new tools or modify file lists
 
-## Alternative Approaches
+## Example Scenarios
 
-### Manual Exclusion List
-- **User maintains**: `.sdd-exclude` file with protected files
-- **Pros**: Simple, user-controlled
-- **Cons**: Manual maintenance burden, easy to forget
+### Scenario 1: GitHub Copilot User
+```bash
+improved-sdd delete python-cli  # User has github-copilot selected
+# Only deletes: sddSpecDriven.chatmode.md, sddPythonCliDev.instructions.md, etc.
+# Preserves: xxx.chatmode.md (manual file)
+```
 
-### Interactive Confirmation
-- **Enhanced prompts**: Show each file with source information before deletion
-- **Pros**: User maintains full control
-- **Cons**: Verbose for large projects, interrupts automation
+### Scenario 2: Claude User  
+```bash
+improved-sdd delete python-cli  # User has claude selected
+# Only deletes: sddSpecDriven.claude.md, etc.
+# Preserves: xxx.chatmode.md, sddSpecDriven.chatmode.md (GitHub Copilot files)
+```
 
-## Recommendation: PROCEED
+## Recommendation: PROCEED WITH CONFIGURATION-BASED APPROACH
 
-The file metadata + manifest hybrid approach provides:
-- **High reliability** through dual tracking mechanisms
-- **Low implementation complexity** leveraging existing infrastructure
-- **Excellent backward compatibility** with optional metadata
-- **Future extensibility** for additional file management features
+This approach is:
+- **Simple to implement** - Just configuration changes
+- **Highly precise** - Explicit file control per AI tool
+- **Future-proof** - Easy to extend for new AI tools
+- **User-friendly** - Predictable and safe deletion behavior
 
-**Next Steps**: Proceed to requirements gathering phase to define specific implementation details and user stories.
+**Next Steps**: Proceed to requirements gathering to define the exact file lists for each AI tool and user interaction patterns.
