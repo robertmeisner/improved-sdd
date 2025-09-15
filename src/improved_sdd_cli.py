@@ -49,24 +49,17 @@ def _import_commands(force=False):
         return check_command, delete_command, init_command, console_manager
 
     try:
-        # When running in development/CI (editable install), use direct imports from src
+        # Development/editable install: direct imports from src
         from commands.check import check_command as check_fn
         from commands.delete import delete_command as delete_fn
         from commands.init import init_command as init_fn
         from ui.console import console_manager as cm
     except (ImportError, ModuleNotFoundError):
-        try:
-            # When installed as a package, use absolute imports with package name
-            from improved_sdd.commands.check import check_command as check_fn
-            from improved_sdd.commands.delete import delete_command as delete_fn
-            from improved_sdd.commands.init import init_command as init_fn
-            from improved_sdd.ui.console import console_manager as cm
-        except (ImportError, ModuleNotFoundError):
-            # Fallback: try relative imports (for running as module)
-            from .commands.check import check_command as check_fn
-            from .commands.delete import delete_command as delete_fn
-            from .commands.init import init_command as init_fn
-            from .ui.console import console_manager as cm
+        # Production install: relative imports
+        from .commands.check import check_command as check_fn
+        from .commands.delete import delete_command as delete_fn
+        from .commands.init import init_command as init_fn
+        from .ui.console import console_manager as cm
 
     # Assign to global variables so they can be patched in tests
     check_command = check_fn
