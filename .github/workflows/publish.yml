@@ -743,7 +743,7 @@ jobs:
         
         # Test CLI import and basic commands
         echo "Testing CLI functionality..."
-        if python -c "import ${PACKAGE_NAME//-/_}; print('✓ CLI module import successful')" 2>&1 | tee cli_test.txt; then
+        if python -c "import improved_sdd_cli; print('✓ CLI module import successful')" 2>&1 | tee cli_test.txt; then
           echo "✅ CLI module imports successfully" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ CLI module import failed" >> $GITHUB_STEP_SUMMARY
@@ -892,7 +892,7 @@ jobs:
         
         # Test CLI import and basic commands
         echo "Testing CLI functionality..."
-        if python -c "import ${PACKAGE_NAME//-/_}; print('✓ CLI module import successful')" 2>&1 | tee cli_test.txt; then
+        if python -c "import improved_sdd_cli; print('✓ CLI module import successful')" 2>&1 | tee cli_test.txt; then
           echo "✅ CLI module imports successfully" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ CLI module import failed" >> $GITHUB_STEP_SUMMARY
