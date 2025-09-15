@@ -88,6 +88,15 @@ class TestCLICommands:
         with tempfile.TemporaryDirectory() as temp_dir:
             result = self.runner.invoke(app, ["init", temp_dir, "--app-type", "python-cli", "--ai-tools", "claude"])
 
+        # Print debug info if the test fails
+        if result.exit_code != 0:
+            print(f"Exit code: {result.exit_code}")
+            print(f"Output: {result.output}")
+            print(f"Exception: {result.exception}")
+            if result.exception:
+                import traceback
+                print(f"Traceback: {''.join(traceback.format_exception(type(result.exception), result.exception, result.exception.__traceback__))}")
+
         assert result.exit_code == 0
         # Verify command completed successfully (mocks don't work with lazy loading)
         assert len(result.output) > 0
@@ -160,6 +169,15 @@ class TestCLICommands:
         mock_create_project.return_value = None
 
         result = self.runner.invoke(app, ["init", "test-project", "--app-type", "python-cli", "--ai-tools", "github-copilot"])
+
+        # Print debug info if the test fails
+        if result.exit_code != 0:
+            print(f"Exit code: {result.exit_code}")
+            print(f"Output: {result.output}")
+            print(f"Exception: {result.exception}")
+            if result.exception:
+                import traceback
+                print(f"Traceback: {''.join(traceback.format_exception(type(result.exception), result.exception, result.exception.__traceback__))}")
 
         # Command succeeds normally (mocks don't work with lazy loading)
         assert result.exit_code == 0
