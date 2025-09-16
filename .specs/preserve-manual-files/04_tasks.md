@@ -85,11 +85,11 @@
   - ✓ Maintain backward compatibility where possible
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 4.2 Implement enhanced delete command UI and reporting [~2h] [Depends on: Task 4.1]
-  - Add file grouping by AI tool in delete preview
-  - Implement comprehensive deletion reporting with success/failure details
-  - Add "no files to delete" messaging for empty results
-  - Enhance progress display and user feedback
+- [x] 4.2 Implement enhanced delete command UI and reporting [~2h] [Depends on: Task 4.1] **COMPLETED ~2h**
+  - ✓ Add file grouping by AI tool in delete preview
+  - ✓ Implement comprehensive deletion reporting with success/failure details
+  - ✓ Add "no files to delete" messaging for empty results
+  - ✓ Enhance progress display and user feedback
   - _Requirements: 5.1, 5.2, 5.3_
 
 - [ ] 5. Add Configuration Validation [~4h] [Low Risk]
