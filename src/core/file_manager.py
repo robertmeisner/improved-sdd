@@ -405,9 +405,6 @@ class FileManager:
 
 
 class SafeFileDeletor:
-    """Result of a single file deletion attempt."""
-    
-class SafeFileDeletor:
     """Safe file deletion engine with comprehensive error handling."""
     
     def __init__(self):
