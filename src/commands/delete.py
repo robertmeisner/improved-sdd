@@ -1,17 +1,27 @@
 """Delete command implementation for Improved-SDD CLI.
 
 This module contains the delete command logic for removing installed templates
-from development environments.
+from development environments using AI tool-specific file management.
 """
 
 from pathlib import Path
+from typing import List, Optional
 
 import typer
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
-# Import configuration and exceptions
-from core import APP_TYPES
+# Import configuration and core components
+from core import (
+    APP_TYPES, 
+    AIToolManager, 
+    FileManager, 
+    UserInteractionHandler,
+    config
+)
 
-# Import UI components
+# Import UI components  
 from ui import console_manager
 
 # Import shared utilities
@@ -21,19 +31,22 @@ from utils import select_app_type
 def delete_command(
     app_type: str = typer.Argument(None, help="App type to delete files for: mcp-server, python-cli"),
     force: bool = typer.Option(False, "--force", help="Skip confirmation prompt"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview what would be deleted without actually deleting"),
 ):
     """
-    Delete Improved-SDD templates for a specific app type.
+    Delete Improved-SDD templates for a specific app type using AI tool-specific file management.
 
     This command will:
-    1. Identify files installed for the specified app type
-    2. Show what will be deleted
-    3. Require confirmation (unless --force is used)
-    4. Delete the files
+    1. Identify AI tool-managed files for the specified app type
+    2. Show files grouped by AI tool 
+    3. Handle conflicts for files that exist but aren't managed
+    4. Require confirmation (unless --force is used)
+    5. Safely delete only the managed files
 
     Examples:
         improved-sdd delete mcp-server
         improved-sdd delete python-cli --force
+        improved-sdd delete python-cli --dry-run
     """
 
     # Show banner first
@@ -51,96 +64,183 @@ def delete_command(
     # Get project path (current directory)
     project_path = Path.cwd()
 
-    # Find files to delete
-    files_to_delete = []
-    dirs_to_delete = []
+    try:
+        # Initialize core components
+        ai_tool_manager = AIToolManager(config)
+        file_manager = FileManager(ai_tool_manager)
+        console = Console()
+        user_interaction = UserInteractionHandler(console)
 
-    # Check for app-specific files
-    github_dir = project_path / ".github"
-    if github_dir.exists():
-        # Check chatmodes
-        chatmodes_dir = github_dir / "chatmodes"
-        if chatmodes_dir.exists():
-            for file_path in chatmodes_dir.glob("*.md"):
-                files_to_delete.append(file_path)
+        # Discover files and detect conflicts
+        console_manager.print_info(f"Analyzing {selected_app_type} files...")
+        
+        discovery_result = file_manager.discover_files(
+            project_root=project_path,
+            active_tools=None,  # Auto-detect active tools
+            app_type=selected_app_type
+        )
 
-        # Check instructions
-        instructions_dir = github_dir / "instructions"
-        if instructions_dir.exists():
-            for file_path in instructions_dir.glob("*.md"):
-                files_to_delete.append(file_path)
+        # Check if there are any managed files to delete
+        if not discovery_result.managed_files_found:
+            console_manager.print_warning(f"No managed files found for app type '{selected_app_type}'")
+            console_manager.print("This could mean:")
+            console_manager.print("  • No AI tools are currently configured")
+            console_manager.print("  • No managed files exist for the selected app type")
+            console_manager.print("  • Files may have been deleted already")
+            return
 
-        # Check prompts
-        prompts_dir = github_dir / "prompts"
-        if prompts_dir.exists():
-            for file_path in prompts_dir.glob("*.md"):
-                files_to_delete.append(file_path)
+        # Show files grouped by AI tool
+        _show_managed_files_preview(discovery_result, selected_app_type, project_path)
 
-        # Check commands
-        commands_dir = github_dir / "commands"
-        if commands_dir.exists():
-            for file_path in commands_dir.glob("*.md"):
-                files_to_delete.append(file_path)
+        # Handle conflicts if any exist
+        files_to_delete = discovery_result.managed_files_found.copy()
+        if discovery_result.conflicts:
+            console_manager.print_warning(f"Found {len(discovery_result.conflicts)} file conflicts that need resolution")
+            
+            if force:
+                console_manager.print_info("Force mode enabled - skipping all conflicted files")
+                # In force mode, skip all conflicted files
+            else:
+                # Resolve conflicts through user interaction
+                conflict_resolutions = user_interaction.resolve_conflicts(discovery_result.conflicts)
+                
+                # Check if user quit
+                if user_interaction.quit_requested:
+                    console_manager.print_warning("Operation cancelled by user")
+                    return
+                
+                # Add files that user chose to delete
+                for resolution in conflict_resolutions:
+                    if resolution.should_delete:
+                        files_to_delete.append(resolution.conflict.file_path)
 
-        # Check if directories are empty after deletion
-        for dir_path in [chatmodes_dir, instructions_dir, prompts_dir, commands_dir]:
-            if dir_path.exists() and not list(dir_path.glob("*")):
-                dirs_to_delete.append(dir_path)
+        # Final confirmation if not in force mode and not dry run
+        if not force and not dry_run and files_to_delete:
+            console_manager.print(f"\n[bold yellow]Ready to delete {len(files_to_delete)} files[/bold yellow]")
+            console_manager.print("[bold yellow][WARN]  This action cannot be undone![/bold yellow]")
+            confirmation = typer.prompt("Type 'Yes' to confirm deletion", type=str, default="")
+            if confirmation != "Yes":
+                console_manager.print_warning("Deletion cancelled")
+                return
 
-        # Check if .github is empty after deletion
-        if not list(github_dir.glob("*")):
-            dirs_to_delete.append(github_dir)
+        # Perform deletion (or dry run)
+        if files_to_delete:
+            deletion_result = file_manager.safe_delete_files(files_to_delete, dry_run=dry_run)
+            
+            # Show results
+            _show_deletion_results(deletion_result, dry_run, project_path)
+            
+            # Clean up empty directories
+            if not dry_run and deletion_result.success_count > 0:
+                _cleanup_empty_directories(project_path, selected_app_type)
+        else:
+            console_manager.print_info("No files selected for deletion")
 
-    # Show what will be deleted
-    if not files_to_delete and not dirs_to_delete:
-        console_manager.print_warning(f"No files found for app type '{selected_app_type}'")
-        return
+    except Exception as e:
+        console_manager.print_error(f"Error during deletion: {e}")
+        raise typer.Exit(1)
 
-    console_manager.print(f"[bold red]Files to be deleted for '{selected_app_type}': [/bold red]")
-    console_manager.print_newline()
 
-    if files_to_delete:
-        console_manager.print("[red]Files:[/red]")
-        for file_path in sorted(files_to_delete):
-            console_manager.print(f"  🗑️  {file_path.relative_to(project_path)}")
-        console_manager.print_newline()
+def _show_managed_files_preview(discovery_result, app_type: str, project_path: Path) -> None:
+    """Show preview of managed files grouped by AI tool."""
+    console = Console()
+    
+    # Group files by AI tool
+    tool_files = {}
+    for file_path in discovery_result.managed_files_found:
+        # Determine which AI tool manages this file
+        # For now, we'll show all managed files together
+        # In future iterations, this could be enhanced to show per-tool grouping
+        if "managed" not in tool_files:
+            tool_files["managed"] = []
+        tool_files["managed"].append(file_path)
+    
+    console_manager.print(f"\n[bold blue]Managed files to delete for '{app_type}':[/bold blue]")
+    
+    if tool_files:
+        for tool_name, files in tool_files.items():
+            console_manager.print(f"\n[cyan]Files ({len(files)} total):[/cyan]")
+            for file_path in sorted(files):
+                relative_path = file_path.relative_to(project_path)
+                console_manager.print(f"  🗑️  {relative_path}")
+    
+    console_manager.print()
 
-    if dirs_to_delete:
-        console_manager.print("[red]Directories:[/red]")
-        for dir_path in sorted(dirs_to_delete):
-            console_manager.print(f"  📁 {dir_path.relative_to(project_path)}")
-        console_manager.print_newline()
 
-    # Confirmation
-    if not force:
-        console_manager.print("[bold yellow][WARN]  This action cannot be undone![/bold yellow]")
-        confirmation = typer.prompt("Type 'Yes' to confirm deletion", type=str, default="")
-        if confirmation != "Yes":
-            console_manager.print_warning("Deletion cancelled")
-            raise typer.Exit(0)  # Exit with success code when user cancels
+def _show_deletion_results(deletion_result, dry_run: bool, project_path: Path) -> None:
+    """Show comprehensive deletion results."""
+    action = "Would delete" if dry_run else "Deleted"
+    mode = "DRY RUN - " if dry_run else ""
+    
+    console_manager.print(f"\n[bold green]{mode}Deletion Results:[/bold green]")
+    
+    # Success summary
+    if deletion_result.success_count > 0:
+        console_manager.print(f"[green]✓ {action}: {deletion_result.success_count} files[/green]")
+        for file_path in deletion_result.deleted_files:
+            relative_path = file_path.relative_to(project_path)
+            console_manager.print(f"  ✓ {relative_path}")
+    
+    # Failures
+    if deletion_result.failure_count > 0:
+        console_manager.print(f"\n[red]✗ Failed: {deletion_result.failure_count} files[/red]")
+        for attempt in deletion_result.failed_deletions:
+            relative_path = attempt.file_path.relative_to(project_path)
+            console_manager.print(f"  ✗ {relative_path}: {attempt.error_message}")
+    
+    # Skipped files
+    if deletion_result.skip_count > 0:
+        console_manager.print(f"\n[yellow]⚠ Skipped: {deletion_result.skip_count} files[/yellow]")
+        for file_path in deletion_result.skipped_files:
+            relative_path = file_path.relative_to(project_path)
+            console_manager.print(f"  ⚠ {relative_path}")
+    
+    # Overall statistics
+    console_manager.print(f"\n[bold]Success rate: {deletion_result.success_rate:.1f}%[/bold]")
 
-    # Delete files
-    console_manager.print_info("Deleting files...")
 
-    deleted_files = 0
-    deleted_dirs = 0
+def _cleanup_empty_directories(project_path: Path, app_type: str) -> None:
+    """Clean up empty directories after file deletion."""
+    try:
+        # Standard template directories that might be empty
+        template_dirs = [
+            ".github/chatmodes",
+            ".github/instructions", 
+            ".github/prompts",
+            ".github/commands"
+        ]
+        
+        dirs_removed = []
+        
+        for dir_path_str in template_dirs:
+            dir_path = project_path / dir_path_str
+            if dir_path.exists() and dir_path.is_dir():
+                # Check if directory is empty
+                if not any(dir_path.iterdir()):
+                    dir_path.rmdir()
+                    dirs_removed.append(dir_path_str)
+        
+        # Check if .github is empty
+        github_dir = project_path / ".github"
+        if github_dir.exists() and github_dir.is_dir():
+            if not any(github_dir.iterdir()):
+                github_dir.rmdir()
+                dirs_removed.append(".github")
+        
+        if dirs_removed:
+            console_manager.print_info(f"Cleaned up {len(dirs_removed)} empty directories")
+            
+    except Exception as e:
+        console_manager.print_warning(f"Warning: Could not clean up empty directories: {e}")
 
-    for file_path in files_to_delete:
-        try:
-            file_path.unlink()
-            console_manager.print_success(f"Deleted: {file_path.relative_to(project_path)}")
-            deleted_files += 1
-        except Exception as e:
-            console_manager.print_error(f"Failed to delete {file_path.relative_to(project_path)}: {e}")
 
-    # Delete directories (in reverse order to handle nested dirs)
-    for dir_path in sorted(dirs_to_delete, reverse=True):
-        try:
-            if not list(dir_path.glob("*")):  # Only delete if empty
-                dir_path.rmdir()
-                console_manager.print_success(f"Deleted directory: {dir_path.relative_to(project_path)}")
-                deleted_dirs += 1
-        except Exception as e:
-            console_manager.print_error(f"Failed to delete directory {dir_path.relative_to(project_path)}: {e}")
-
-    console_manager.print_success(f"\nDeletion complete: {deleted_files} files, {deleted_dirs} directories removed")
+# Backward compatibility - keep the old function signature available
+def delete_templates(app_type: str, force: bool = False) -> None:
+    """
+    Legacy function for backward compatibility.
+    
+    Args:
+        app_type: Application type to delete files for
+        force: Skip confirmation prompt
+    """
+    delete_command(app_type=app_type, force=force, dry_run=False)

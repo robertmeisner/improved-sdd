@@ -78,11 +78,11 @@
   - _Requirements: 3.3, 5.4_
 
 - [ ] 4. Enhance Delete Command Integration [~6h] [High Risk]
-- [ ] 4.1 Modify existing delete command to use new file management [~4h] [Depends on: Task 3.3]
-  - Update `src/commands/delete.py` to integrate with new FileManager
-  - Replace directory globbing logic with managed file approach
-  - Add AI tool specific deletion logic for python-cli and mcp-server app types
-  - Maintain backward compatibility where possible
+- [x] 4.1 Modify existing delete command to use new file management [~4h] [Depends on: Task 3.3] **COMPLETED ~3h**
+  - ✓ Update `src/commands/delete.py` to integrate with new FileManager
+  - ✓ Replace directory globbing logic with managed file approach
+  - ✓ Add AI tool specific deletion logic for python-cli and mcp-server app types
+  - ✓ Maintain backward compatibility where possible
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
 - [ ] 4.2 Implement enhanced delete command UI and reporting [~2h] [Depends on: Task 4.1]
