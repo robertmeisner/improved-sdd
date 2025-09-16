@@ -3,6 +3,7 @@ rich
 platformdirs
 readchar
 httpx
+PyYAML
 
 # Development dependencies
 flake8>=6.0.0

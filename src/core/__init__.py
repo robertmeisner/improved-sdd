@@ -45,7 +45,30 @@ from .interfaces import (
 )
 
 # Import models and enums (available after Task 1.3)
-from .models import ProgressInfo, TemplateResolutionResult, TemplateSource, TemplateSourceType
+from .models import (
+    AITool,
+    AIToolConfig as AIToolConfigModel,
+    CLIConfig,
+    DeleteBehaviorConfig,
+    FileExtensions,
+    KeywordReplacements,
+    ManagedFiles,
+    PreferencesConfig,
+    ProgressInfo,
+    SDDConfig,
+    TemplateResolutionResult,
+    TemplateSource,
+    TemplateSourceType,
+)
+
+# Import AI Tool Manager (available after Task 2.2)
+from .ai_tool_manager import AIToolManager, ManagedFileResult, ActiveToolsResult
+
+# Import File Manager (available after Task 3.1)
+from .file_manager import FileManager, FileConflict, FileDiscoveryResult
+
+# Import User Interaction Handler (available after Task 3.2)
+from .user_interaction_handler import UserInteractionHandler, UserChoice, ConflictResolution
 
 # Import order for future modules:
 # All modules have been imported
@@ -73,10 +96,31 @@ __all__ = [
     "TimeoutError",
     "ValidationError",
     # Models and enums
+    "AITool",
+    "AIToolConfigModel",
+    "CLIConfig", 
+    "DeleteBehaviorConfig",
+    "FileExtensions",
+    "KeywordReplacements",
+    "ManagedFiles",
+    "PreferencesConfig",
     "ProgressInfo",
+    "SDDConfig",
     "TemplateResolutionResult",
     "TemplateSource",
     "TemplateSourceType",
+    # AI Tool Manager
+    "AIToolManager",
+    "ManagedFileResult",
+    "ActiveToolsResult",
+    # File Manager
+    "FileManager",
+    "FileConflict",
+    "FileDiscoveryResult",
+    # User Interaction Handler
+    "UserInteractionHandler",
+    "UserChoice",
+    "ConflictResolution",
     # Protocols
     "CacheManagerProtocol",
     "ConsoleProtocol",

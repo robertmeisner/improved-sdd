@@ -29,7 +29,8 @@ dependencies = [
     "rich>=13.0.0",
     "platformdirs>=3.0.0",
     "readchar>=4.0.0",
-    "httpx>=0.24.0"
+    "httpx>=0.24.0",
+    "PyYAML>=6.0.0"
 ]
 authors = [
     {name = "Robert Meisner", email = "robert@catchit.pl"}
