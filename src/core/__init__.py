@@ -65,7 +65,7 @@ from .models import (
 from .ai_tool_manager import AIToolManager, ManagedFileResult, ActiveToolsResult
 
 # Import File Manager (available after Task 3.1)
-from .file_manager import FileManager, FileConflict, FileDiscoveryResult
+from .file_manager import FileManager, FileConflict, FileDiscoveryResult, DeleteResult, DeletionAttempt, SafeFileDeletor
 
 # Import User Interaction Handler (available after Task 3.2)
 from .user_interaction_handler import UserInteractionHandler, UserChoice, ConflictResolution
@@ -117,6 +117,9 @@ __all__ = [
     "FileManager",
     "FileConflict",
     "FileDiscoveryResult",
+    "DeleteResult",
+    "DeletionAttempt", 
+    "SafeFileDeletor",
     # User Interaction Handler
     "UserInteractionHandler",
     "UserChoice",

@@ -4,6 +4,7 @@ This module provides the FileManager class that handles:
 - File discovery across project template directories
 - Conflict detection between existing files and managed files
 - Safe file categorization for deletion operations
+- Safe file deletion with comprehensive error handling
 """
 
 from dataclasses import dataclass
@@ -11,6 +12,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 import logging
+import os
+import stat
 
 from .ai_tool_manager import AIToolManager, ManagedFileResult
 
@@ -76,6 +79,60 @@ class FileDiscoveryResult:
     def get_conflicts_by_type(self, conflict_type: ConflictType) -> List[FileConflict]:
         """Get conflicts of a specific type."""
         return [conflict for conflict in self.conflicts if conflict.conflict_type == conflict_type]
+
+
+@dataclass
+class DeletionAttempt:
+    """Result of a single file deletion attempt."""
+    
+    file_path: Path
+    success: bool
+    error_message: Optional[str] = None
+    permission_denied: bool = False
+    file_not_found: bool = False
+    
+    @property
+    def failed(self) -> bool:
+        """Check if deletion failed."""
+        return not self.success
+
+
+@dataclass
+class DeleteResult:
+    """Comprehensive result of delete operation."""
+    
+    deleted_files: List[Path]
+    skipped_files: List[Path]
+    failed_deletions: List[DeletionAttempt]
+    total_conflicts: int
+    total_files_processed: int
+    
+    @property
+    def success_count(self) -> int:
+        """Number of successfully deleted files."""
+        return len(self.deleted_files)
+    
+    @property
+    def skip_count(self) -> int:
+        """Number of skipped files."""
+        return len(self.skipped_files)
+    
+    @property
+    def failure_count(self) -> int:
+        """Number of failed deletions."""
+        return len(self.failed_deletions)
+    
+    @property
+    def total_processed(self) -> int:
+        """Total number of files processed."""
+        return self.success_count + self.skip_count + self.failure_count
+    
+    @property
+    def success_rate(self) -> float:
+        """Success rate as percentage."""
+        if self.total_processed == 0:
+            return 100.0
+        return (self.success_count / self.total_processed) * 100.0
 
 
 class FileManager:
@@ -308,6 +365,19 @@ class FileManager:
         
         return conflicts
     
+    def safe_delete_files(self, files_to_delete: List[Path], dry_run: bool = False) -> DeleteResult:
+        """Safely delete files using the SafeFileDeletor.
+        
+        Args:
+            files_to_delete: List of file paths to delete
+            dry_run: If True, only simulate deletion
+            
+        Returns:
+            DeleteResult with comprehensive deletion statistics
+        """
+        deletor = SafeFileDeletor()
+        return deletor.delete_files(files_to_delete, dry_run)
+    
     def _get_file_type(self, file_path: Path, project_root: Path) -> Optional[str]:
         """Determine the file type based on the file path.
         
@@ -332,3 +402,204 @@ class FileManager:
             return None
         except ValueError:
             return None
+
+
+class SafeFileDeletor:
+    """Result of a single file deletion attempt."""
+    
+class SafeFileDeletor:
+    """Safe file deletion engine with comprehensive error handling."""
+    
+    def __init__(self):
+        """Initialize safe file deletor."""
+        self.logger = logging.getLogger(__name__)
+    
+    def delete_files(self, files_to_delete: List[Path], dry_run: bool = False) -> DeleteResult:
+        """Safely delete a list of files with comprehensive error handling.
+        
+        Args:
+            files_to_delete: List of file paths to delete
+            dry_run: If True, only simulate deletion without actually deleting
+            
+        Returns:
+            DeleteResult with comprehensive deletion statistics
+        """
+        deleted_files = []
+        failed_deletions = []
+        
+        self.logger.info(f"Starting {'dry run' if dry_run else 'deletion'} of {len(files_to_delete)} files")
+        
+        for file_path in files_to_delete:
+            attempt = self._delete_single_file(file_path, dry_run)
+            
+            if attempt.success:
+                deleted_files.append(file_path)
+                self.logger.info(f"{'Would delete' if dry_run else 'Deleted'}: {file_path}")
+            else:
+                failed_deletions.append(attempt)
+                self.logger.error(f"Failed to delete {file_path}: {attempt.error_message}")
+        
+        result = DeleteResult(
+            deleted_files=deleted_files,
+            skipped_files=[],  # No skips in this method
+            failed_deletions=failed_deletions,
+            total_conflicts=0,  # Not applicable here
+            total_files_processed=len(files_to_delete)
+        )
+        
+        self.logger.info(
+            f"Deletion {'simulation' if dry_run else 'operation'} complete: "
+            f"{result.success_count} succeeded, {result.failure_count} failed"
+        )
+        
+        return result
+    
+    def _delete_single_file(self, file_path: Path, dry_run: bool = False) -> DeletionAttempt:
+        """Safely delete a single file with comprehensive error handling.
+        
+        Args:
+            file_path: Path to file to delete
+            dry_run: If True, only simulate deletion
+            
+        Returns:
+            DeletionAttempt with result details
+        """
+        try:
+            # Validate path
+            if not self._validate_file_path(file_path):
+                return DeletionAttempt(
+                    file_path=file_path,
+                    success=False,
+                    error_message="Invalid file path - potential security risk"
+                )
+            
+            # Check if file exists
+            if not file_path.exists():
+                return DeletionAttempt(
+                    file_path=file_path,
+                    success=False,
+                    error_message="File does not exist",
+                    file_not_found=True
+                )
+            
+            # Check if it's actually a file (not directory)
+            if not file_path.is_file():
+                return DeletionAttempt(
+                    file_path=file_path,
+                    success=False,
+                    error_message="Path is not a file"
+                )
+            
+            # Check permissions
+            if not self._check_file_permissions(file_path):
+                return DeletionAttempt(
+                    file_path=file_path,
+                    success=False,
+                    error_message="Insufficient permissions to delete file",
+                    permission_denied=True
+                )
+            
+            # Perform deletion (or simulate)
+            if not dry_run:
+                file_path.unlink()
+            
+            return DeletionAttempt(
+                file_path=file_path,
+                success=True
+            )
+            
+        except PermissionError as e:
+            return DeletionAttempt(
+                file_path=file_path,
+                success=False,
+                error_message=f"Permission denied: {str(e)}",
+                permission_denied=True
+            )
+        except FileNotFoundError as e:
+            return DeletionAttempt(
+                file_path=file_path,
+                success=False,
+                error_message=f"File not found: {str(e)}",
+                file_not_found=True
+            )
+        except OSError as e:
+            return DeletionAttempt(
+                file_path=file_path,
+                success=False,
+                error_message=f"OS error: {str(e)}"
+            )
+        except Exception as e:
+            return DeletionAttempt(
+                file_path=file_path,
+                success=False,
+                error_message=f"Unexpected error: {str(e)}"
+            )
+    
+    def _validate_file_path(self, file_path: Path) -> bool:
+        """Validate file path for security.
+        
+        Args:
+            file_path: Path to validate
+            
+        Returns:
+            True if path is safe, False otherwise
+        """
+        try:
+            # Convert to absolute path to resolve any relative components
+            abs_path = file_path.resolve()
+            
+            # Check for directory traversal attempts
+            if ".." in str(abs_path):
+                return False
+            
+            # Path should exist within reasonable bounds (not system directories)
+            path_str = str(abs_path).lower()
+            
+            # Block system directories on Windows
+            system_dirs = ["c:\\windows", "c:\\program files", "c:\\system32"]
+            for sys_dir in system_dirs:
+                if path_str.startswith(sys_dir):
+                    return False
+            
+            # Block system directories on Unix-like systems
+            unix_dirs = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/etc", "/boot"]
+            for unix_dir in unix_dirs:
+                if path_str.startswith(unix_dir):
+                    return False
+            
+            return True
+            
+        except Exception:
+            # If we can't resolve or validate the path, err on the side of caution
+            return False
+    
+    def _check_file_permissions(self, file_path: Path) -> bool:
+        """Check if we have permission to delete the file.
+        
+        Args:
+            file_path: Path to check
+            
+        Returns:
+            True if we can delete the file, False otherwise
+        """
+        try:
+            # Check if parent directory is writable
+            parent = file_path.parent
+            if not os.access(parent, os.W_OK):
+                return False
+            
+            # Check if file is writable (or if we can change its permissions)
+            if not os.access(file_path, os.W_OK):
+                # Try to check if we can modify permissions
+                try:
+                    current_stat = file_path.stat()
+                    # If file is read-only, we might still be able to delete it
+                    # depending on directory permissions, so we'll allow it
+                    return True
+                except Exception:
+                    return False
+            
+            return True
+            
+        except Exception:
+            return False
