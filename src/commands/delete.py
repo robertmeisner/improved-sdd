@@ -389,12 +389,31 @@ def _show_deletion_results(deletion_result, dry_run: bool, project_path: Path) -
     
     console.print(summary_table)
     
-    # Detailed file results
+    # Detailed file results with AI tool context
     if deletion_result.success_count > 0:
         console_manager.print(f"\n[bold green]✓ Successfully {action}:[/bold green]")
+        
+        # Get AI tool manager to determine file ownership for context
+        ai_tool_manager = AIToolManager(config)
+        active_tools_result = ai_tool_manager.detect_active_tools(project_path)
+        active_tools = active_tools_result.active_tools
+        
         for file_path in deletion_result.deleted_files:
             relative_path = file_path.relative_to(project_path)
-            console_manager.print(f"  ✓ {relative_path}")
+            
+            # Determine which tool managed this file
+            managing_tool = "Unknown"
+            file_name = file_path.name
+            
+            for tool_id in active_tools:
+                tool_result = ai_tool_manager.get_managed_files_for_tool(tool_id, None)  # Check all app types
+                all_managed_files = tool_result.get_all_files()
+                
+                if file_name in all_managed_files:
+                    managing_tool = tool_result.tool_name
+                    break
+            
+            console_manager.print(f"  ✓ {relative_path} [dim]({managing_tool})[/dim]")
     
     # Show failures with detailed error information
     if deletion_result.failure_count > 0:
