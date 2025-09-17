@@ -106,6 +106,21 @@ def mock_config():
     mock_config.get_preference.side_effect = lambda key, default: config_data.get("preferences", {}).get(key, default)
     mock_config.get_yaml_config.return_value = config_data
     
+    # Add the method that FileManager actually calls
+    def mock_get_managed_files_for_tool_and_app(tool_id, app_type=None):
+        """Mock implementation of get_managed_files_for_tool_and_app."""
+        ai_tools = config_data.get("ai_tools", {})
+        if tool_id in ai_tools:
+            return ai_tools[tool_id].get("managed_files", {
+                "chatmodes": [],
+                "instructions": [],
+                "prompts": [],
+                "commands": []
+            })
+        return {"chatmodes": [], "instructions": [], "prompts": [], "commands": []}
+    
+    mock_config.get_managed_files_for_tool_and_app = mock_get_managed_files_for_tool_and_app
+    
     return mock_config
 
 
