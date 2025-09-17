@@ -1,0 +1,265 @@
+# SDD (Spec-Driven Development) Configuration
+# This file defines managed files for AI assistant tools and CLI behavior
+# 
+# Configuration Hierarchy (highest to lowest priority):
+# 1. Local project config (.sdd/config.yaml or .sdd-config.yaml)
+# 2. This remote configuration file (downloaded from GitHub)
+# 3. Built-in defaults (hardcoded in application)
+
+# AI Tools Configuration
+# Defines which files are managed by each AI assistant tool
+ai_tools:
+  # GitHub Copilot Configuration
+  github-copilot:
+    name: "GitHub Copilot"
+    description: "GitHub Copilot in VS Code"
+    template_dir: "github"
+    
+    # Files managed by GitHub Copilot for different project types
+    managed_files:
+      # Chat mode files (.chatmode.md) - AI conversation templates
+      chatmodes:
+        - "sddSpecDriven.chatmode.md"
+        - "sddSpecDrivenSimple.chatmode.md" 
+        - "sddTesting.chatmode.md"
+      
+      # Instruction files (.instructions.md) - Development guidelines
+      instructions:
+        - "sddMcpServerDev.instructions.md"
+        - "sddPythonCliDev.instructions.md"
+      
+      # Prompt files (.prompt.md) - Reusable AI prompts
+      prompts:
+        - "sddCommitWorkflow.prompt.md"
+        - "sddFileVerification.prompt.md"
+        - "sddProjectAnalysis.prompt.md"
+        - "sddSpecSync.prompt.md"
+        - "sddTaskExecution.prompt.md"
+        - "sddTaskVerification.prompt.md"
+        - "sddTestAll.prompt.md"
+      
+      # Command files (.command.md) - Future: Custom commands
+      commands: []
+
+    # File extensions for each category (used during template generation)
+    file_extensions:
+      chatmodes: ".chatmode.md"
+      instructions: ".instructions.md"
+      prompts: ".prompt.md"
+      commands: ".command.md"
+
+    # Keyword replacements during template processing
+    keywords:
+      "{AI_ASSISTANT}": "GitHub Copilot"
+      "{AI_SHORTNAME}": "Copilot"
+      "{AI_COMMAND}": "Ctrl+Shift+P → 'Chat: Open Chat'"
+
+  # Claude (Anthropic) Configuration  
+  claude:
+    name: "Claude (Anthropic)"
+    description: "Claude Code or Claude API"
+    template_dir: "claude"
+    
+    managed_files:
+      chatmodes:
+        - "sddSpecDriven.claude.md"
+        - "sddSpecDrivenSimple.claude.md"
+        - "sddTesting.claude.md"
+      
+      instructions:
+        - "sddMcpServerDev.claude.md"
+        - "sddPythonCliDev.claude.md"
+      
+      prompts:
+        - "sddCommitWorkflow.claude.md"
+        - "sddFileVerification.claude.md"
+        - "sddProjectAnalysis.claude.md"
+        - "sddSpecSync.claude.md"
+        - "sddTaskExecution.claude.md"
+        - "sddTaskVerification.claude.md"
+        - "sddTestAll.claude.md"
+      
+      commands: []
+
+    file_extensions:
+      chatmodes: ".claude.md"
+      instructions: ".claude.md"
+      prompts: ".claude.md"
+      commands: ".claude.md"
+
+    keywords:
+      "{AI_ASSISTANT}": "Claude"
+      "{AI_SHORTNAME}": "Claude"
+      "{AI_COMMAND}": "Open Claude interface"
+
+  # Cursor AI Configuration
+  cursor:
+    name: "Cursor AI" 
+    description: "Cursor AI Editor"
+    template_dir: "cursor"
+    
+    managed_files:
+      chatmodes:
+        - "sddSpecDriven.cursor.md"
+        - "sddSpecDrivenSimple.cursor.md"
+        - "sddTesting.cursor.md"
+      
+      instructions:
+        - "sddMcpServerDev.cursor.md"
+        - "sddPythonCliDev.cursor.md"
+      
+      prompts:
+        - "sddCommitWorkflow.cursor.md"
+        - "sddFileVerification.cursor.md"
+        - "sddProjectAnalysis.cursor.md"
+        - "sddSpecSync.cursor.md"
+        - "sddTaskExecution.cursor.md"
+        - "sddTaskVerification.cursor.md"
+        - "sddTestAll.cursor.md"
+      
+      commands: []
+
+    file_extensions:
+      chatmodes: ".cursor.md"
+      instructions: ".cursor.md"
+      prompts: ".cursor.md"
+      commands: ".cursor.md"
+
+    keywords:
+      "{AI_ASSISTANT}": "Cursor AI"
+      "{AI_SHORTNAME}": "Cursor"
+      "{AI_COMMAND}": "Ctrl+K for quick chat"
+
+  # Google Gemini Configuration
+  gemini:
+    name: "Google Gemini"
+    description: "Google Gemini CLI or API"
+    template_dir: "gemini"
+    
+    managed_files:
+      chatmodes:
+        - "sddSpecDriven.gemini.md"
+        - "sddSpecDrivenSimple.gemini.md"
+        - "sddTesting.gemini.md"
+      
+      instructions:
+        - "sddMcpServerDev.gemini.md"
+        - "sddPythonCliDev.gemini.md"
+      
+      prompts:
+        - "sddCommitWorkflow.gemini.md"
+        - "sddFileVerification.gemini.md"
+        - "sddProjectAnalysis.gemini.md"
+        - "sddSpecSync.gemini.md"
+        - "sddTaskExecution.gemini.md"
+        - "sddTaskVerification.gemini.md"
+        - "sddTestAll.gemini.md"
+      
+      commands: []
+
+    file_extensions:
+      chatmodes: ".gemini.md"
+      instructions: ".gemini.md"
+      prompts: ".gemini.md"
+      commands: ".gemini.md"
+
+    keywords:
+      "{AI_ASSISTANT}": "Google Gemini"
+      "{AI_SHORTNAME}": "Gemini"
+      "{AI_COMMAND}": "Open Gemini interface"
+
+# CLI Behavior Configuration
+cli_behavior:
+  # Default AI tools to use when none are specified
+  default_ai_tools: ["github-copilot"]
+  
+  # Template download settings
+  template_download:
+    enabled: true
+    cache_duration_hours: 24
+    fallback_to_bundled: true
+    retry_attempts: 3
+    timeout_seconds: 30
+  
+  # Delete command behavior
+  delete_behavior:
+    require_confirmation: true
+    enable_dry_run: true
+    preserve_manual_files: true
+    cleanup_empty_directories: true
+  
+  # File conflict resolution
+  conflict_resolution:
+    default_action: "prompt"  # prompt, skip, overwrite
+    show_file_preview: true
+    max_preview_lines: 50
+
+# App Type Configuration
+# Defines which instruction files to use for different project types
+app_types:
+  mcp-server:
+    description: "MCP Server - Model Context Protocol server for AI integrations"
+    instruction_files:
+      - "sddMcpServerDev"
+    
+  python-cli:
+    description: "Python CLI - Command-line application using typer and rich"
+    instruction_files:
+      - "sddPythonCliDev"
+      - "CLIPythonDev"  # Legacy naming
+
+# GitLab Flow Configuration
+gitlab_flow:
+  name: "GitLab Flow Integration"
+  description: "GitLab Flow workflow guidance with platform-specific git commands"
+  template_dir: "gitlab-flow"
+  enabled: true
+  
+  template_files:
+    setup: "gitlab-flow-setup.md"
+    workflow: "gitlab-flow-workflow.md"
+    pr: "gitlab-flow-pr.md"
+
+# Configuration Metadata
+metadata:
+  version: "1.0.0"
+  last_updated: "2025-09-17"
+  schema_version: "1.0"
+  description: "Default SDD configuration with managed files for all supported AI tools"
+  
+# Examples and Documentation
+examples:
+  # Example: Adding a custom AI tool
+  custom_ai_tool_example:
+    name: "Custom AI Assistant"
+    description: "Your custom AI assistant"
+    template_dir: "custom"
+    managed_files:
+      chatmodes: ["custom.chatmode.md"]
+      instructions: ["customDev.instructions.md"]
+      prompts: ["customPrompt.prompt.md"] 
+      commands: []
+    file_extensions:
+      chatmodes: ".custom.md"
+      instructions: ".custom.md"
+      prompts: ".custom.md"
+      commands: ".custom.md"
+    keywords:
+      "{AI_ASSISTANT}": "Custom AI"
+      "{AI_SHORTNAME}": "Custom"
+      "{AI_COMMAND}": "Your custom command"
+
+  # Example: Custom project configuration (.sdd/config.yaml)
+  local_config_example: |
+    # Override specific managed files for this project
+    ai_tools:
+      github-copilot:
+        managed_files:
+          chatmodes:
+            - "sddSpecDriven.chatmode.md"
+            - "projectSpecific.chatmode.md"
+    
+    cli_behavior:
+      default_ai_tools: ["github-copilot", "claude"]
+      delete_behavior:
+        require_confirmation: false  # Skip confirmation for this project

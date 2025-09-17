@@ -252,8 +252,6 @@ Specs have an iterative workflow where you help transform an idea into requireme
 
 # Workflow to Execute
 
-<workflow-definition>
-
 # Feature Spec Creation Workflow
 
 ## Overview
@@ -264,66 +262,168 @@ A core principal of this workflow is that we rely on the user establishing groun
 
 Before you get started, think of a short feature name based on the user's rough idea. This will be used for the feature directory. Use kebab-case format for the feature_name (e.g. "user-authentication")
 
-## GitLab Flow Setup
+# GitLab Flow Setup Agent Instructions
 
-Before starting the spec development workflow, set up your GitLab Flow branch structure to enable proper version control and collaboration.
+**CRITICAL**: Execute these commands BEFORE starting any spec development workflow.
 
-### Repository Status Check
+## MANDATORY PRE-WORKFLOW SETUP
 
-First, verify your repository status and ensure you're on the main branch:
+### Step 1: Repository Status Verification
 
+**EXECUTE IMMEDIATELY:**
 ```bash
-# Check current repository status
 git status
-
-# Ensure you're on main branch
-git checkout main
-git pull origin main
 ```
 
-### Create Feature Branch
-
-Create a dedicated feature branch for this specification:
-
+**THEN EXECUTE:**
 ```bash
-# Create and switch to feature branch
-git checkout -b feature/spec-{spec-name}
+git checkout master ; git pull origin master
 ```
 
-**Branch Naming Convention**: `feature/spec-{kebab-case-name}`
+**VERIFY OUTPUT**: Ensure repository is clean and up-to-date before proceeding.
 
-**Examples**:
+### Step 2: Create Feature Branch
+
+**EXECUTE THIS COMMAND** (replace `{kebab-case-name}` with actual feature name):
+```bash
+git checkout -b feature/spec-{kebab-case-name}
+```
+
+## BRANCH NAMING REQUIREMENTS
+
+**Format**: `feature/spec-{kebab-case-name}`
+
+**Agent Translation Examples**:
 - "User Authentication" → `feature/spec-user-authentication`
-- "Payment System" → `feature/spec-payment-system`
+- "Payment System" → `feature/spec-payment-system` 
 - "Data Migration" → `feature/spec-data-migration`
 - "API Integration" → `feature/spec-api-integration`
 
-### Repository Validation
+## VALIDATION CHECKLIST
 
-**✅ Pre-Workflow Checklist**:
-- [ ] Repository is clean (no uncommitted changes)
-- [ ] On main branch and up to date
-- [ ] Feature branch created with proper naming
-- [ ] Ready to begin spec development
+**AGENT MUST VERIFY** before proceeding to spec development:
 
-### Workflow Integration
+### ✅ Required Conditions
+- [ ] `git status` shows clean working directory
+- [ ] Currently on master/main branch  
+- [ ] Latest changes pulled from origin
+- [ ] Feature branch created successfully
+- [ ] Branch name follows exact naming convention
 
-This GitLab Flow setup enables:
-- **Isolated Development**: Work on feature branch without affecting main
-- **Incremental Progress**: Commit each spec phase (feasibility, requirements, design, tasks)
-- **Collaborative Review**: Create PR after implementation completion
-- **Version Control**: Track spec evolution and implementation progress
+### ✅ Terminal Command Verification
+**RUN THIS TO CONFIRM SETUP:**
+```bash
+git branch --show-current
+```
+**Expected Output**: `feature/spec-{your-feature-name}`
 
-**Next Steps**: Begin with feasibility assessment while tracking progress through commits.
+## ERROR HANDLING
+
+**If git checkout fails:**
+1. Run `git status` to check for uncommitted changes
+2. Commit or stash changes: `git stash`
+3. Retry checkout command
+4. Report any errors to user
+
+**If branch already exists:**
+1. Switch to existing branch: `git checkout feature/spec-{name}`
+2. Ensure it's up to date: `git pull origin master`
+3. Continue with spec development
+
+## NEXT ACTION
+
+**AFTER SUCCESSFUL SETUP**: Begin feasibility assessment phase and commit each spec phase as completed.
+
+**WORKFLOW BENEFITS**: Feature isolation, incremental safety, team collaboration, easy rollback.
 
 
 ## GitLab Flow Workflow Integration
 
-## GitLab Flow Workflow Integration
+# GitLab Flow Agent Instructions
 
-Systematic version control for specification-driven development with phase-based commits and collaborative review.
+**OBJECTIVE**: Execute systematic version control for specification-driven development with phase-based commits.
 
-### Workflow Diagram
+## MANDATORY: Pre-Workflow Setup
+
+**EXECUTE IMMEDIATELY** before starting any spec development:
+
+1. **Verify Repository Status**
+   ```bash
+   git status ; git checkout master ; git pull origin master
+   ```
+
+2. **Create Feature Branch** 
+   ```bash
+   git checkout -b feature/spec-{kebab-case-name}
+   ```
+
+**Branch Naming Format**: `feature/spec-{kebab-case-name}`
+- "User Authentication" → `feature/spec-user-authentication`
+- "Payment System" → `feature/spec-payment-system`
+
+## COMMIT WORKFLOW COMMANDS
+
+**EXECUTE AFTER EACH PHASE APPROVAL:**
+
+### Phase Commits
+```bash
+# After feasibility approval
+git add . ; git commit -m "feat: Add feasibility assessment for {feature-name}"
+
+# After requirements approval  
+git add . ; git commit -m "feat: Add requirements for {feature-name}"
+
+# After design approval
+git add . ; git commit -m "feat: Add design for {feature-name}"
+
+# After tasks approval
+git add . ; git commit -m "feat: Add implementation tasks for {feature-name}"
+```
+
+### Task Implementation Commits
+```bash
+# After each task completion
+git add . ; git commit -m "feat: Complete Task {X.Y} - {brief-task-description}"
+```
+
+## COMMIT MESSAGE TEMPLATES
+
+**Spec Phase Format:**
+```
+feat: Add {phase} for {feature-name}
+
+- {Key accomplishment 1}
+- {Key accomplishment 2}
+```
+
+**Task Implementation Format:**
+```
+feat: Complete Task {X.Y} - {task-description}
+
+- {Implementation detail 1}
+- {Implementation detail 2}
+```
+
+## AGENT ACTION REQUIREMENTS
+
+### ✅ BEFORE Each Commit
+- [ ] Verify all files are saved
+- [ ] Confirm phase/task is completely finished
+- [ ] Use exact commit message format above
+
+### ✅ DURING Spec Development
+- [ ] Commit after EACH phase approval (feasibility → requirements → design → tasks)
+- [ ] Commit after EACH individual task completion
+- [ ] Never combine multiple phases in one commit
+- [ ] Never commit partial work
+
+### ✅ FINAL Step - Create Pull Request
+**EXECUTE ONLY after ALL tasks are completed:**
+```bash
+git push -u origin feature/spec-{feature-name} ; gh pr create --title "Spec: {Feature Name}" --body "Implementation of {feature-name} specification"
+```
+
+## WORKFLOW DIAGRAM
 
 ```mermaid
 gitGraph
@@ -341,52 +441,15 @@ gitGraph
     merge feature/spec-user-auth id: "PR merged"
 ```
 
-### Branch Naming
-```
-feature/spec-{kebab-case-name}
-```
-**Examples:** `feature/spec-user-authentication`, `feature/spec-payment-system`
+## ERROR RECOVERY
 
-### Commit Workflow
+**If commit fails:**
+1. Check git status: `git status`
+2. Stage missing files: `git add .`
+3. Retry commit with same message
+4. Report terminal output to user
 
-**1. After each phase approval:**
-```bash
-git add . ; git commit -m "feat: Add {phase} for {feature-name}"
-```
-
-**2. Commit timing:**
-- ✅ **Feasibility approved** → Commit 01_feasibility.md
-- ✅ **Requirements approved** → Commit 02_requirements.md  
-- ✅ **Design approved** → Commit 03_design.md
-- ✅ **Tasks approved** → Commit 04_tasks.md
-- ✅ **Each task completed** → Commit implementation
-
-### Message Templates
-
-**Spec Phase Example:**
-```
-feat: Add requirements for user-authentication
-
-- Define user stories and acceptance criteria
-- Specify success metrics and security requirements
-```
-
-**Task Implementation Example:**
-```
-feat: Complete Task 1.2 - Add login validation
-
-- Implement email/password validation logic
-- Add comprehensive unit tests for edge cases
-```
-
-### Best Practices
-
-- **One logical change** per commit (single phase or single task)
-- **Complete work** before committing (no partial phases)
-- **Descriptive messages** following conventional format
-- **Track dependencies** through commit history
-
-**Workflow Benefits:** Feature isolation, incremental safety, team collaboration, easy rollback.
+**CRITICAL**: Always use terminal commands through `run_in_terminal` tool. Never execute git commands manually.
 
 **Pre-Spec Analysis (MANDATORY):** Before starting the spec creation process, ALWAYS perform a comprehensive analysis of the existing codebase:
 - Analyze the project structure, existing patterns, and conventions.
@@ -658,124 +721,121 @@ After task completion, conduct a review to capture learnings.
 ## Implementation Complete
 
 **After ALL implementation tasks are finished:**
-## Create Pull Request
+# Pull Request Creation Agent Instructions
 
-**🚨 CRITICAL**: Only create PR after ALL implementation tasks are completed and tested!
+**🚨 CRITICAL**: Execute ONLY after ALL implementation tasks are completed and tested!
 
-### Prerequisites Verification
+## MANDATORY PRE-PR VERIFICATION
 
-Before creating a pull request, ensure you have completed:
+**AGENT MUST VERIFY** before creating PR:
 
-**✅ Specification Complete**:
-- [ ] Feasibility assessment approved
-- [ ] Requirements document approved
-- [ ] Design document approved
-- [ ] Implementation tasks approved
-
-**✅ Implementation Complete**:
-- [ ] ALL tasks in 04_tasks.md marked complete (✅)
-- [ ] All code implementations finished
-- [ ] Comprehensive testing completed
-- [ ] Documentation updated
-- [ ] No failing tests or linting errors
-
-### Push and Create PR
-
-Once implementation is complete, push your branch and create a pull request:
-
+### Step 1: Specification Completion Check
+**EXECUTE THIS VERIFICATION:**
 ```bash
-# Push feature branch and create pull request
-git push -u origin feature/spec-{feature-name} ; gh pr create --title "Spec: {feature-name}" --body "Implementation of {feature-name} specification"
+# Verify all spec documents exist and are complete
+ls .specs/{feature-name}/ | findstr /R "01_feasibility.md 02_requirements.md 03_design.md 04_tasks.md"
 ```
 
-### PR Guidelines
+### Step 2: Implementation Status Check
+**VERIFY ALL TASKS MARKED COMPLETE:**
+- Check that ALL `[ ]` in 04_tasks.md are changed to `[x]`
+- Confirm no `[-]` (in-progress) tasks remain
+- Validate all code implementations finished
 
-#### PR Title Format
+### Step 3: Testing Verification
+**EXECUTE TESTING COMMANDS:**
+```bash
+# Run all tests to ensure passing
+pytest tests/ -v
+```
+
+## PR CREATION COMMANDS
+
+### Primary Method: Automated PR Creation
+**EXECUTE THIS COMMAND** (replace `{feature-name}` with actual name):
+```bash
+git push -u origin feature/spec-{feature-name} ; gh pr create --title "Spec: {Feature Name}" --body "Implementation of {feature-name} specification"
+```
+
+### Fallback Method: Manual Push + GitHub UI
+**IF AUTOMATED METHOD FAILS:**
+```bash
+git push -u origin feature/spec-{feature-name}
+```
+**THEN INSTRUCT USER**: "Visit GitHub repository and click 'Compare & pull request'"
+
+## PR CONFIGURATION REQUIREMENTS
+
+### Title Format (EXACT)
 ```
 Spec: {Feature Name}
 ```
 
-**Examples**:
-- `Spec: User Authentication`
-- `Spec: Payment System Integration`
-- `Spec: Data Migration Framework`
+**Agent Translation Examples**:
+- feature/spec-user-authentication → `Spec: User Authentication`
+- feature/spec-payment-system → `Spec: Payment System`
 
-#### PR Description Template
+### PR Description Template (USE THIS EXACT FORMAT)
 ```markdown
 ## Specification Summary
 
-Brief summary of the feature specification and implementation.
+Implementation of {feature-name} following specification-driven development process.
 
 ## Implementation Highlights
 
-- Key architectural decisions made
-- Important implementation details
-- Any trade-offs or compromises
+- Completed feasibility assessment and requirements analysis
+- Implemented design with {key-architecture-decisions}
+- All tasks in 04_tasks.md completed successfully
 
 ## Testing Coverage
 
-- [ ] Unit tests implemented
-- [ ] Integration tests added
-- [ ] Edge cases covered
-- [ ] Performance requirements met
+- [x] Unit tests implemented and passing
+- [x] Integration tests added where applicable
+- [x] Edge cases covered in test scenarios
+- [x] All automated checks passing
 
 ## Review Checklist
 
-- [ ] All tasks in 04_tasks.md completed ✅
-- [ ] Code follows project standards
-- [ ] Documentation updated
-- [ ] No breaking changes
-- [ ] Security considerations addressed
+- [x] All tasks in 04_tasks.md completed ✅
+- [x] Code follows project standards
+- [x] Documentation updated and synchronized
+- [x] No breaking changes introduced
+- [x] Security considerations addressed
 
 ## Deployment Notes
 
-- Any special deployment considerations
-- Database migrations required (if any)
-- Configuration changes needed
+{deployment-considerations-if-any}
 ```
 
-### Manual PR Creation (Alternative)
+## ERROR HANDLING
 
-If the automated command fails, create PR manually:
+**If `gh pr create` fails:**
+1. **EXECUTE**: `gh auth status` to check GitHub CLI authentication
+2. **IF NOT AUTHENTICATED**: Instruct user to run `gh auth login`
+3. **RETRY**: PR creation command after authentication
+4. **FALLBACK**: Use manual push method above
 
-1. **Push branch**:
-   ```bash
-   git push -u origin feature/spec-{feature-name}
-   ```
+**If push fails:**
+1. **EXECUTE**: `git status` to check for uncommitted changes
+2. **COMMIT REMAINING**: `git add . ; git commit -m "feat: Final cleanup before PR"`
+3. **RETRY**: Push command
 
-2. **Visit GitHub repository** and click "Compare & pull request"
+## POST-PR ACTIONS
 
-3. **Fill in details**:
-   - Title: `Spec: {Feature Name}`
-   - Description: Use template above
-   - Reviewers: Add relevant team members
-   - Labels: Add appropriate labels (e.g., `spec`, `feature`)
+**AGENT MUST COMMUNICATE TO USER:**
+1. "✅ Pull request created successfully"
+2. "🔗 PR URL: {generated-url}"
+3. "📋 Next: Wait for code review and address any feedback"
+4. "🎉 Specification-driven development cycle complete!"
 
-### Review Process
+## VERIFICATION COMMANDS
 
-**🔍 Review Focus Areas**:
-- **Specification Quality**: Requirements complete and testable
-- **Design Soundness**: Architecture decisions well-justified
-- **Implementation Quality**: Code follows project standards
-- **Test Coverage**: Comprehensive testing of all functionality
-- **Documentation**: Clear and up-to-date documentation
+**CONFIRM PR CREATION:**
+```bash
+gh pr list --head feature/spec-{feature-name}
+```
 
-**📋 Post-Review Actions**:
-- Address reviewer feedback promptly
-- Update code and documentation as needed
-- Re-request review after changes
-- Merge only after all approvals received
-
-### Success Criteria
-
-**✅ PR Ready for Merge When**:
-- [ ] All implementation tasks completed
-- [ ] All automated checks passing
-- [ ] Required approvals received
-- [ ] No unresolved review comments
-- [ ] Documentation updated and accurate
-
-**🎉 Congratulations!** Your specification-driven development cycle is complete!
+**Expected Output**: Should show the created PR with "Spec: {Feature Name}" title
 
 
 **Example Format (truncated):**
@@ -842,7 +902,6 @@ If the design becomes too complex or unwieldy:
 - The model MAY suggest a phased approach to implementation
 - The model SHOULD return to requirements clarification to prioritize features if needed
 
-</workflow-definition>
 
 # CRITICAL: Requirements ↔ Design ↔ Codebase Synchronization
 
@@ -974,7 +1033,7 @@ Follow these instructions for user requests related to spec tasks. The user may 
   - Documentation tasks → `docs:`
   - Configuration tasks → `chore:`
   - Bug fixes → `fix:`
-- Include task ID and brief description: `feat: Complete [Task 1.2] - Add GitLab Flow configuration`
+- Include task ID and brief description: `feat: Complete [Task 1.2] - Add new configuration`
 - Keep messages under 50 characters for summary, add details in body if needed
 
 **Platform-Specific Terminal Commands**:

@@ -1,118 +1,115 @@
-## Create Pull Request
+# Pull Request Creation Agent Instructions
 
-**🚨 CRITICAL**: Only create PR after ALL implementation tasks are completed and tested!
+**🚨 CRITICAL**: Execute ONLY after ALL implementation tasks are completed and tested!
 
-### Prerequisites Verification
+## MANDATORY PRE-PR VERIFICATION
 
-Before creating a pull request, ensure you have completed:
+**AGENT MUST VERIFY** before creating PR:
 
-**✅ Specification Complete**:
-- [ ] Feasibility assessment approved
-- [ ] Requirements document approved
-- [ ] Design document approved
-- [ ] Implementation tasks approved
-
-**✅ Implementation Complete**:
-- [ ] ALL tasks in 04_tasks.md marked complete (✅)
-- [ ] All code implementations finished
-- [ ] Comprehensive testing completed
-- [ ] Documentation updated
-- [ ] No failing tests or linting errors
-
-### Push and Create PR
-
-Once implementation is complete, push your branch and create a pull request:
-
+### Step 1: Specification Completion Check
+**EXECUTE THIS VERIFICATION:**
 ```bash
-# Push feature branch and create pull request
-{PUSH_PR}
+# Verify all spec documents exist and are complete
+ls .specs/{feature-name}/ | findstr /R "01_feasibility.md 02_requirements.md 03_design.md 04_tasks.md"
 ```
 
-### PR Guidelines
+### Step 2: Implementation Status Check
+**VERIFY ALL TASKS MARKED COMPLETE:**
+- Check that ALL `[ ]` in 04_tasks.md are changed to `[x]`
+- Confirm no `[-]` (in-progress) tasks remain
+- Validate all code implementations finished
 
-#### PR Title Format
+### Step 3: Testing Verification
+**EXECUTE TESTING COMMANDS:**
+```bash
+# Run all tests to ensure passing
+pytest tests/ -v
+```
+
+## PR CREATION COMMANDS
+
+### Primary Method: Automated PR Creation
+**EXECUTE THIS COMMAND** (replace `{feature-name}` with actual name):
+```bash
+git push -u origin feature/spec-{feature-name} ; gh pr create --title "Spec: {Feature Name}" --body "Implementation of {feature-name} specification"
+```
+
+### Fallback Method: Manual Push + GitHub UI
+**IF AUTOMATED METHOD FAILS:**
+```bash
+git push -u origin feature/spec-{feature-name}
+```
+**THEN INSTRUCT USER**: "Visit GitHub repository and click 'Compare & pull request'"
+
+## PR CONFIGURATION REQUIREMENTS
+
+### Title Format (EXACT)
 ```
 Spec: {Feature Name}
 ```
 
-**Examples**:
-- `Spec: User Authentication`
-- `Spec: Payment System Integration`
-- `Spec: Data Migration Framework`
+**Agent Translation Examples**:
+- feature/spec-user-authentication → `Spec: User Authentication`
+- feature/spec-payment-system → `Spec: Payment System`
 
-#### PR Description Template
+### PR Description Template (USE THIS EXACT FORMAT)
 ```markdown
 ## Specification Summary
 
-Brief summary of the feature specification and implementation.
+Implementation of {feature-name} following specification-driven development process.
 
 ## Implementation Highlights
 
-- Key architectural decisions made
-- Important implementation details
-- Any trade-offs or compromises
+- Completed feasibility assessment and requirements analysis
+- Implemented design with {key-architecture-decisions}
+- All tasks in 04_tasks.md completed successfully
 
 ## Testing Coverage
 
-- [ ] Unit tests implemented
-- [ ] Integration tests added
-- [ ] Edge cases covered
-- [ ] Performance requirements met
+- [x] Unit tests implemented and passing
+- [x] Integration tests added where applicable
+- [x] Edge cases covered in test scenarios
+- [x] All automated checks passing
 
 ## Review Checklist
 
-- [ ] All tasks in 04_tasks.md completed ✅
-- [ ] Code follows project standards
-- [ ] Documentation updated
-- [ ] No breaking changes
-- [ ] Security considerations addressed
+- [x] All tasks in 04_tasks.md completed ✅
+- [x] Code follows project standards
+- [x] Documentation updated and synchronized
+- [x] No breaking changes introduced
+- [x] Security considerations addressed
 
 ## Deployment Notes
 
-- Any special deployment considerations
-- Database migrations required (if any)
-- Configuration changes needed
+{deployment-considerations-if-any}
 ```
 
-### Manual PR Creation (Alternative)
+## ERROR HANDLING
 
-If the automated command fails, create PR manually:
+**If `gh pr create` fails:**
+1. **EXECUTE**: `gh auth status` to check GitHub CLI authentication
+2. **IF NOT AUTHENTICATED**: Instruct user to run `gh auth login`
+3. **RETRY**: PR creation command after authentication
+4. **FALLBACK**: Use manual push method above
 
-1. **Push branch**:
-   ```bash
-   git push -u origin feature/spec-{feature-name}
-   ```
+**If push fails:**
+1. **EXECUTE**: `git status` to check for uncommitted changes
+2. **COMMIT REMAINING**: `git add . ; git commit -m "feat: Final cleanup before PR"`
+3. **RETRY**: Push command
 
-2. **Visit GitHub repository** and click "Compare & pull request"
+## POST-PR ACTIONS
 
-3. **Fill in details**:
-   - Title: `Spec: {Feature Name}`
-   - Description: Use template above
-   - Reviewers: Add relevant team members
-   - Labels: Add appropriate labels (e.g., `spec`, `feature`)
+**AGENT MUST COMMUNICATE TO USER:**
+1. "✅ Pull request created successfully"
+2. "🔗 PR URL: {generated-url}"
+3. "📋 Next: Wait for code review and address any feedback"
+4. "🎉 Specification-driven development cycle complete!"
 
-### Review Process
+## VERIFICATION COMMANDS
 
-**🔍 Review Focus Areas**:
-- **Specification Quality**: Requirements complete and testable
-- **Design Soundness**: Architecture decisions well-justified
-- **Implementation Quality**: Code follows project standards
-- **Test Coverage**: Comprehensive testing of all functionality
-- **Documentation**: Clear and up-to-date documentation
+**CONFIRM PR CREATION:**
+```bash
+gh pr list --head feature/spec-{feature-name}
+```
 
-**📋 Post-Review Actions**:
-- Address reviewer feedback promptly
-- Update code and documentation as needed
-- Re-request review after changes
-- Merge only after all approvals received
-
-### Success Criteria
-
-**✅ PR Ready for Merge When**:
-- [ ] All implementation tasks completed
-- [ ] All automated checks passing
-- [ ] Required approvals received
-- [ ] No unresolved review comments
-- [ ] Documentation updated and accurate
-
-**🎉 Congratulations!** Your specification-driven development cycle is complete!
+**Expected Output**: Should show the created PR with "Spec: {Feature Name}" title

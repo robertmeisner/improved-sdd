@@ -38,36 +38,39 @@ import typer
 from typer.core import TyperGroup
 
 # Import commands lazily to avoid import errors at module level
-check_command, delete_command, init_command, console_manager = (None, None, None, None)
+check_command, delete_command, init_command, validate_config_command, console_manager = (None, None, None, None, None)
 
 
 def _import_commands(force=False):
     """Import commands lazily to handle different execution contexts."""
-    global check_command, delete_command, init_command, console_manager
+    global check_command, delete_command, init_command, validate_config_command, console_manager
     # Return cached imports if already loaded and not forcing
-    if not force and all((check_command, delete_command, init_command, console_manager)):
-        return check_command, delete_command, init_command, console_manager
+    if not force and all((check_command, delete_command, init_command, validate_config_command, console_manager)):
+        return check_command, delete_command, init_command, validate_config_command, console_manager
 
     try:
         # Development/editable install: direct imports from src
         from commands.check import check_command as check_fn
         from commands.delete import delete_command as delete_fn
         from commands.init import init_command as init_fn
+        from commands.validate_config import validate_config_command as validate_config_fn
         from ui.console import console_manager as cm
     except (ImportError, ModuleNotFoundError):
         # Production install: relative imports
         from .commands.check import check_command as check_fn
         from .commands.delete import delete_command as delete_fn
         from .commands.init import init_command as init_fn
+        from .commands.validate_config import validate_config_command as validate_config_fn
         from .ui.console import console_manager as cm
 
     # Assign to global variables so they can be patched in tests
     check_command = check_fn
     delete_command = delete_fn
     init_command = init_fn
+    validate_config_command = validate_config_fn
     console_manager = cm
     
-    return check_command, delete_command, init_command, console_manager
+    return check_command, delete_command, init_command, validate_config_command, console_manager
 
 # Core constants and exceptions are now imported from core module
 
@@ -78,7 +81,7 @@ class BannerGroup(TyperGroup):
     def format_help(self, ctx, formatter):
         # Ensure commands are imported before showing help
         _setup_app()
-        _, _, _, local_console_manager = _import_commands()
+        _, _, _, _, local_console_manager = _import_commands()
         
         # Show banner before help
         if local_console_manager:
@@ -110,7 +113,7 @@ def callback(ctx: typer.Context):
     if ctx.invoked_subcommand is None and "--help" not in sys.argv and "-h" not in sys.argv:
         # Ensure app is set up before showing banner
         _ensure_app_setup()
-        _, _, _, local_console_manager = _import_commands()
+        _, _, _, _, local_console_manager = _import_commands()
         if local_console_manager:
             local_console_manager.show_banner()
             local_console_manager.show_centered_message("[dim]Run 'improved-sdd --help' for usage information[/dim]")
@@ -135,7 +138,7 @@ def _ensure_app_setup(force=False):
 def _setup_app():
     """Import and register commands for the Typer app."""
     # Import commands at runtime to register them
-    check_fn, delete_fn, init_fn, _ = _import_commands(force=True)
+    check_fn, delete_fn, init_fn, validate_config_fn, _ = _import_commands(force=True)
 
     # Register the commands with the app
     if init_fn:
@@ -144,6 +147,8 @@ def _setup_app():
         app.command(name="delete")(delete_fn)
     if check_fn:
         app.command(name="check")(check_fn)
+    if validate_config_fn:
+        app.command(name="validate-config")(validate_config_fn)
 # Configure the app on first use, not at import time
 # _setup_app()  # Removed to avoid circular imports
 

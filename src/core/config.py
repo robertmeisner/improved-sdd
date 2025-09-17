@@ -7,8 +7,9 @@ with a compatibility layer to ensure smooth migration from the monolithic CLI.
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING, Set
 import logging
+import re
 
 # YAML support for configuration loading
 try:
@@ -21,6 +22,12 @@ try:
     import httpx
 except ImportError:
     httpx = None
+
+# Pydantic for schema validation
+try:
+    from pydantic import ValidationError
+except ImportError:
+    ValidationError = None
 
 # Type checking imports to avoid circular imports
 if TYPE_CHECKING:
@@ -42,13 +49,402 @@ class MissingConfigError(YAMLConfigurationError):
     pass
 
 
+class ValidationWarning:
+    """Represents a validation warning with context."""
+    
+    def __init__(self, message: str, category: str = "general", severity: str = "warning"):
+        self.message = message
+        self.category = category  # "syntax", "schema", "duplicate", "empty", "pattern"
+        self.severity = severity  # "warning", "error", "info"
+    
+    def __str__(self):
+        return f"[{self.severity.upper()}] {self.message}"
+
+
+@dataclass
+class ValidationResult:
+    """Complete validation result with categorized warnings."""
+    
+    valid: bool = True
+    parsed_content: Dict[str, Any] = None
+    warnings: List[ValidationWarning] = None
+    errors: List[ValidationWarning] = None
+    schema_valid: bool = True
+    
+    def __post_init__(self):
+        if self.warnings is None:
+            self.warnings = []
+        if self.errors is None:
+            self.errors = []
+        if self.parsed_content is None:
+            self.parsed_content = {}
+    
+    def add_warning(self, message: str, category: str = "general"):
+        """Add a validation warning."""
+        self.warnings.append(ValidationWarning(message, category, "warning"))
+    
+    def add_error(self, message: str, category: str = "general"):
+        """Add a validation error."""
+        self.errors.append(ValidationWarning(message, category, "error"))
+        self.valid = False
+    
+    def has_warnings(self) -> bool:
+        """Check if there are any warnings."""
+        return len(self.warnings) > 0
+    
+    def has_errors(self) -> bool:
+        """Check if there are any errors."""
+        return len(self.errors) > 0
+    
+    def get_warnings_by_category(self, category: str) -> List[ValidationWarning]:
+        """Get warnings by category."""
+        return [w for w in self.warnings if w.category == category]
+    
+    def summary(self) -> str:
+        """Get a summary of validation results."""
+        parts = []
+        if self.has_errors():
+            parts.append(f"{len(self.errors)} errors")
+        if self.has_warnings():
+            parts.append(f"{len(self.warnings)} warnings")
+        if not parts:
+            return "Configuration is valid"
+        return f"Validation completed with {', '.join(parts)}"
+
+
+class ConfigurationValidator:
+    """Advanced configuration validator with Pydantic schema validation."""
+    
+    def __init__(self, logger: Optional[logging.Logger] = None):
+        self.logger = logger or logging.getLogger(__name__)
+        self._valid_file_patterns = [
+            r'^[a-zA-Z0-9\-_\.]+\.(md|chatmode|instructions|prompt|command)$',
+            r'^[a-zA-Z0-9\-_\.]+\.md$'
+        ]
+    
+    def validate_config(self, content: str, source: str = "configuration") -> ValidationResult:
+        """Comprehensive configuration validation with Pydantic schema.
+        
+        Args:
+            content: YAML content string
+            source: Source description for error messages
+            
+        Returns:
+            ValidationResult with detailed validation information
+        """
+        result = ValidationResult()
+        
+        # Step 1: YAML syntax validation
+        try:
+            result = self._validate_yaml_syntax(content, source)
+            if not result.valid:
+                return result
+        except Exception as e:
+            result.add_error(f"YAML parsing failed: {e}", "syntax")
+            return result
+        
+        # Step 2: Pydantic schema validation
+        if result.parsed_content:
+            self._validate_pydantic_schema(result)
+        
+        # Step 3: Advanced validations
+        if result.parsed_content:
+            self._validate_file_patterns(result)
+            self._validate_empty_lists(result)
+            self._detect_duplicate_files(result)
+            self._validate_tool_consistency(result)
+        
+        return result
+    
+    def _validate_yaml_syntax(self, content: str, source: str) -> ValidationResult:
+        """Validate YAML syntax and basic structure."""
+        result = ValidationResult()
+        
+        if not content or not content.strip():
+            result.add_warning(f"Empty {source}", "syntax")
+            return result
+        
+        try:
+            parsed = yaml.safe_load(content)
+            if parsed is None:
+                result.add_warning(f"Empty or null content in {source}", "syntax")
+                return result
+            
+            result.parsed_content = parsed
+            
+            if not isinstance(parsed, dict):
+                result.add_error("Configuration must be a YAML dictionary/object", "syntax")
+                return result
+            
+            # Check for version field
+            if "version" not in parsed:
+                result.add_warning("Missing 'version' field in configuration", "schema")
+            
+        except yaml.YAMLError as e:
+            result.add_error(f"Invalid YAML syntax in {source}: {e}", "syntax")
+        except Exception as e:
+            result.add_error(f"Unexpected error parsing {source}: {e}", "syntax")
+        
+        return result
+    
+    def _validate_pydantic_schema(self, result: ValidationResult) -> None:
+        """Validate configuration against Pydantic schema."""
+        if not ValidationError:
+            result.add_warning("Pydantic not available - skipping schema validation", "schema")
+            return
+        
+        try:
+            from .models import SDDConfig
+            config = SDDConfig.model_validate(result.parsed_content)
+            result.schema_valid = True
+            
+            # Store validated content
+            result.parsed_content = config.model_dump()
+            
+        except ValidationError as e:
+            result.schema_valid = False
+            for error in e.errors():
+                location = " -> ".join(str(x) for x in error["loc"])
+                message = f"Schema validation error at {location}: {error['msg']}"
+                result.add_warning(message, "schema")
+        except Exception as e:
+            result.add_error(f"Schema validation failed: {e}", "schema")
+    
+    def _validate_file_patterns(self, result: ValidationResult) -> None:
+        """Validate managed file name patterns."""
+        ai_tools = result.parsed_content.get("ai_tools", {})
+        
+        for tool_id, tool_config in ai_tools.items():
+            managed_files = tool_config.get("managed_files", {})
+            
+            for category, files in managed_files.items():
+                if not isinstance(files, list):
+                    continue
+                
+                for file_name in files:
+                    if not self._is_valid_file_pattern(file_name):
+                        result.add_warning(
+                            f"AI tool '{tool_id}' has invalid file pattern in {category}: '{file_name}'",
+                            "pattern"
+                        )
+    
+    def _validate_empty_lists(self, result: ValidationResult) -> None:
+        """Validate for empty managed file lists and warn accordingly."""
+        ai_tools = result.parsed_content.get("ai_tools", {})
+        
+        for tool_id, tool_config in ai_tools.items():
+            managed_files = tool_config.get("managed_files", {})
+            
+            if not managed_files:
+                result.add_warning(f"AI tool '{tool_id}' has no managed files defined", "empty")
+                continue
+            
+            all_empty = True
+            for category, files in managed_files.items():
+                if isinstance(files, list) and files:
+                    all_empty = False
+                elif isinstance(files, list) and not files:
+                    result.add_warning(f"AI tool '{tool_id}' has empty managed_files.{category}", "empty")
+            
+            if all_empty:
+                result.add_warning(f"AI tool '{tool_id}' has all managed file categories empty", "empty")
+    
+    def _detect_duplicate_files(self, result: ValidationResult) -> None:
+        """Detect duplicate files across AI tools and within categories."""
+        ai_tools = result.parsed_content.get("ai_tools", {})
+        
+        # Track files across all tools
+        global_files: Dict[str, List[str]] = {}  # file_name -> [tool_ids]
+        
+        for tool_id, tool_config in ai_tools.items():
+            managed_files = tool_config.get("managed_files", {})
+            
+            for category, files in managed_files.items():
+                if not isinstance(files, list):
+                    continue
+                
+                # Check for duplicates within the same category
+                file_set = set()
+                for file_name in files:
+                    if file_name in file_set:
+                        result.add_warning(
+                            f"AI tool '{tool_id}' has duplicate file in {category}: '{file_name}'",
+                            "duplicate"
+                        )
+                    else:
+                        file_set.add(file_name)
+                        
+                        # Track globally for cross-tool duplicate detection
+                        if file_name not in global_files:
+                            global_files[file_name] = []
+                        global_files[file_name].append(f"{tool_id}:{category}")
+        
+        # Check for files managed by multiple tools
+        for file_name, tool_locations in global_files.items():
+            if len(tool_locations) > 1:
+                tools_list = ", ".join(tool_locations)
+                result.add_warning(
+                    f"File '{file_name}' is managed by multiple AI tools: {tools_list}",
+                    "duplicate"
+                )
+    
+    def _validate_tool_consistency(self, result: ValidationResult) -> None:
+        """Validate AI tool configuration consistency."""
+        ai_tools = result.parsed_content.get("ai_tools", {})
+        
+        for tool_id, tool_config in ai_tools.items():
+            # Check required fields
+            if not tool_config.get("name"):
+                result.add_warning(f"AI tool '{tool_id}' missing required 'name' field", "schema")
+            
+            if not tool_config.get("template_dir"):
+                result.add_warning(f"AI tool '{tool_id}' missing required 'template_dir' field", "schema")
+            
+            # Validate template_dir pattern
+            template_dir = tool_config.get("template_dir", "")
+            if template_dir and not re.match(r'^[a-zA-Z0-9\-_]+$', template_dir):
+                result.add_warning(
+                    f"AI tool '{tool_id}' has invalid template_dir pattern: '{template_dir}'",
+                    "pattern"
+                )
+    
+    def _is_valid_file_pattern(self, file_name: str) -> bool:
+        """Check if a file name matches valid patterns."""
+        if not file_name or not isinstance(file_name, str):
+            return False
+        
+        for pattern in self._valid_file_patterns:
+            if re.match(pattern, file_name):
+                return True
+        
+        return False
+
+
 class ConfigurationLoader:
     """Base class for configuration loading with hierarchy support."""
     
     def __init__(self, logger: Optional[logging.Logger] = None):
         self.logger = logger or logging.getLogger(__name__)
+        self.validator = ConfigurationValidator(logger)
     
     def load_local_config(self, project_root: Union[str, Path]) -> Dict[str, Any]:
+        """Load configuration from local .sdd_templates/sdd-config.yaml.
+        
+        Args:
+            project_root: Root directory to search for local configuration
+            
+        Returns:
+            Dictionary containing configuration data or empty dict if not found
+        """
+        project_path = Path(project_root)
+        config_path = project_path / ".sdd_templates" / "sdd-config.yaml"
+        
+        if not config_path.exists():
+            self.logger.debug(f"No local configuration found at {config_path}")
+            return {}
+        
+        try:
+            content = config_path.read_text(encoding='utf-8')
+            validation_result = self.validator.validate_config(content, f"local config ({config_path})")
+            
+            # Log validation results
+            self._log_validation_results(validation_result, "local configuration")
+            
+            # Return parsed content even if there are warnings (graceful degradation)
+            return validation_result.parsed_content
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load local configuration from {config_path}: {e}")
+            return {}
+    
+    def load_remote_config(self, repo_url: str = "robertmeisner/improved-sdd", 
+                          branch: str = "master") -> Dict[str, Any]:
+        """Load configuration from GitHub repository.
+        
+        Args:
+            repo_url: GitHub repository in format 'owner/repo'
+            branch: Branch to load from
+            
+        Returns:
+            Dictionary containing configuration data or empty dict if not found
+        """
+        if not httpx:
+            self.logger.warning("httpx not available - cannot load remote configuration")
+            return {}
+        
+        config_url = f"https://raw.githubusercontent.com/{repo_url}/{branch}/templates/sdd-config.yaml"
+        
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                response = client.get(config_url)
+                response.raise_for_status()
+                
+            content = response.text
+            validation_result = self.validator.validate_config(content, f"remote config ({config_url})")
+            
+            # Log validation results
+            self._log_validation_results(validation_result, "remote configuration")
+            
+            # Return parsed content even if there are warnings (graceful degradation)
+            return validation_result.parsed_content
+            
+        except httpx.HTTPError as e:
+            self.logger.warning(f"Failed to load remote configuration from {config_url}: {e}")
+            return {}
+        except Exception as e:
+            self.logger.error(f"Unexpected error loading remote configuration: {e}")
+            return {}
+    
+    def _log_validation_results(self, result: ValidationResult, source: str) -> None:
+        """Log validation results with appropriate severity levels."""
+        if result.has_errors():
+            self.logger.error(f"Configuration validation errors in {source}:")
+            for error in result.errors:
+                self.logger.error(f"  - {error}")
+        
+        if result.has_warnings():
+            self.logger.warning(f"Configuration validation warnings in {source}:")
+            for warning in result.warnings:
+                self.logger.warning(f"  - {warning}")
+        
+        # Log summary
+        self.logger.info(f"Configuration validation for {source}: {result.summary()}")
+        
+        # Log categorized warnings for debugging
+        categories = ["duplicate", "empty", "pattern", "schema"]
+        for category in categories:
+            warnings = result.get_warnings_by_category(category)
+            if warnings:
+                self.logger.debug(f"{source} {category} warnings: {len(warnings)}")
+    
+    def validate_yaml_syntax(self, content: str, source: str = "configuration") -> Dict[str, Any]:
+        """Legacy method for backward compatibility - now uses new validation system.
+        
+        Args:
+            content: YAML content string
+            source: Source description for error messages
+            
+        Returns:
+            Dictionary containing parsed content and validation info
+            
+        Raises:
+            InvalidYAMLError: If YAML syntax is invalid
+        """
+        validation_result = self.validator.validate_config(content, source)
+        
+        # Convert to legacy format for backward compatibility
+        legacy_result = {
+            "valid": validation_result.valid,
+            "parsed_content": validation_result.parsed_content,
+            "warnings": [str(w) for w in validation_result.warnings],
+            "errors": [str(e) for e in validation_result.errors]
+        }
+        
+        if validation_result.has_errors():
+            error_messages = [str(e) for e in validation_result.errors]
+            raise InvalidYAMLError(f"Configuration validation failed: {'; '.join(error_messages)}")
+        
+        return legacy_result
         """Load configuration from local .sdd_templates/sdd-config.yaml.
         
         Args:
@@ -172,125 +568,6 @@ class ConfigurationLoader:
                     result[key] = value
                 
         return result
-    
-    def validate_yaml_syntax(self, content: str, source: str = "configuration") -> Dict[str, Any]:
-        """Validate YAML syntax and return parsed content with validation results.
-        
-        Args:
-            content: YAML content string
-            source: Source description for error messages
-            
-        Returns:
-            Dictionary containing parsed content and validation info
-            
-        Raises:
-            InvalidYAMLError: If YAML syntax is invalid
-        """
-        validation_result = {
-            "valid": True,
-            "parsed_content": {},
-            "warnings": [],
-            "errors": []
-        }
-        
-        if not content or not content.strip():
-            validation_result["warnings"].append(f"Empty {source}")
-            return validation_result
-            
-        try:
-            parsed = yaml.safe_load(content)
-            if parsed is None:
-                validation_result["warnings"].append(f"Empty or null content in {source}")
-                return validation_result
-                
-            validation_result["parsed_content"] = parsed
-            
-            # Basic structure validation
-            if isinstance(parsed, dict):
-                # Check for required version field
-                if "version" not in parsed:
-                    validation_result["warnings"].append("Missing 'version' field in configuration")
-                
-                # Validate AI tools structure
-                if "ai_tools" in parsed:
-                    self._validate_ai_tools_structure(parsed["ai_tools"], validation_result)
-                
-                # Validate CLI configuration structure
-                if "cli" in parsed:
-                    self._validate_cli_structure(parsed["cli"], validation_result)
-                    
-            else:
-                validation_result["warnings"].append(f"Configuration should be a dictionary, got {type(parsed)}")
-                
-        except yaml.YAMLError as e:
-            validation_result["valid"] = False
-            validation_result["errors"].append(f"Invalid YAML syntax in {source}: {e}")
-            raise InvalidYAMLError(f"Invalid YAML syntax in {source}: {e}")
-        except Exception as e:
-            validation_result["warnings"].append(f"Unexpected error validating {source}: {e}")
-            
-        return validation_result
-    
-    def _validate_ai_tools_structure(self, ai_tools: Any, validation_result: Dict[str, Any]) -> None:
-        """Validate AI tools configuration structure.
-        
-        Args:
-            ai_tools: AI tools configuration to validate
-            validation_result: Validation result dictionary to update
-        """
-        if not isinstance(ai_tools, dict):
-            validation_result["warnings"].append("AI tools configuration should be a dictionary")
-            return
-            
-        for tool_id, tool_config in ai_tools.items():
-            if not isinstance(tool_config, dict):
-                validation_result["warnings"].append(f"AI tool '{tool_id}' configuration should be a dictionary")
-                continue
-                
-            # Check for managed_files structure
-            if "managed_files" in tool_config:
-                managed_files = tool_config["managed_files"]
-                if not isinstance(managed_files, dict):
-                    validation_result["warnings"].append(f"AI tool '{tool_id}' managed_files should be a dictionary")
-                else:
-                    # Validate managed files categories
-                    expected_categories = ["chatmodes", "instructions", "prompts", "commands"]
-                    for category in managed_files:
-                        if category not in expected_categories:
-                            validation_result["warnings"].append(f"AI tool '{tool_id}' has unknown managed_files category: {category}")
-                        elif not isinstance(managed_files[category], list):
-                            validation_result["warnings"].append(f"AI tool '{tool_id}' managed_files.{category} should be a list")
-                        else:
-                            # Check for empty lists
-                            if not managed_files[category]:
-                                validation_result["warnings"].append(f"AI tool '{tool_id}' managed_files.{category} is empty")
-                            # Check for duplicate files within category
-                            file_list = managed_files[category]
-                            if len(file_list) != len(set(file_list)):
-                                validation_result["warnings"].append(f"AI tool '{tool_id}' managed_files.{category} contains duplicates")
-    
-    def _validate_cli_structure(self, cli_config: Any, validation_result: Dict[str, Any]) -> None:
-        """Validate CLI configuration structure.
-        
-        Args:
-            cli_config: CLI configuration to validate
-            validation_result: Validation result dictionary to update
-        """
-        if not isinstance(cli_config, dict):
-            validation_result["warnings"].append("CLI configuration should be a dictionary")
-            return
-            
-        # Validate delete_behavior if present
-        if "delete_behavior" in cli_config:
-            delete_behavior = cli_config["delete_behavior"]
-            if not isinstance(delete_behavior, dict):
-                validation_result["warnings"].append("CLI delete_behavior should be a dictionary")
-            else:
-                # Check boolean fields
-                boolean_fields = ["confirm_before_delete", "show_file_preview", "group_by_ai_tool"]
-                for field in boolean_fields:
-                    if field in delete_behavior and not isinstance(delete_behavior[field], bool):
-                        validation_result["warnings"].append(f"CLI delete_behavior.{field} should be a boolean")
     
     def detect_configuration_conflicts(self, config: Dict[str, Any]) -> List[str]:
         """Detect potential conflicts in configuration.
